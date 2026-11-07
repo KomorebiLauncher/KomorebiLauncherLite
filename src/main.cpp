@@ -6,10 +6,12 @@
 
 #include <QApplication>
 #include <QDir>
+#include <QFile>
 #include <QStandardPaths>
 #include <QTimer>
 
 #include "core/Instance.h"
+#include "dev/SelfTest.h"
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
 
@@ -38,6 +40,11 @@ int main(int argc, char** argv)
             instancesRoot = legacy;
     }
 
+    // The rendering check runs without a window: it renders each control and surface and looks at
+    // the pixels, so a black or transparent surface cannot reach a screenshot unnoticed.
+    // The rendering check runs without a window and writes its own report; see dev/SelfTest.cpp.
+    if (app.arguments().contains(QStringLiteral("--selftest")))
+        return Komorebi::Dev::runSelfTest() == 0 ? 0 : 1;
     AppWindow window(theme, instancesRoot);
     window.show();
 
