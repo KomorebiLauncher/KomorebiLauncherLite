@@ -16,6 +16,7 @@
 #include "core/Paths.h"
 #include "core/launch/LaunchPlan.h"
 #include "services/net/Fetcher.h"
+#include "core/version/ComponentResolver.h"
 #include "core/version/VersionJson.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
@@ -174,6 +175,92 @@ int main(int argc, char** argv)
         note(QStringLiteral("--- output ---"));
         note(collected);
         note(stillRunning ? QStringLiteral("still running after 40s: launched") : QStringLiteral("exited on its own"));
+        return stillRunning ? 0 : 1;
+    }
+
+    // Launch by instance id: the instance names its components, the resolver merges them, and the
+    // launch takes it from there. This is the path a real instance will use.
+    const int instanceLaunchIndex = arguments.indexOf(QStringLiteral("--launch-instance"));
+    if (instanceLaunchIndex >= 0 && instanceLaunchIndex + 1 < arguments.size()) {
+        const QString instanceId = arguments.at(instanceLaunchIndex + 1);
+        const QString instanceDir = QDir(instancesRoot).filePath(instanceId);
+        const QString metaRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("meta"));
+
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+
+        const auto components = Komorebi::readComponentList(instanceDir);
+        note(QStringLiteral("instance %1: %2 components").arg(instanceId).arg(components.size()));
+        for (const auto& component : components)
+            note(QStringLiteral("  %1 %2").arg(component.uid, component.version));
+
+        const QStringList missing = Komorebi::missingComponents(metaRoot, components);
+        for (const auto& entry : missing)
+            note(QStringLiteral("  missing component %1").arg(entry));
+
+        Komorebi::VersionJson version = Komorebi::mergeComponents(metaRoot, components);
+        note(QStringLiteral("merged: id %1, main %2, java %3, libraries %4")
+                 .arg(version.id, version.mainClass)
+                 .arg(version.javaMajor)
+                 .arg(version.libraries.size()));
+
+        const int gameDirIndex2 = arguments.indexOf(QStringLiteral("--game-dir"));
+        const QString gameDirectory = gameDirIndex2 >= 0 && gameDirIndex2 + 1 < arguments.size()
+                                          ? arguments.at(gameDirIndex2 + 1)
+                                          : QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("game"));
+        QDir().mkpath(gameDirectory);
+
+        Komorebi::LaunchRequest request;
+        request.version = version;
+        request.librariesRoot = Komorebi::librariesRoot();
+        request.assetsRoot = Komorebi::assetsRoot();
+        request.nativesRoot = QDir(gameDirectory).filePath(QStringLiteral("natives"));
+        request.gameDirectory = gameDirectory;
+        request.clientJar = QDir(Komorebi::librariesRoot())
+                                .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+        request.playerName = QStringLiteral("Player");
+
+        const Komorebi::LaunchPlan plan = Komorebi::buildLaunchPlan(request);
+        note(QStringLiteral("java: %1").arg(plan.program));
+        note(QStringLiteral("missing files: %1").arg(plan.missingFiles.size()));
+        for (const auto& entry : plan.missingFiles.mid(0, 8))
+            note(QStringLiteral("  %1").arg(entry));
+        if (!plan.valid()) {
+            note(QStringLiteral("cannot launch: %1").arg(plan.error));
+            return 1;
+        }
+
+        QProcess process;
+        process.setWorkingDirectory(plan.workingDirectory);
+        process.setProcessChannelMode(QProcess::MergedChannels);
+        process.start(plan.program, plan.arguments);
+        if (!process.waitForStarted(15000)) {
+            note(QStringLiteral("java did not start"));
+            return 1;
+        }
+        note(QStringLiteral("started, pid %1").arg(process.processId()));
+
+        QString collected;
+        QElapsedTimer timer;
+        timer.start();
+        while (timer.elapsed() < 60000) {
+            process.waitForReadyRead(500);
+            collected += QString::fromLocal8Bit(process.readAll());
+            if (process.state() == QProcess::NotRunning)
+                break;
+        }
+        const bool stillRunning = process.state() != QProcess::NotRunning;
+        if (stillRunning)
+            process.kill();
+        collected += QString::fromLocal8Bit(process.readAll());
+        note(QStringLiteral("--- output ---"));
+        note(collected.right(6000));
+        note(stillRunning ? QStringLiteral("still running after 60s: launched") : QStringLiteral("exited on its own"));
         return stillRunning ? 0 : 1;
     }
 
