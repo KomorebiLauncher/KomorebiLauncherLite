@@ -1,0 +1,12 @@
+{
+  "name": "Komorebi",
+  "qssFilePath": "theme.css",
+  "tokens": {
+    "paper": "#FAF7F0",
+    "paperDeep": "#F3ECDE",
+    "ink": "#242E4C",
+    "inkSoft": "#78786E",
+    "plum": "#8B243A",
+    "line": "#C9C2B4"
+  }
+}

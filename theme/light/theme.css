@@ -1,0 +1,28 @@
+/* Only what the kit does not paint: the window surface and the popups. */
+QWidget {
+    color: @ink;
+}
+
+QMenu {
+    background-color: @paper;
+    border: 1px solid @line;
+    border-radius: 6px;
+    padding: 5px;
+    color: @ink;
+}
+
+QMenu::item {
+    padding: 6px 22px 6px 16px;
+}
+
+QMenu::item:selected {
+    background-color: rgba(139, 36, 58, 0.14);
+}
+
+QComboBox QAbstractItemView {
+    background-color: @paper;
+    border: 1px solid @line;
+    color: @ink;
+    selection-background-color: rgba(139, 36, 58, 0.16);
+    selection-color: @ink;
+}
