@@ -205,6 +205,26 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
         version.libraries.append(library);
     }
 
+    // The game itself: the official manifest calls it downloads.client, the component format keeps
+    // it under mainJar.
+    // "where is the game" is a question with three answers in the wild; the one thing that makes a
+    // download usable is its url, because the file name is ours to choose.
+    const auto readClient = [&root](const QString& path) {
+        return readDownload(root);
+    };
+    Q_UNUSED(readClient);
+    version.clientJar = readDownload(root.value(QStringLiteral("downloads")).toObject().value(QStringLiteral("client")).toObject());
+    if (version.clientJar.url.isEmpty())
+        version.clientJar = readDownload(root.value(QStringLiteral("mainJar")).toObject().value(QStringLiteral("downloads")).toObject().value(QStringLiteral("artifact")).toObject());
+    if (version.clientJar.url.isEmpty())
+        version.clientJar = readDownload(root.value(QStringLiteral("mainJar")).toObject());
+    if (version.clientJar.path.isEmpty() && !version.clientJar.url.isEmpty())
+        version.clientJar.path = QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id);
+
+    const auto index = root.value(QStringLiteral("assetIndex")).toObject();
+    version.assetIndex = readDownload(index);
+    version.assetIndex.path = QStringLiteral("indexes/%1.json").arg(index.value(QStringLiteral("id")).toString());
+
     const auto arguments = root.value(QStringLiteral("arguments")).toObject();
     version.gameArguments = readArguments(arguments.value(QStringLiteral("game")).toArray());
     version.jvmArguments = readArguments(arguments.value(QStringLiteral("jvm")).toArray());

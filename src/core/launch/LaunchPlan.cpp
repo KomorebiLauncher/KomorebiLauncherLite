@@ -99,6 +99,12 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
         }
     }
 
+    if (!request.clientJar.isEmpty()) {
+        classpath << request.clientJar;
+        if (!QFileInfo::exists(request.clientJar))
+            plan.missingFiles << request.clientJar;
+    }
+
     QDir().mkpath(request.nativesRoot);
 
     QHash<QString, QString> values;
@@ -128,7 +134,7 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
 
     // The classpath and the natives are not in the manifest's jvm arguments: they are ours to add.
     if (!arguments.contains(QStringLiteral("-cp")) && !arguments.contains(QStringLiteral("-classpath")))
-        arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath")) << QStringLiteral("java.library.path=") + request.nativesRoot;
+        arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath")) << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
 
     arguments << request.version.mainClass;
     for (const auto& argument : request.version.resolvedGameArguments(environment))

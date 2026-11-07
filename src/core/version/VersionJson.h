@@ -69,6 +69,8 @@ struct VersionJson {
     QString assets;                  ///< asset index id
     int javaMajor = 8;               ///< the Java the version asks for
     QList<Library> libraries;
+    Download clientJar;              ///< the game itself
+    Download assetIndex;            ///< the index of the assets, not the assets
     QList<Argument> gameArguments;   ///< new style
     QList<Argument> jvmArguments;    ///< new style
     QStringList legacyArguments;     ///< old style: one string, split on spaces

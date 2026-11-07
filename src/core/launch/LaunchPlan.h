@@ -33,6 +33,7 @@ struct LaunchRequest {
     QString nativesRoot;     ///< where the native jars are unpacked
     QString assetsRoot;
     QString gameDirectory;
+    QString clientJar;       ///< the game jar, added to the end of the classpath
     QString javaPath;        ///< empty: search for one
     QString playerName = QStringLiteral("Player");
     QString uuid;
