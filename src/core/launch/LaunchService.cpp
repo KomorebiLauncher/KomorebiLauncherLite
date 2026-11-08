@@ -42,6 +42,19 @@ PreparedLaunch prepareLaunch(const Settings& settings, const QString& versionId,
     request.gameDirectory = gameDirectory.isEmpty() ? directory : gameDirectory;  // versions are isolated
     // A loader does not ship the game; the jar belongs to the version at the bottom of the chain.
     request.clientJar = QDir(versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"));
+    // Forge and NeoForge start through ForgeWrapper, which is told where things are and runs the
+    // loader's installer itself. The installer jar is one of the files the component listed beside
+    // the game, not a classpath entry.
+    if (resolved.version.mainClass.contains(QLatin1String("forgewrapper"))) {
+        for (const auto& file : resolved.version.mavenFiles) {
+            if (!file.artifact.valid())
+                continue;
+            if (!file.artifact.path.endsWith(QLatin1String("-installer.jar")))
+                continue;
+            request.installerJar = QDir(librariesRoot()).filePath(file.artifact.path);
+            break;
+        }
+    }
     // Whoever is signed in plays as themselves; without an account the game still starts, offline.
     const QList<MinecraftAccount> accounts = AccountStore::load();
     if (!accounts.isEmpty()) {

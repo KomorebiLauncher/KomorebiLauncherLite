@@ -45,7 +45,7 @@ QNetworkRequest makeRequest(const QString& url)
 }
 
 /// A reply read to completion, with a way out when the server says nothing.
-QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error)
+QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error, int* status = nullptr)
 {
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
@@ -58,6 +58,8 @@ QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error)
     timer.start(timeoutMs);
     loop.exec();
 
+    if (status)
+        *status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     const QByteArray data = reply->readAll();
     if (reply->error() != QNetworkReply::NoError && data.isEmpty())
         *error = QStringLiteral("network: %1").arg(reply->errorString());
@@ -147,31 +149,34 @@ FetchResult fetchFile(const QString& url, const QString& target, const QString& 
     }
 
     // One candidate after another: the policy decides the order, the file is the same either way.
+    // A mirror can refuse a burst of parallel requests with a 4xx that still carries a body, so the
+    // answer is checked before anything is written.
     for (const QString& candidate : candidateUrls(url)) {
-        QNetworkReply* reply = manager().get(makeRequest(candidate));
-        QString error;
-        const QByteArray data = readReply(reply, kTimeoutMs, &error);
-        if (data.isEmpty()) {
-            result.error = error.isEmpty() ? QStringLiteral("no data from %1").arg(candidate) : error;
-            continue;
-        }
-
-        if (!sha1.isEmpty()) {
-            const QString actual = QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
-            if (actual != sha1) {
-                result.error = QStringLiteral("hash mismatch from %1").arg(candidate);
+        for (int tryNumber = 0; tryNumber < 2; ++tryNumber) {
+            QNetworkReply* reply = manager().get(makeRequest(candidate));
+            QString error;
+            int status = 0;
+            const QByteArray data = readReply(reply, kTimeoutMs, &error, &status);
+            if (data.isEmpty() || (status >= 400 && status < 600)) {
+                result.error = error.isEmpty() ? QStringLiteral("HTTP %1 from %2").arg(status).arg(candidate) : error;
+                QThread::msleep(400);
                 continue;
             }
-        }
 
-        if (!writeAtomically(target, data, &error)) {
-            result.error = QStringLiteral("write %1: %2").arg(target, error);
+            if (!sha1.isEmpty() && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != sha1) {
+                result.error = QStringLiteral("hash mismatch from %1").arg(candidate);
+                break;
+            }
+
+            if (!writeAtomically(target, data, &error)) {
+                result.error = QStringLiteral("write %1: %2").arg(target, error);
+                return result;
+            }
+
+            result.bytes = data.size();
+            result.ok = true;
             return result;
         }
-
-        result.bytes = data.size();
-        result.ok = true;
-        return result;
     }
 
     if (result.error.isEmpty())
@@ -224,17 +229,17 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
             startNext();
     };
 
-    std::function<void(const FetchJob&, int)> attempt;
+    std::function<void(const FetchJob&, int, int)> attempt;  // job, candidate index, retries used
 
     startNext = [&] {
         while (active < qMax(1, concurrency) && next < pending.size()) {
             const FetchJob job = pending.at(next++);
             ++active;
-            attempt(job, 0);
+            attempt(job, 0, 0);
         }
     };
 
-    attempt = [&](const FetchJob& job, int index) {
+    attempt = [&](const FetchJob& job, int index, int retries) {
         const QStringList candidates = candidateUrls(job.url);
         if (index >= candidates.size()) {
             finishOne(false, QStringLiteral("%1 (no source answered)").arg(job.target));
@@ -242,10 +247,17 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         }
 
         QNetworkReply* reply = manager().get(makeRequest(candidates.at(index)));
-        QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index] {
-            if (reply->error() != QNetworkReply::NoError) {
+        QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index, retries] {
+            const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (reply->error() != QNetworkReply::NoError || status >= 400) {
                 reply->deleteLater();
-                attempt(job, index + 1);
+                // Retry a refusal once before giving up on the source: mirror hosts answer a burst
+                // of parallel requests with a 4xx now and then, and the next attempt goes through.
+                if (status >= 400 && status < 600 && retries < 1) {
+                    QTimer::singleShot(400, &loop, [&, job, index, retries] { attempt(job, index, retries + 1); });
+                    return;
+                }
+                attempt(job, index + 1, 0);
                 return;
             }
 
@@ -260,7 +272,7 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
 
             if (!job.sha1.isEmpty()
                 && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != job.sha1) {
-                attempt(job, index + 1);
+                attempt(job, index + 1, 0);
                 return;
             }
 

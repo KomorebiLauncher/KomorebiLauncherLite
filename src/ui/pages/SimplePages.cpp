@@ -294,8 +294,10 @@ AboutPage::AboutPage(QWidget* parent)
     credits->setOpenExternalLinks(true);
     credits->setText(tr("Komorebi Lite is the light edition of KomorebiLauncher. The project's lineage is "
                         "<a href=\"https://github.com/PrismLauncher/PrismLauncher\">Prism Launcher</a> and, before it, "
-                        "MultiMC -- this edition's code is written independently, following the public protocols those "
-                        "projects also rely on. Details in NOTICE.md next to this launcher."));
+                        "MultiMC. This edition's code is written independently; two parts have an outside source, which is "
+                        "named here rather than claimed as this project's own: the small Java helper that runs OptiFine's "
+                        "installer follows Prism Launcher's approach, and NeoForge is described by the component metadata "
+                        "Prism Launcher publishes. That is a source, not an affiliation. Details in NOTICE.md next to this launcher."));
     layout->addWidget(credits);
 
     auto* links = new QHBoxLayout();

@@ -26,6 +26,8 @@
 #include "core/util/Archive.h"
 #include "core/util/Cleanup.h"
 #include "core/content/CurseForge.h"
+#include "core/content/PrismMeta.h"
+#include "core/content/Modrinth.h"
 #include "core/install/ModpackInstaller.h"
 #include "core/launch/WindowsTweaks.h"
 #include "services/net/Fetcher.h"
@@ -35,6 +37,7 @@
 #include "core/install/VersionInstaller.h"
 #include "core/install/LoaderInstaller.h"
 #include "core/install/ForgeInstaller.h"
+#include "core/install/OptiFineInstaller.h"
 #include "core/version/VersionResolver.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
@@ -155,28 +158,51 @@ int main(int argc, char** argv)
         // A loader is a second step: it builds on the version that was just installed.
         const int loaderIndex = arguments.indexOf(QStringLiteral("--loader"));
         if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
-            const QString loaderSpec = arguments.at(loaderIndex + 1);
-            if (loaderSpec.startsWith(QLatin1String("neoforge"))) {
-                const QString loaderVersion = loaderSpec.section(QLatin1Char(':'), 1);
-                note(QStringLiteral("installing NeoForge %1 on %2").arg(loaderVersion.isEmpty() ? QStringLiteral("(newest)") : loaderVersion, versionId));
-                const Komorebi::ForgeInstallResult neo = Komorebi::installLoader(
-                    Komorebi::LoaderFamily::NeoForge, Komorebi::dataRoot(), versionId, loaderVersion,
+            const QString spec = arguments.at(loaderIndex + 1);
+            if (spec.startsWith(QLatin1String("optifine"))) {
+                const QString patch = spec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing OptiFine %1 on %2")
+                         .arg(patch.isEmpty() ? QStringLiteral("(newest)") : patch, versionId));
+                const Komorebi::OptiFineResult optifine = Komorebi::installOptiFine(
+                    Komorebi::dataRoot(), versionId, patch,
                     [&note](const Komorebi::InstallProgress& progress) {
                         note(QStringLiteral("%1 %2").arg(progress.stage, progress.current));
                     });
-                if (!neo.ok) {
-                    note(QStringLiteral("neoforge failed: %1").arg(neo.error));
+                if (!optifine.ok) {
+                    note(QStringLiteral("optifine failed: %1").arg(optifine.error));
                     return 1;
                 }
-                note(QStringLiteral("neoforge installed as %1").arg(neo.versionId));
+                note(QStringLiteral("optifine installed as %1 (%2 files copied)").arg(optifine.versionId).arg(optifine.downloaded));
                 return 0;
             }
         }
         if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
-            const QString spec = arguments.at(loaderIndex + 1);
-            if (spec.startsWith(QLatin1String("forge"))) {
-                const QString forgeVersion = spec.section(QLatin1Char(':'), 1);
-                note(QStringLiteral("installing Forge %1 on %2").arg(forgeVersion.isEmpty() ? QStringLiteral("(newest)") : forgeVersion, versionId));
+            const QString loaderSpec = arguments.at(loaderIndex + 1);
+            if (loaderSpec.startsWith(QLatin1String("neoforge"))) {
+                const QString loaderVersion = loaderSpec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing NeoForge %1 on %2")
+                         .arg(loaderVersion.isEmpty() ? QStringLiteral("(newest)") : loaderVersion, versionId));
+                // NeoForge's component says everything it needs -- its libraries, its main class and
+                // the installer its wrapper runs -- so nothing is installed here beyond writing down
+                // what the component lists and fetching those files.
+                QString error;
+                QString installed;
+                const QString component =
+                    Komorebi::PrismMeta::install(QStringLiteral("net.neoforged"), versionId, loaderVersion, &installed, &error);
+                if (component.isEmpty()) {
+                    note(QStringLiteral("neoforge failed: %1").arg(error));
+                    return 1;
+                }
+                note(QStringLiteral("neoforge installed as %1").arg(component));
+                return 0;
+            }
+        }
+        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
+            const QString loaderSpec = arguments.at(loaderIndex + 1);
+            if (loaderSpec.startsWith(QLatin1String("forge"))) {
+                const QString forgeVersion = loaderSpec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing Forge %1 on %2")
+                         .arg(forgeVersion.isEmpty() ? QStringLiteral("(newest)") : forgeVersion, versionId));
                 const Komorebi::ForgeInstallResult forgeResult = Komorebi::installForge(
                     Komorebi::dataRoot(), versionId, forgeVersion,
                     [&note](const Komorebi::InstallProgress& progress) {
@@ -187,24 +213,6 @@ int main(int argc, char** argv)
                     return 1;
                 }
                 note(QStringLiteral("forge installed as %1").arg(forgeResult.versionId));
-                return 0;
-            }
-        }
-        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
-            const QString loaderSpec = arguments.at(loaderIndex + 1);
-            if (loaderSpec.startsWith(QLatin1String("neoforge"))) {
-                const QString loaderVersion = loaderSpec.section(QLatin1Char(':'), 1);
-                note(QStringLiteral("installing NeoForge %1 on %2").arg(loaderVersion.isEmpty() ? QStringLiteral("(newest)") : loaderVersion, versionId));
-                const Komorebi::ForgeInstallResult neo = Komorebi::installLoader(
-                    Komorebi::LoaderFamily::NeoForge, Komorebi::dataRoot(), versionId, loaderVersion,
-                    [&note](const Komorebi::InstallProgress& progress) {
-                        note(QStringLiteral("%1 %2").arg(progress.stage, progress.current));
-                    });
-                if (!neo.ok) {
-                    note(QStringLiteral("neoforge failed: %1").arg(neo.error));
-                    return 1;
-                }
-                note(QStringLiteral("neoforge installed as %1").arg(neo.versionId));
                 return 0;
             }
         }
@@ -358,6 +366,26 @@ int main(int argc, char** argv)
         }
         note(QStringLiteral("installed as %1 (%2 downloaded, %3 present, %4 failed)")
                  .arg(result.versionId).arg(result.downloaded).arg(result.skipped).arg(result.failed.size()));
+        return 0;
+    }
+
+    // Loaders through component metadata instead of an installer (what Prism's service describes).
+    const int componentsIndex = arguments.indexOf(QStringLiteral("--loader-components"));
+    if (componentsIndex >= 0 && componentsIndex + 2 < arguments.size()) {
+        const QString uid = arguments.at(componentsIndex + 1);
+        const QString mcVersion = arguments.at(componentsIndex + 2);
+        const QString loaderVersion = componentsIndex + 3 < arguments.size() ? arguments.at(componentsIndex + 3) : QString();
+
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("components.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        QString error;
+        QString installed;
+        const QString id = Komorebi::PrismMeta::install(uid, mcVersion, loaderVersion, &installed, &error);
+        if (id.isEmpty()) {
+            out.write(QStringLiteral("failed: %1\n").arg(error).toUtf8());
+            return 1;
+        }
+        out.write(QStringLiteral("installed as %1\n").arg(id).toUtf8());
         return 0;
     }
 

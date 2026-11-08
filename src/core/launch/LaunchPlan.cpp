@@ -190,13 +190,17 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
             plan.missingFiles << request.clientJar;
     }
 
-    // The files a loader's installer needs are on the classpath, not part of the game's libraries.
-    for (const auto& file : request.version.mavenFiles) {
-        if (!file.artifact.valid())
-            continue;
-        const QString path = QDir(request.librariesRoot).filePath(file.artifact.path);
-        if (QFileInfo::exists(path))
-            classpath << path;
+    // The files a loader's installer needs are on disk for it to read, not entries the game loads:
+    // putting an installer on the classpath is how a wrapper ends up with two modules claiming one
+    // package.
+    if (!wrappedLoader) {
+        for (const auto& file : request.version.mavenFiles) {
+            if (!file.artifact.valid())
+                continue;
+            const QString path = QDir(request.librariesRoot).filePath(file.artifact.path);
+            if (QFileInfo::exists(path))
+                classpath << path;
+        }
     }
 
     QDir().mkpath(request.nativesRoot);

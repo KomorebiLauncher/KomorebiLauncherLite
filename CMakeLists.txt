@@ -56,3 +56,33 @@ foreach(file ${THEME_FILES})
     file(RELATIVE_PATH rel ${CMAKE_CURRENT_SOURCE_DIR} ${file})
     configure_file(${file} ${CMAKE_CURRENT_BINARY_DIR}/${rel} COPYONLY)
 endforeach()
+
+# OptiFine ships no version metadata: its own installer is the only thing that knows how to patch the
+# game, and it insists on a window. A small Java helper calls the same entry point without one. It is
+# compiled next to the executable so a build always carries the class it was built from; a machine
+# without a JDK still builds the launcher, and OptiFine then reports itself unavailable.
+file(GLOB _jdk_hints
+    "$ENV{JAVA_HOME}/bin"
+    "$ENV{JDK_HOME}/bin"
+    "C:/Program Files/Zulu/*/bin"
+    "C:/Program Files/Eclipse Adoptium/*/bin"
+    "C:/Program Files/Microsoft/jdk*/bin"
+    "C:/Program Files/Java/*/bin"
+)
+find_program(JAVAC_EXECUTABLE NAMES javac HINTS ${_jdk_hints})
+if(JAVAC_EXECUTABLE)
+    set(OPTIFINE_RUNNER_DIR ${CMAKE_CURRENT_BINARY_DIR}/optifine-runner)
+    set(OPTIFINE_RUNNER_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/tools/optifinerunner/komorebilauncher/optifine/Runner.java)
+    add_custom_command(
+        OUTPUT ${OPTIFINE_RUNNER_DIR}/komorebilauncher/optifine/Runner.class
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${OPTIFINE_RUNNER_DIR}
+        COMMAND ${JAVAC_EXECUTABLE} --release 8 -d ${OPTIFINE_RUNNER_DIR} ${OPTIFINE_RUNNER_SOURCE}
+        DEPENDS ${OPTIFINE_RUNNER_SOURCE}
+        COMMENT "Compiling the OptiFine runner"
+        VERBATIM
+    )
+    add_custom_target(optifine-runner ALL DEPENDS ${OPTIFINE_RUNNER_DIR}/komorebilauncher/optifine/Runner.class)
+    add_dependencies(komorebi-lite optifine-runner)
+else()
+    message(WARNING "javac was not found: installing OptiFine will report itself unavailable")
+endif()

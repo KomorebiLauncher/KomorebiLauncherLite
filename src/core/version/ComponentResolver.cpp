@@ -93,17 +93,17 @@ void merge(VersionJson& target, const VersionJson& source)
     if (source.javaMajor > target.javaMajor)
         target.javaMajor = source.javaMajor;
 
-    // Arguments accumulate. The old single-string form is the base component's own description of
-    // how to start the game, so it is taken once, from the bottom of the stack; a later component
-    // that brought gameArguments on top of it keeps them, appended, instead of being dropped.
-    if (target.legacyArguments.isEmpty() && !source.legacyArguments.isEmpty()) {
+    // Arguments accumulate. The old single-string form is a complete description of how to start
+    // the game, and a loader at the top of the stack has to replace it: NeoForge's string carries
+    // --fml.*, which is exactly what the game cannot start without.
+    if (!source.legacyArguments.isEmpty()) {
         target.legacyArguments = source.legacyArguments;
         target.gameArguments.clear();
-    } else if (!target.legacyArguments.isEmpty()) {
+    } else if (target.legacyArguments.isEmpty()) {
+        target.gameArguments += source.gameArguments;
+    } else {
         for (const auto& argument : source.gameArguments)
             target.legacyArguments.append(argument.value);
-    } else {
-        target.gameArguments += source.gameArguments;
     }
     target.jvmArguments += source.jvmArguments;
 

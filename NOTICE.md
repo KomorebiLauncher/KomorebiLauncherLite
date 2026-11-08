@@ -26,13 +26,20 @@ copyright header, and the modification is noted in the header and in the commit 
 ## What this launcher implements itself
 
 The code in this repository was written for it. It does not contain source code from Prism Launcher,
-MultiMC or the full edition; what it follows is their public behaviour and public documentation:
+MultiMC or the full edition; what it follows is their public behaviour and public documentation. One
+file is a rewrite of an idea from Prism Launcher -- the OptiFine runner, noted below -- and keeps
+this project's header with the source named.
 
 | Part | Follows |
 | --- | --- |
 | Microsoft account sign-in | Microsoft's and Xbox Live's published OAuth and identity protocols |
 | Version manifests, library rules, native conventions | the manifest formats Mojang publishes |
 | Loader installation | Fabric's and Quilt's published install endpoints; Forge's own installer, run headless |
+| NeoForge installation | the component metadata Prism Launcher publishes (used as a data source) |
+| OptiFine installation | Prism Launcher's approach: a few lines of Java call OptiFine's own installer without its window. `tools/optifinerunner` in this repository is written along those lines |
+
+Those last two name a source, not an affiliation: this project is not related to, endorsed by, or
+affiliated with Prism Launcher.
 
 The lineage above is historical context for the project, not a claim about this code's origin.
 ## Qt

@@ -17,6 +17,8 @@
 #include "core/Paths.h"
 #include "core/install/VersionInstaller.h"
 #include "core/install/LoaderInstaller.h"
+#include "core/install/OptiFineInstaller.h"
+#include "core/content/PrismMeta.h"
 #include "core/install/ForgeInstaller.h"
 #include "kit/Kit.h"
 
@@ -76,6 +78,7 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     m_loader->addItem(tr("Quilt"), QStringLiteral("quilt"));
     m_loader->addItem(tr("Forge (newest)"), QStringLiteral("forge"));
     m_loader->addItem(tr("NeoForge (newest)"), QStringLiteral("neoforge"));
+    m_loader->addItem(tr("OptiFine (newest)"), QStringLiteral("optifine"));
     loaderRow->addWidget(m_loader, 1);
     layout->addLayout(loaderRow);
 
@@ -188,9 +191,8 @@ void InstallDialog::startInstall()
         // A loader builds on the version that was just installed, so it is a second step.
         LoaderResult loaderResult;
         loaderResult.ok = true;
-        if (loader == QLatin1String("forge") || loader == QLatin1String("neoforge")) {
-            const auto family = loader == QLatin1String("forge") ? LoaderFamily::Forge : LoaderFamily::NeoForge;
-            const ForgeInstallResult forge = installLoader(family, dataRoot, id, {}, [state](const InstallProgress& progress) {
+        if (loader == QLatin1String("forge")) {
+            const ForgeInstallResult forge = installLoader(LoaderFamily::Forge, dataRoot, id, {}, [state](const InstallProgress& progress) {
                 std::lock_guard<std::mutex> lock(state->mutex);
                 state->stage = progress.stage;
                 state->current = progress.current;
@@ -198,6 +200,30 @@ void InstallDialog::startInstall()
             loaderResult.ok = forge.ok;
             loaderResult.error = forge.error;
             loaderResult.versionId = forge.versionId;
+        } else if (loader == QLatin1String("neoforge")) {
+            // NeoForge is fully described by its component; the installer its wrapper needs is just
+            // one of the files that component lists, so this step only writes them down.
+            {
+                std::lock_guard<std::mutex> lock(state->mutex);
+                state->stage = QStringLiteral("neoforge");
+                state->current.clear();
+            }
+            QString error;
+            QString installed;
+            const QString component = PrismMeta::install(QStringLiteral("net.neoforged"), id, {}, &installed, &error);
+            loaderResult.ok = !component.isEmpty();
+            loaderResult.error = error;
+            loaderResult.versionId = component;
+        } else if (loader == QLatin1String("optifine")) {
+            // OptiFine patches the game that was just installed, so it too is a second step.
+            const OptiFineResult optifine = installOptiFine(dataRoot, id, {}, [state](const InstallProgress& progress) {
+                std::lock_guard<std::mutex> lock(state->mutex);
+                state->stage = progress.stage;
+                state->current = progress.current;
+            });
+            loaderResult.ok = optifine.ok;
+            loaderResult.error = optifine.error;
+            loaderResult.versionId = optifine.versionId;
         } else if (!loader.isEmpty()) {
             LoaderChoice choice;
             choice.kind = loader;

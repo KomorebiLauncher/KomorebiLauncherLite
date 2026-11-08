@@ -45,16 +45,32 @@ QUrl validBase(const QString& raw)
     return base;
 }
 
-QString withPrefix(const QUrl& source, const QUrl& base, const QString& prefix)
+QString withPrefix(const QUrl& source, const QUrl& base, const QString& prefix, const QString& path)
 {
     QUrl out = base;
-    QString path = out.path();
-    while (path.endsWith(QLatin1Char('/')))
-        path.chop(1);
-    out.setPath(path + prefix + source.path());
+    QString basePath = out.path();
+    while (basePath.endsWith(QLatin1Char('/')))
+        basePath.chop(1);
+    out.setPath(basePath + prefix + path);
     if (source.hasQuery())
         out.setQuery(source.query());
     return out.toString(QUrl::FullyEncoded);
+}
+
+/// The part of a maven URL that comes after the repository root. Some hosts keep their artifacts in
+/// a named repository ("/releases"), which the mirror's own tree does not repeat.
+QString mavenTree(const QUrl& source)
+{
+    QString path = source.path();
+    if (source.host().compare(QLatin1String("maven.neoforged.net"), Qt::CaseInsensitive) == 0) {
+        for (const QString& repository : { QStringLiteral("/releases"), QStringLiteral("/snapshots") }) {
+            if (path.startsWith(repository + QLatin1Char('/'))) {
+                path = path.mid(repository.size());
+                break;
+            }
+        }
+    }
+    return path;
 }
 
 }  // namespace
@@ -81,11 +97,11 @@ QString mirrorUrl(const QString& url, const QString& mirrorBase)
 
     const QString host = source.host().toLower();
     if (kMavenHosts.contains(host))
-        return withPrefix(source, base, QStringLiteral("/maven"));
+        return withPrefix(source, base, QStringLiteral("/maven"), mavenTree(source));
     if (kAssetHosts.contains(host))
-        return withPrefix(source, base, QStringLiteral("/assets"));
+        return withPrefix(source, base, QStringLiteral("/assets"), source.path());
     if (kObjectHosts.contains(host))
-        return withPrefix(source, base, QString());
+        return withPrefix(source, base, QString(), source.path());
     return {};
 }
 
