@@ -109,6 +109,19 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     m_preLaunch->setText(settings.preLaunchCommand);
     launchForm->addRow(tr("Before launch"), m_preLaunch);
 
+    m_priority = new Komorebi::Combo(page);
+    m_priority->addItem(tr("Normal"), QString());
+    m_priority->addItem(tr("Above normal"), QStringLiteral("above"));
+    m_priority->addItem(tr("High"), QStringLiteral("high"));
+    m_priority->addItem(tr("Below normal"), QStringLiteral("below"));
+    for (int i = 0; i < m_priority->count(); ++i) {
+        if (m_priority->itemData(i).toString() == settings.processPriority) {
+            m_priority->setCurrentIndex(i);
+            break;
+        }
+    }
+    launchForm->addRow(tr("Process priority"), m_priority);
+
     m_highPerformanceGpu = new QCheckBox(tr("Ask for the high performance GPU"), page);
     m_highPerformanceGpu->setChecked(settings.highPerformanceGpu);
     launchForm->addRow(QString(), m_highPerformanceGpu);
@@ -183,6 +196,7 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.legacyFix = m_legacyFix->isChecked();
         m_result.unsafeAgent = m_unsafeAgent->isChecked();
         m_result.wallpaperOpacity = m_wallpaperOpacity->value();
+        m_result.processPriority = m_priority->currentData().toString();
         m_result.downloadSite = m_downloadSite->currentData().toString();
         m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
         m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());

@@ -15,7 +15,8 @@
 | 启动已安装版本 | 可用，`--launch-version <版本>` |
 | 界面（启动 / Java / 日志 / 关于 / 设置） | 可用 |
 | 三语言（简体中文 / English / 日本語） | 可用 |
-| 内存、窗口、JVM 参数、游戏参数、启动前命令、Java 指定 | 可用 |
+| 内存（含锁定 `-Xms`）、窗口、JVM 参数、游戏参数、启动前命令、Java 指定 | 可用 |
+| 高性能显卡（写 Windows 图形首选项）、进程优先级、原生库解包 | 可用 |
 | 下载源（官方 / 镜像）、并发数、限速 | 可用 |
 | 微软账户登录 | 未做 |
 | CurseForge 整合包下载 | 未做 |
@@ -60,6 +61,7 @@ run.bat --install 1.20.1 --loader forge         装完再装加载器
 run.bat --launch-version 1.20.1                 启动，输出写 launch.log
 run.bat --launch-plan <版本 json>               只打印命令行
 run.bat --resolve <版本 id>                     打印继承链与合并结果
+run.bat --unpack <压缩包> <目录>                用启动器自己的解包器展开一个压缩包
 ```
 
 ## 来源与致谢

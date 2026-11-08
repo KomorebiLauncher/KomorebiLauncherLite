@@ -18,6 +18,7 @@
 #include "core/InstanceConfig.h"
 #include "core/Paths.h"
 #include "core/launch/LaunchService.h"
+#include "core/launch/WindowsTweaks.h"
 #include "kit/Kit.h"
 #include "ui/InstallDialog.h"
 
@@ -244,6 +245,8 @@ void LaunchPage::play()
     ++config.launchCount;
     config.lastLaunched = QDate::currentDate().toString(Qt::ISODate);
     config.save(versionDirectory(m_selected));
+
+    setProcessPriority(m_game->processId(), prepared.plan.priority);
 
     m_play->setEnabled(false);
     emit status(tr("Game started"));

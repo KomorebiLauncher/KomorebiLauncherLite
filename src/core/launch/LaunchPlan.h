@@ -22,6 +22,7 @@ struct LaunchPlan {
     QString workingDirectory;  ///< the game directory
     QStringList missingFiles;  ///< libraries or natives the plan expects but cannot find
     QString error;             ///< set when the plan cannot be built at all
+    QString priority;          ///< the priority class the process should get, when it runs
 
     bool valid() const { return error.isEmpty() && !program.isEmpty(); }
     QString commandLine() const;

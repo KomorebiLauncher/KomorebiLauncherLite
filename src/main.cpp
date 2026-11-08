@@ -23,6 +23,8 @@
 #include "core/launch/LaunchPlan.h"
 #include "core/auth/MicrosoftAuth.h"
 #include "core/launch/LaunchService.h"
+#include "core/util/Archive.h"
+#include "core/launch/WindowsTweaks.h"
 #include "services/net/Fetcher.h"
 #include "services/net/DownloadSite.h"
 #include "core/version/ComponentResolver.h"
@@ -228,6 +230,8 @@ int main(int argc, char** argv)
             return 1;
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
+        if (!plan.priority.isEmpty())
+            note(QStringLiteral("priority %1: %2").arg(plan.priority, Komorebi::setProcessPriority(process.processId(), plan.priority) ? QStringLiteral("set") : QStringLiteral("refused")));
         note(QStringLiteral("--- output ---"));
         while (process.state() != QProcess::NotRunning) {
             process.waitForReadyRead(1000);
@@ -241,6 +245,17 @@ int main(int argc, char** argv)
         out.flush();
         note(QStringLiteral("exited with code %1").arg(process.exitCode()));
         return process.exitCode() == 0 ? 0 : 1;
+    }
+
+    // A development hook: unpack an archive the way the launcher does, for checking the unpacker.
+    const int unpackIndex = arguments.indexOf(QStringLiteral("--unpack"));
+    if (unpackIndex >= 0 && unpackIndex + 2 < arguments.size()) {
+        QString error;
+        const bool ok = Komorebi::extractArchive(arguments.at(unpackIndex + 1), arguments.at(unpackIndex + 2), &error);
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("unpack.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        out.write(QStringLiteral("%1: %2\n").arg(ok ? QStringLiteral("ok") : QStringLiteral("failed"), error).toUtf8());
+        return ok ? 0 : 1;
     }
 
     // A development hook: walk an inheritance chain and say what it resolved to.
@@ -423,6 +438,8 @@ int main(int argc, char** argv)
             return 1;
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
+        if (!plan.priority.isEmpty())
+            note(QStringLiteral("priority %1: %2").arg(plan.priority, Komorebi::setProcessPriority(process.processId(), plan.priority) ? QStringLiteral("set") : QStringLiteral("refused")));
         note(QStringLiteral("command: %1").arg(plan.commandLine()));
 
         // Watch it for a while: a launcher that dies in the first seconds is the failure this check
@@ -571,6 +588,8 @@ int main(int argc, char** argv)
             return 1;
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
+        if (!plan.priority.isEmpty())
+            note(QStringLiteral("priority %1: %2").arg(plan.priority, Komorebi::setProcessPriority(process.processId(), plan.priority) ? QStringLiteral("set") : QStringLiteral("refused")));
         note(QStringLiteral("command: %1").arg(plan.commandLine()));
 
         // A launch by instance is someone playing: the game stays up until it closes, and its

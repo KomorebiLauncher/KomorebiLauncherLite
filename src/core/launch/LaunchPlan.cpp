@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "core/launch/LaunchPlan.h"
 
+#include "core/util/Archive.h"
+
 #include <QDir>
 #include "core/Paths.h"
 #include <QFileInfo>
@@ -236,6 +238,19 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
         arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath"));
     // The natives path is not part of the classpath decision: a manifest that brings its own -cp
     // still needs to be told where the natives are.
+    // Native libraries: LWJGL 3 unpacks what it needs itself, but anything before 1.13 expects the
+    // files to be there already, so they are unpacked when the version lists them.
+    if (!request.nativesRoot.isEmpty() && (!nativeJars.isEmpty() || request.legacyFix)) {
+        QDir().mkpath(request.nativesRoot);
+        for (const auto& jar : nativeJars) {
+            if (!QFileInfo::exists(jar))
+                continue;
+            QString error;
+            if (!extractArchive(jar, request.nativesRoot, &error) && !error.isEmpty())
+                plan.error = QStringLiteral("could not unpack %1: %2").arg(QFileInfo(jar).fileName(), error);
+        }
+    }
+
     arguments << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
 
     // The JVM unpacks natives and, for a loader, its installer work into java.io.tmpdir. The system
@@ -260,13 +275,11 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
             arguments << QStringLiteral("-Xms%1m").arg(request.minMemoryMb);
     }
 
-    // Choices from the settings page that cost one argument each.
-    if (request.highPerformanceGpu)
-        arguments << QStringLiteral("-Dkomorebi.gpu=high");
-    if (request.unsafeAgent)
-        arguments << QStringLiteral("-Dkomorebi.unsafeAgent=1");
-    if (request.legacyFix)
-        arguments << QStringLiteral("-Dkomorebi.legacyFix=1");
+    // Native access: modern Java warns (and a future one refuses) when a library reaches into the
+    // system without saying so, which is exactly what LWJGL and the hardware probes do.
+    if (request.unsafeAgent && request.version.javaMajor >= 17)
+        arguments << QStringLiteral("--enable-native-access=ALL-UNNAMED");
+
     arguments << request.extraJvmArguments;
 
     arguments << request.version.mainClass;

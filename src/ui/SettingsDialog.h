@@ -32,6 +32,7 @@ class SettingsDialog : public QDialog {
     Komorebi::Settings m_result;
 
     QComboBox* m_language = nullptr;
+    QComboBox* m_priority = nullptr;
     QLineEdit* m_memory = nullptr;
     QLineEdit* m_width = nullptr;
     QLineEdit* m_height = nullptr;

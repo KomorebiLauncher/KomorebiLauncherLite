@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "core/launch/LaunchService.h"
+#include "core/launch/WindowsTweaks.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -108,6 +109,12 @@ PreparedLaunch prepareLaunch(const Settings& settings, const QString& versionId,
     }
 
     prepared.plan = buildLaunchPlan(request);
+
+    // Windows-side preferences: told once, remembered by the system, honoured on every start.
+    if (settings.highPerformanceGpu && prepared.plan.valid())
+        setGpuPreference(prepared.plan.program, true);
+
+    prepared.plan.priority = settings.processPriority;
     return prepared;
 }
 
