@@ -41,6 +41,10 @@ struct ModpackResult {
 /// Reads the manifest inside a pack without installing anything.
 bool readModpack(const QString& zipPath, ModpackInfo* info, QString* error);
 
+/// Installs a Modrinth pack (.mrpack), whose index names the files by url and hash.
+ModpackResult installMrpack(const QString& zipPath, bool withAssets,
+                             const std::function<void(const InstallProgress&)>& onProgress = {});
+
 /// Installs a pack: game, loader, files, overrides. `onProgress` sees each stage.
 ModpackResult installModpack(const QString& zipPath, bool withAssets,
                              const std::function<void(const InstallProgress&)>& onProgress = {});
