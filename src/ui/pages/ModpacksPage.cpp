@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QProgressBar>
 #include <QStandardPaths>
 
 #include <QTimer>
@@ -30,6 +31,8 @@ struct ModpacksPage::Job {
     std::atomic<int> downloaded{ 0 };
     std::atomic<int> skipped{ 0 };
     std::atomic<int> failed{ 0 };
+    std::atomic<int> stepsDone{ 0 };
+    std::atomic<int> stepsTotal{ 0 };
     std::mutex mutex;
     QString stage;
     QString current;
@@ -70,6 +73,19 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     m_hint = new QLabel(tr("Pick a pack and press install; the game and its loader are installed as part of it."), this);
     m_hint->setWordWrap(true);
     layout->addWidget(m_hint);
+
+    // Installing a pack is minutes of work with no window of its own; without something moving the
+    // page looks stuck. The bar tracks the stage that reports counts, the label says what it is doing.
+    m_progress = new QProgressBar(this);
+    m_progress->setTextVisible(false);
+    m_progress->setFixedHeight(6);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    m_progress->setStyleSheet(QStringLiteral(
+        "QProgressBar { background: rgba(201, 194, 180, 0.45); border: none; border-radius: 3px; }"
+        "QProgressBar::chunk { background: #8b243a; border-radius: 3px; }"));
+    m_progress->setVisible(false);
+    layout->addWidget(m_progress);
 
     m_results = new QListWidget(this);
     m_results->setFrameShape(QFrame::NoFrame);
@@ -196,6 +212,8 @@ void ModpacksPage::installSelected()
                     std::lock_guard<std::mutex> lock(job.mutex);
                     job.stage = progress.stage;
                     job.current = progress.current;
+                    job.stepsDone = progress.done;
+                    job.stepsTotal = progress.total;
                 });
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.ok = result.ok;
@@ -250,6 +268,8 @@ void ModpacksPage::installSelected()
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.stage = progress.stage;
                 job.current = progress.current;
+                job.stepsDone = progress.done;
+                job.stepsTotal = progress.total;
             });
             std::lock_guard<std::mutex> lock(job.mutex);
             job.ok = result.ok;
@@ -277,6 +297,8 @@ void ModpacksPage::importZip()
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.stage = progress.stage;
                 job.current = progress.current;
+                job.stepsDone = progress.done;
+                job.stepsTotal = progress.total;
             });
             std::lock_guard<std::mutex> lock(job.mutex);
             job.ok = result.ok;
@@ -293,6 +315,9 @@ void ModpacksPage::startJob(const std::function<void(Job&)>& work, const QString
     m_job = new Job;
     Job* job = m_job;
     m_hint->setText(tr("Installing %1…").arg(label));
+    m_progress->setValue(0);
+    m_progress->setVisible(true);
+    m_install->setEnabled(false);
     emit status(tr("Installing %1").arg(label));
 
     std::thread([job, work] {
@@ -310,8 +335,16 @@ void ModpacksPage::pollInstall()
 
     {
         std::lock_guard<std::mutex> lock(m_job->mutex);
-        if (!m_job->stage.isEmpty())
-            m_hint->setText(QStringLiteral("%1 · %2").arg(m_job->stage, m_job->current));
+        if (!m_job->stage.isEmpty()) {
+            const int total = m_job->stepsTotal.load();
+            const int done = m_job->stepsDone.load();
+            if (total > 0) {
+                m_progress->setValue(done * 100 / total);
+                m_hint->setText(tr("%1 · %2 (%3/%4)").arg(m_job->stage, m_job->current).arg(done).arg(total));
+            } else {
+                m_hint->setText(QStringLiteral("%1 · %2").arg(m_job->stage, m_job->current));
+            }
+        }
     }
 
     if (!m_job->done) {
@@ -327,6 +360,7 @@ void ModpacksPage::pollInstall()
     const int failed = m_job->failed;
     delete m_job;
     m_job = nullptr;
+    m_progress->setVisible(false);
     m_install->setEnabled(m_results->currentRow() >= 0);
 
     if (!ok) {

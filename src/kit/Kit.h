@@ -78,6 +78,9 @@ class Combo : public QComboBox {
     explicit Combo(QWidget* parent = nullptr);
     QSize sizeHint() const override;
 
+   public slots:
+    void showPopup() override;
+
    protected:
     void paintEvent(QPaintEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;

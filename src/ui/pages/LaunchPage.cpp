@@ -61,6 +61,11 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));
     m_list->setMinimumWidth(260);
     m_list->setMaximumWidth(320);
+    // Long version names used to add a horizontal scrollbar under a list that is only a column wide;
+    // eliding the name keeps the row one line and the scrollbar out of the way.
+    m_list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_list->setTextElideMode(Qt::ElideRight);
+    m_list->setWordWrap(false);
     layout->addWidget(m_list, 0);
 
     auto* plate = new QFrame(this);

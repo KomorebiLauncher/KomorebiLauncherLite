@@ -129,6 +129,32 @@ Combo::Combo(QWidget* parent) : QComboBox(parent)
     setSizeAdjustPolicy(QComboBox::AdjustToContents);
 }
 
+/**
+ * Shows the popup, but not at the height Qt would like.
+ *
+ * With a stylesheet on the view -- which every control here has -- Qt stops honouring maxVisibleItems
+ * and sizes the popup from the whole list, so picking a version out of a hundred drops a column taller
+ * than the screen over everything. The popup is capped to a readable number of rows here instead.
+ */
+void Combo::showPopup()
+{
+    QComboBox::showPopup();
+
+    QAbstractItemView* popupView = view();
+    if (!popupView)
+        return;
+    QWidget* container = popupView->window();
+    if (!container || container == this)
+        return;
+
+    constexpr int rowsVisible = 12;
+    const int rowHeight = qMax(1, popupView->sizeHintForRow(0));
+    const int border = container->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, nullptr, container) * 2;
+    const int wanted = rowHeight * qMin(qMax(count(), 1), rowsVisible) + border + 4;
+    container->setMaximumHeight(wanted);
+    container->resize(container->width(), qMin(container->height(), wanted));
+}
+
 QSize Combo::sizeHint() const
 {
     const QSize base = QComboBox::sizeHint();

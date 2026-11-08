@@ -864,6 +864,11 @@ Started %1 time(s), last %2</source>
         <translation>搜索 Modrinth 整合包，留空则按热度列出</translation>
     </message>
     <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="120"/>
+        <source>%1 · %2 (%3/%4)</source>
+        <translation>%1 · %2（%3/%4）</translation>
+    </message>
+    <message>
         <location filename="../src/ui/pages/ModpacksPage.cpp" line="57"/>
         <source>Search</source>
         <translation>搜索</translation>

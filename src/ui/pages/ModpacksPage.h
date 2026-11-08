@@ -14,6 +14,7 @@
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QProgressBar;
 class QTimer;
 
 namespace Komorebi {
@@ -45,6 +46,7 @@ class ModpacksPage : public QWidget {
     Komorebi::Combo* m_source = nullptr;
     QListWidget* m_results = nullptr;
     QLabel* m_hint = nullptr;
+    QProgressBar* m_progress = nullptr;
     Komorebi::Button* m_install = nullptr;
     Komorebi::Button* m_import = nullptr;
     QTimer* m_poll = nullptr;

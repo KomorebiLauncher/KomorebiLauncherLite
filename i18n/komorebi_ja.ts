@@ -864,6 +864,11 @@ Started %1 time(s), last %2</source>
         <translation>Modrinth の整合パックを検索します。空欄なら人気順</translation>
     </message>
     <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="120"/>
+        <source>%1 · %2 (%3/%4)</source>
+        <translation>%1 · %2（%3/%4）</translation>
+    </message>
+    <message>
         <location filename="../src/ui/pages/ModpacksPage.cpp" line="57"/>
         <source>Search</source>
         <translation>検索</translation>
