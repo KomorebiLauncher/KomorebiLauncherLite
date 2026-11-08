@@ -175,6 +175,11 @@ void ModpacksPage::installSelected()
                 }
 
                 ScratchDirectory temp("pack");
+                if (!temp.isValid()) {
+                    std::lock_guard<std::mutex> lock(job.mutex);
+                    job.error = tr("no place to unpack the pack");
+                    return;
+                }
                 const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));
                 {
                     std::lock_guard<std::mutex> lock(job.mutex);
@@ -224,6 +229,11 @@ void ModpacksPage::installSelected()
             }
 
             ScratchDirectory temp("pack");
+            if (!temp.isValid()) {
+                std::lock_guard<std::mutex> lock(job.mutex);
+                job.error = tr("no place to unpack the pack");
+                return;
+            }
             const QString zip = QDir(temp.path()).filePath(chosen.fileName);
             {
                 std::lock_guard<std::mutex> lock(job.mutex);

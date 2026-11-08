@@ -218,11 +218,33 @@ void LaunchPage::play()
         return;
     }
 
+    // A launch that fails has to leave something to read afterwards: the status line is one sentence
+    // and it is gone as soon as the next thing happens.
+    const auto record = [](const QString& version, const QString& text) {
+        const QDir logs(QDir(dataRoot()).filePath(QStringLiteral("logs")));
+        QDir().mkpath(logs.path());
+        QFile file(logs.filePath(QStringLiteral("launcher.log")));
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Append))
+            return;
+        file.write(QStringLiteral("[%1] %2: %3\n")
+                       .arg(QDateTime::currentDateTime().toString(Qt::ISODate), version, text)
+                       .toUtf8());
+    };
+
     const PreparedLaunch prepared = prepareLaunch(m_settings, m_selected);
     if (!prepared.ok()) {
-        emit status(prepared.error.isEmpty() ? tr("%1 file(s) are missing").arg(prepared.plan.missingFiles.size()) : prepared.error);
+        QString reason = prepared.error;
+        if (reason.isEmpty())
+            reason = tr("%1 file(s) are missing").arg(prepared.plan.missingFiles.size());
+        if (!prepared.plan.missingFiles.isEmpty())
+            reason += QStringLiteral("\n") + prepared.plan.missingFiles.mid(0, 5).join(QLatin1Char('\n'));
+        record(m_selected, QStringLiteral("cannot launch: ") + reason);
+        emit status(reason);
+        QMessageBox::warning(this, tr("Cannot launch %1").arg(m_selected), reason);
         return;
     }
+
+    record(m_selected, QStringLiteral("launching: ") + prepared.plan.commandLine());
 
     if (!m_game) {
         m_game = new QProcess(this);
@@ -246,7 +268,10 @@ void LaunchPage::play()
     m_game->setWorkingDirectory(prepared.plan.workingDirectory);
     m_game->start(prepared.plan.program, prepared.plan.arguments);
     if (!m_game->waitForStarted(10000)) {
+        record(m_selected, QStringLiteral("java did not start: ") + m_game->errorString());
         emit status(tr("Could not start: Java did not run"));
+        QMessageBox::warning(this, tr("Cannot launch %1").arg(m_selected),
+                             tr("Java did not start: %1").arg(m_game->errorString()));
         return;
     }
 
