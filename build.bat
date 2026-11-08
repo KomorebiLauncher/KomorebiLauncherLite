@@ -21,11 +21,15 @@ if not exist "%QT%\bin\qmake.exe" (
 
 call "%VCVARS%" >nul
 
+rem English diagnostics: Ninja recognises MSVC's include lines by their English prefix, and a
+rem localized compiler silently breaks header dependency tracking (CMakeLists.txt sets it too).
+set "VSLANG=1033"
+
 cmake -S "%HERE%." -B "%HERE%build" -G Ninja -DCMAKE_PREFIX_PATH=%QT% -DCMAKE_BUILD_TYPE=Debug
 if errorlevel 1 exit /b 1
 
-rem A clean build on purpose: an object compiled against an older copy of a struct keeps working
-rem just well enough to crash at startup, which looks like a logic bug and costs an hour every time.
+rem A clean build on purpose: with dependency tracking working the --clean-first is belt and braces,
+rem and it costs a minute rather than an evening of chasing a crash that is really a stale object.
 cmake --build "%HERE%build" --clean-first
 if errorlevel 1 exit /b 1
 

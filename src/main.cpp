@@ -152,6 +152,8 @@ int main(int argc, char** argv)
 
         const Komorebi::InstallResult result = installer.install(versionId, withAssets);
         note(result.summary());
+        if (!result.warning.isEmpty())
+            note(QStringLiteral("warning: %1").arg(result.warning));
         for (const auto& failure : result.failed.mid(0, 10))
             note(QStringLiteral("  %1").arg(failure));
         if (!result.ok)

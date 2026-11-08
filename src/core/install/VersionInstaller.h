@@ -35,6 +35,7 @@ struct InstallProgress {
 struct InstallResult {
     bool ok = false;
     QString error;
+    QString warning;     ///< something that did not stop the install but the player should know
     QStringList failed;   ///< files that could not be fetched, with the reason
     int downloaded = 0;
     int skipped = 0;      ///< already present and correct

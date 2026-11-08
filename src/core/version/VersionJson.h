@@ -74,6 +74,7 @@ struct VersionJson {
     QString mainClass;
     QString assets;                  ///< asset index id
     int javaMajor = 8;               ///< the Java the version asks for
+    QString javaComponent;           ///< Mojang's name for that runtime, e.g. java-runtime-epsilon
     QList<Library> libraries;
     QList<Library> mavenFiles;  ///< files a loader needs beside the game, e.g. the Forge installer
     Download clientJar;              ///< the game itself

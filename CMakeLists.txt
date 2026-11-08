@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.21)
 project(KomorebiNext LANGUAGES CXX)
 
+# The build needs the compiler to speak English. Ninja tracks header dependencies by watching the
+# include lines MSVC prints, and it recognises them by their English prefix; with a localized
+# compiler those lines do not match, so an edited header does not recompile the files that include
+# it, and the stale object files crash in ways that look like logic bugs. Set here rather than in a
+# script so every way of configuring this project gets it.
+if(MSVC)
+    set(ENV{VSLANG} 1033)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

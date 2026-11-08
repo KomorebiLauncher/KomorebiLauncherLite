@@ -178,6 +178,7 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
     if (version.assets.isEmpty())
         version.assets = root.value(QStringLiteral("assetIndex")).toObject().value(QStringLiteral("id")).toString();
     version.javaMajor = root.value(QStringLiteral("javaVersion")).toObject().value(QStringLiteral("majorVersion")).toInt(0);
+    version.javaComponent = root.value(QStringLiteral("javaVersion")).toObject().value(QStringLiteral("component")).toString();
     if (version.javaMajor == 0)
         version.javaMajor = root.value(QStringLiteral("compatibleJavaMajors")).toArray().first().toInt(8);
 

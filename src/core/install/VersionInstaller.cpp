@@ -12,6 +12,7 @@
 #include <QSet>
 
 #include "core/Paths.h"
+#include "core/install/JavaRuntime.h"
 #include "services/net/Fetcher.h"
 
 namespace Komorebi {
@@ -45,7 +46,8 @@ QString InstallResult::summary() const
 {
     if (!ok)
         return QStringLiteral("failed: %1 (%2 file(s) could not be fetched)").arg(error).arg(failed.size());
-    return QStringLiteral("ok: %1 downloaded, %2 already present").arg(downloaded).arg(skipped);
+    const QString line = QStringLiteral("ok: %1 downloaded, %2 already present").arg(downloaded).arg(skipped);
+    return warning.isEmpty() ? line : line + QStringLiteral("\nwarning: ") + warning;
 }
 
 VersionManifest VersionManifest::fetch(QString* error)
@@ -184,7 +186,24 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
     result.skipped += libraryResult.skipped;
     result.failed += libraryResult.failed;
 
-    // 4. the asset index, and then the assets it lists
+    // 4. the runtime the version was built against, when this machine has no matching one. Without it
+    // the game cannot start at all, and downloading it here is cheaper than failing at launch.
+    if (!parsed.javaComponent.isEmpty() && !hasJavaRuntime(m_dataRoot, parsed.javaMajor)) {
+        report(QStringLiteral("java"), 0, 0, parsed.javaComponent);
+        const JavaRuntimeResult runtime = installJavaRuntime(m_dataRoot, parsed.javaComponent, parsed.javaMajor,
+                                                             [&](const InstallProgress& progress) {
+                                                                 report(progress.stage, progress.done, progress.total, progress.current);
+                                                             });
+        result.downloaded += runtime.downloaded;
+        result.skipped += runtime.skipped;
+        if (!runtime.ok) {
+            // The game is installed; a runtime that could not be fetched is reported rather than fatal:
+            // the player may have their own Java, and the launch path picks whichever fits.
+            result.warning = QStringLiteral("Java %1 could not be downloaded: %2").arg(parsed.javaMajor).arg(runtime.error);
+        }
+    }
+
+    // 5. the asset index, and then the assets it lists
     if (parsed.assetIndex.valid()) {
         const QString indexPath = QDir(m_dataRoot).filePath(QStringLiteral("assets/") + parsed.assetIndex.path);
         report(QStringLiteral("assets index"), 0, 0, parsed.assetIndex.path);
