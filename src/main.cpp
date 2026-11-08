@@ -38,6 +38,8 @@
 #include "ui/AppWindow.h"
 #include "ui/InstallDialog.h"
 #include "ui/SettingsDialog.h"
+#include "ui/InstanceSettingsDialog.h"
+#include "core/InstanceConfig.h"
 #include "ui/LoginDialog.h"
 
 int main(int argc, char** argv)
@@ -619,6 +621,22 @@ int main(int argc, char** argv)
 
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.
+    // A development hook for the per-version settings dialog.
+    const int shotInstanceIndex = app.arguments().indexOf(QStringLiteral("--shot-instance"));
+    if (shotInstanceIndex >= 0) {
+        const QString path = shotInstanceIndex + 1 < app.arguments().size() ? app.arguments().at(shotInstanceIndex + 1)
+                                                                           : QStringLiteral("instance.png");
+        const QString id = shotInstanceIndex + 2 < app.arguments().size() ? app.arguments().at(shotInstanceIndex + 2)
+                                                                         : QStringLiteral("1.20.1");
+        const Komorebi::InstanceConfig config = Komorebi::InstanceConfig::load(Komorebi::versionDirectory(id));
+        auto* dialog = new InstanceSettingsDialog(id, config, Komorebi::Settings::load().memoryMb, &window);
+        dialog->show();
+        QTimer::singleShot(1500, dialog, [dialog, path] {
+            dialog->grab().save(path);
+            QApplication::quit();
+        });
+    }
+
     // A development hook for the sign-in dialog.
     const int shotLoginIndex = app.arguments().indexOf(QStringLiteral("--shot-login"));
     if (shotLoginIndex >= 0) {

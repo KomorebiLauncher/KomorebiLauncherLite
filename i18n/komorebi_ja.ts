@@ -362,6 +362,71 @@ This version can be started.</source>
     </message>
 </context>
 <context>
+    <name>InstanceSettingsDialog</name>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="18" />
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="25" />
+        <source>Settings for %1</source>
+        <translation>%1 の設定</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="36" />
+        <source>Empty: the version id</source>
+        <translation>空欄: バージョン ID を使用</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="38" />
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="42" />
+        <source>Empty or 0: follow the launcher (%1 MB)</source>
+        <translation>空欄または 0: ランチャーに従う（%1 MB）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="44" />
+        <source>Memory (MB)</source>
+        <translation>メモリ (MB)</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="47" />
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="52" />
+        <source>Empty: follow the launcher</source>
+        <translation>空欄: ランチャーに従う</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="49" />
+        <source>JVM arguments</source>
+        <translation>JVM 引数</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="54" />
+        <source>Game arguments</source>
+        <translation>ゲーム引数</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="57" />
+        <source>Notes shown on this version's page</source>
+        <translation>このバージョンのページに表示するメモ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="59" />
+        <source>Notes</source>
+        <translation>メモ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="66" />
+        <source>Save</source>
+        <translation>保存</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstanceSettingsDialog.cpp" line="68" />
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+</context>
+<context>
     <name>JavaPage</name>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="49" />
@@ -417,72 +482,77 @@ This version can be started.</source>
 <context>
     <name>LaunchPage</name>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="72" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="74" />
         <source>Select a version</source>
         <translation>バージョンを選ぶ</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="87" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="316" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="89" />
+        <source>Settings</source>
+        <translation>設定</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="90" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="344" />
         <source>Rename</source>
         <translation>名前を変更</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="88" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="332" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="91" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="360" />
         <source>Notes</source>
         <translation>メモ</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="89" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="92" />
         <source>Folder</source>
         <translation>フォルダー</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="90" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="281" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="93" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="294" />
         <source>Complete files</source>
         <translation>ファイルを補完</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="91" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="94" />
         <source>Start script</source>
         <translation>起動スクリプト</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="92" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="345" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="95" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="373" />
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="104" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="198" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="108" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="209" />
         <source>Ready</source>
         <translation>準備完了</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="106" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="110" />
         <source>Play</source>
         <translation>起動</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="151" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="156" />
         <source>No versions installed yet</source>
         <translation>インストール済みのバージョンはありません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="152" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="157" />
         <source>Use Install a version in the top right corner to download one.</source>
         <translation>右上の「バージョンをインストール」からダウンロードしてください。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="154" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="159" />
         <source>Nothing installed</source>
         <translation>未インストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="189" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="194" />
         <source>Java %1 · %2
 Installed at: %3
 Game files: %4</source>
@@ -491,95 +561,121 @@ Game files: %4</source>
 ゲームファイル: %4</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="190" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="195" />
         <source>unknown</source>
         <translation>不明</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="191" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="196" />
         <source>complete</source>
         <translation>完全</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="191" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="196" />
         <source>missing</source>
         <translation>不足</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="193" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="198" />
+        <source>
+Memory: %1 MB (this version)</source>
+        <translation>
+メモリ: %1 MB（このバージョン）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="200" />
+        <source>
+JVM arguments: %1</source>
+        <translation>
+JVM 引数: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="202" />
+        <source>
+Game arguments: %1</source>
+        <translation>
+ゲーム引数: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="204" />
         <source>
 Started %1 time(s), last %2</source>
         <translation>
 %1 回起動、最後は %2</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="198" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="209" />
         <source>The game files of this version are missing; complete them</source>
         <translation>このバージョンのゲームファイルが足りません。補完してください</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="206" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="217" />
         <source>The game is already running</source>
         <translation>ゲームはすでに起動しています</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="212" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="223" />
         <source>%1 file(s) are missing</source>
         <translation>%1 個のファイルがありません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="220" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="231" />
         <source>Game exited</source>
         <translation>ゲームが終了しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="220" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="231" />
         <source>The game exited with code %1</source>
         <translation>ゲームが異常終了しました（%1）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="225" />
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="238" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="236" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="249" />
         <source>Could not start: Java did not run</source>
         <translation>起動できません: Java が実行されませんでした</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="249" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="262" />
         <source>Game started</source>
         <translation>ゲームを起動しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="275" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="288" />
         <source>Nothing is missing</source>
         <translation>不足しているファイルはありません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="282" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="295" />
         <source>%1 file(s) missing, opening the installer</source>
         <translation>%1 個のファイルが不足しています。インストーラーを開きます</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="300" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="313" />
         <source>Could not write %1</source>
         <translation>%1 に書き込めません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="306" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="319" />
         <source>Wrote %1</source>
         <translation>%1 を書き出しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="316" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="334" />
+        <source>Saved the settings of %1</source>
+        <translation>%1 の設定を保存しました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="344" />
         <source>Name (empty: the version id)</source>
         <translation>名前（空欄ならバージョン ID）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="332" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="360" />
         <source>Notes for this version</source>
         <translation>このバージョンのメモ</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="346" />
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="374" />
         <source>Delete %1 and everything in its folder?</source>
         <translation>%1 とそのフォルダーの中身をすべて削除しますか？</translation>
     </message>
@@ -800,67 +896,92 @@ Started %1 time(s), last %2</source>
         <translation>起動前コマンド</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="112" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="113" />
+        <source>Normal</source>
+        <translation>標準</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="114" />
+        <source>Above normal</source>
+        <translation>標準以上</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="115" />
+        <source>High</source>
+        <translation>高</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="116" />
+        <source>Below normal</source>
+        <translation>標準未満</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="123" />
+        <source>Process priority</source>
+        <translation>プロセスの優先度</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="125" />
         <source>Ask for the high performance GPU</source>
         <translation>高性能 GPU を要求</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="116" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="129" />
         <source>Legacy fix (old versions)</source>
         <translation>旧バージョン互換の修正</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="120" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="133" />
         <source>Allow the unsafe memory access agent</source>
         <translation>Unsafe メモリアクセスを許可</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="130" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="143" />
         <source>Official servers</source>
         <translation>公式サーバー</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="131" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="144" />
         <source>Mirror (BG)</source>
         <translation>ミラー（BG）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="138" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="151" />
         <source>Download from</source>
         <translation>ダウンロード元</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="141" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="154" />
         <source>Files at once</source>
         <translation>同時ダウンロード数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="144" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="157" />
         <source>0: no limit</source>
         <translation>0: 制限なし</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="145" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="158" />
         <source>Speed limit (KB/s)</source>
         <translation>速度制限（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="154" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="167" />
         <source>Wallpaper</source>
         <translation>壁紙</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="157" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="170" />
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>言語の変更は次回ランチャー起動時に反映されます。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="165" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="178" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="167" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="180" />
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

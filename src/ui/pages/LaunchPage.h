@@ -42,6 +42,7 @@ class LaunchPage : public QWidget {
     void openFolder();
     void completeFiles();
     void exportScript();
+    void editInstance();
     void renameVersion();
     void describeVersion();
     void removeVersion();

@@ -21,6 +21,7 @@
 #include "core/launch/WindowsTweaks.h"
 #include "kit/Kit.h"
 #include "ui/InstallDialog.h"
+#include "ui/InstanceSettingsDialog.h"
 
 using namespace Komorebi;
 
@@ -85,12 +86,14 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     // the things a player does to a version
     auto* actions = new QHBoxLayout();
     actions->setSpacing(8);
+    auto* configure = new Button(tr("Settings"), plate);
     auto* rename = new Button(tr("Rename"), plate);
     auto* describe = new Button(tr("Notes"), plate);
     auto* folder = new Button(tr("Folder"), plate);
     auto* complete = new Button(tr("Complete files"), plate);
     auto* script = new Button(tr("Start script"), plate);
     auto* remove = new Button(tr("Delete"), plate);
+    actions->addWidget(configure);
     actions->addWidget(rename);
     actions->addWidget(describe);
     actions->addWidget(folder);
@@ -115,6 +118,7 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     connect(m_list, &QListWidget::currentRowChanged, this, &LaunchPage::selectRow);
     connect(m_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem*) { play(); });
     connect(m_play, &QPushButton::clicked, this, &LaunchPage::play);
+    connect(configure, &QPushButton::clicked, this, &LaunchPage::editInstance);
     connect(rename, &QPushButton::clicked, this, &LaunchPage::renameVersion);
     connect(describe, &QPushButton::clicked, this, &LaunchPage::describeVersion);
     connect(folder, &QPushButton::clicked, this, &LaunchPage::openFolder);
@@ -190,6 +194,12 @@ void LaunchPage::selectRow(int row)
     QString body = tr("Java %1 · %2\nInstalled at: %3\nGame files: %4")
                        .arg(version.javaMajor > 0 ? QString::number(version.javaMajor) : tr("unknown"), sizes(version.size),
                             QDir::toNativeSeparators(version.path), version.hasGameJar ? tr("complete") : tr("missing"));
+    if (config.memoryMb > 0)
+        body += tr("\nMemory: %1 MB (this version)").arg(config.memoryMb);
+    if (!config.jvmArguments.isEmpty())
+        body += tr("\nJVM arguments: %1").arg(config.jvmArguments);
+    if (!config.gameArguments.isEmpty())
+        body += tr("\nGame arguments: %1").arg(config.gameArguments);
     if (config.launchCount > 0)
         body += tr("\nStarted %1 time(s), last %2").arg(config.launchCount).arg(config.lastLaunched);
     if (!config.description.isEmpty())
@@ -307,6 +317,21 @@ void LaunchPage::exportScript()
     file.write(prepared.plan.commandLine().toUtf8() + "\r\n");
     file.close();
     emit status(tr("Wrote %1").arg(QDir::toNativeSeparators(path)));
+}
+
+void LaunchPage::editInstance()
+{
+    if (m_selected.isEmpty())
+        return;
+
+    const QString directory = versionDirectory(m_selected);
+    InstanceSettingsDialog dialog(m_selected, InstanceConfig::load(directory), m_settings.memoryMb, this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    dialog.result().save(directory);
+    reload();
+    emit status(tr("Saved the settings of %1").arg(m_selected));
 }
 
 void LaunchPage::renameVersion()
