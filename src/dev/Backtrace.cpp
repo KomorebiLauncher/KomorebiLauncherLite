@@ -6,6 +6,9 @@
 #include <QFile>
 #include <QTextStream>
 
+#include <cstdlib>
+#include <exception>
+
 #if defined(Q_OS_WIN)
 #include <windows.h>
 #include <dbghelp.h>
@@ -143,6 +146,54 @@ void fatalHandler(QtMsgType type, const QMessageLogContext& context, const QStri
         previousHandler(type, context, message);
 }
 
+/// Writes a short record and the current stack; used by the handlers for the ways a C++ program dies
+/// without raising an exception (terminate, a pure virtual call, the CRT's invalid parameter path).
+void writeShortRecord(const char* what)
+{
+    QFile file(crashFile());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append))
+        return;
+
+    QTextStream out(&file);
+    out << QString::fromLatin1(what) << QLatin1Char('\n');
+
+    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+    const bool symbols = SymInitialize(currentProcess, nullptr, TRUE);
+    void* frames[64];
+    const USHORT count = CaptureStackBackTrace(0, 64, frames, nullptr);
+    for (USHORT index = 0; index < count; ++index) {
+        const DWORD64 address = reinterpret_cast<DWORD64>(frames[index]);
+        QString location;
+        const QString name = symbols ? symbolFor(address, &location) : QString();
+        out << QStringLiteral("#%1 0x%2 %3 %4\n")
+                   .arg(index)
+                   .arg(address, 0, 16)
+                   .arg(name.isEmpty() ? QStringLiteral("?") : name, location);
+    }
+    if (symbols)
+        SymCleanup(currentProcess);
+    out.flush();
+}
+
+[[noreturn]] void onTerminate()
+{
+    writeShortRecord("terminate called");
+    TerminateProcess(currentProcess, 3);
+    std::abort();
+}
+
+void onPureCall()
+{
+    writeShortRecord("pure virtual call");
+    TerminateProcess(currentProcess, 3);
+}
+
+void onInvalidParameter(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t)
+{
+    writeShortRecord("invalid parameter");
+    TerminateProcess(currentProcess, 3);
+}
+
 }  // namespace
 
 void installFatalBacktrace()
@@ -150,6 +201,9 @@ void installFatalBacktrace()
     currentProcess = GetCurrentProcess();
     previousHandler = qInstallMessageHandler(fatalHandler);
     SetUnhandledExceptionFilter(faultFilter);
+    std::set_terminate(onTerminate);
+    _set_purecall_handler(onPureCall);
+    _set_invalid_parameter_handler(onInvalidParameter);
 }
 
 #else
