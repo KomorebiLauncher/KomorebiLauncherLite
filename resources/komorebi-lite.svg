@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Komorebi Lite mark. Original work, SPDX-License-Identifier: CC0-1.0
+       Komorebi is sunlight through leaves; here the sun sits behind three of them, on paper. -->
+  <rect width="1024" height="1024" fill="#faf7f0"/>
+  <circle cx="500" cy="452" r="238" fill="#e9a73c"/>
+  <ellipse cx="712" cy="368" rx="198" ry="86" transform="rotate(-36 712 368)" fill="#2e7654"/>
+  <ellipse cx="318" cy="652" rx="200" ry="94" transform="rotate(-16 318 652)" fill="#1c4635"/>
+  <ellipse cx="690" cy="656" rx="158" ry="72" transform="rotate(24 690 656)" fill="#3f9e74"/>
+  <path d="M 176 838 Q 512 764 848 838" stroke="#8b243a" stroke-width="28" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>komorebi-lite-256.png</file>
+        <file>komorebi-lite.svg</file>
+    </qresource>
+</RCC>

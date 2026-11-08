@@ -1,0 +1,2 @@
+// Generated from resources/windows.rc.in: the shell icon for the executable.
+IDI_ICON1 ICON "@CMAKE_CURRENT_SOURCE_DIR@/resources/komorebi-lite.ico"
