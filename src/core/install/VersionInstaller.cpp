@@ -170,21 +170,19 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
     }
 
     // 3. the libraries: the parser already dropped the ones this platform does not need
-    const QList<Library>& wanted = parsed.libraries;
-    int done = 0;
-    for (const auto& library : wanted) {
+    QList<FetchJob> libraryJobs;
+    for (const auto& library : parsed.libraries) {
         const Download& download = library.isNative() ? library.natives : library.artifact;
         if (!download.valid())
             continue;
-        const QString target = QDir(m_dataRoot).filePath(QStringLiteral("libraries/") + download.path);
-        report(QStringLiteral("libraries"), done++, wanted.size(), library.name);
-        const FetchResult fetched = fetchFile(download.url, target, download.sha1);
-        if (!fetched.ok) {
-            result.failed << QStringLiteral("%1 (%2)").arg(target, fetched.error);
-            continue;
-        }
-        fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
+        libraryJobs.append({ download.url, QDir(m_dataRoot).filePath(QStringLiteral("libraries/") + download.path), download.sha1 });
     }
+    const FetchSummary libraryResult = fetchMany(libraryJobs, 8, [&](int done, int total) {
+        report(QStringLiteral("libraries"), done, total, {});
+    });
+    result.downloaded += libraryResult.downloaded;
+    result.skipped += libraryResult.skipped;
+    result.failed += libraryResult.failed;
 
     // 4. the asset index, and then the assets it lists
     if (parsed.assetIndex.valid()) {
@@ -200,28 +198,22 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
         if (withAssets && fetched.ok) {
             const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
             const auto objects = index.value(QStringLiteral("objects")).toObject();
-            int assetDone = 0;
-            const int assetTotal = objects.size();
+            QList<FetchJob> assetJobs;
+            assetJobs.reserve(objects.size());
             for (auto it = objects.begin(); it != objects.end(); ++it) {
-                const auto object = it.value().toObject();
-                const QString hash = object.value(QStringLiteral("hash")).toString();
+                const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
                 if (hash.size() < 2)
                     continue;
-                const QString target = QDir(m_dataRoot).filePath(
-                    QStringLiteral("assets/objects/%1/%2").arg(hash.left(2), hash));
-                report(QStringLiteral("assets"), assetDone++, assetTotal, it.key());
-                if (QFileInfo::exists(target)) {
-                    ++result.skipped;
-                    continue;
-                }
-                const QString url = QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash);
-                const FetchResult asset = fetchFile(url, target, hash);
-                if (!asset.ok) {
-                    result.failed << QStringLiteral("%1 (%2)").arg(target, asset.error);
-                    continue;
-                }
-                asset.alreadyPresent ? ++result.skipped : ++result.downloaded;
+                assetJobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash),
+                                   QDir(m_dataRoot).filePath(QStringLiteral("assets/objects/%1/%2").arg(hash.left(2), hash)),
+                                   hash });
             }
+            const FetchSummary assetResult = fetchMany(assetJobs, 12, [&](int done, int total) {
+                report(QStringLiteral("assets"), done, total, {});
+            });
+            result.downloaded += assetResult.downloaded;
+            result.skipped += assetResult.skipped;
+            result.failed += assetResult.failed;
         }
     }
 

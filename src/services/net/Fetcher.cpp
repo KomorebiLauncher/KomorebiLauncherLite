@@ -11,23 +11,56 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QCryptographicHash>
+#include <functional>
 
 namespace Komorebi {
 
 namespace {
 /// How long a single file may take before the download is given up on.
 constexpr int kTimeoutMs = 20000;
+
+/// One connection pool for everything the launcher fetches.
+QNetworkAccessManager& manager()
+{
+    static QNetworkAccessManager instance;
+    return instance;
+}
+
+QNetworkRequest makeRequest(const QString& url)
+{
+    QNetworkRequest request{ QUrl(url) };
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
+    return request;
+}
+
+bool writeAtomically(const QString& target, const QByteArray& data, QString* error)
+{
+    QDir().mkpath(QFileInfo(target).absolutePath());
+    QSaveFile file(target);
+    if (!file.open(QIODevice::WriteOnly)) {
+        *error = file.errorString();
+        return false;
+    }
+    if (file.write(data) != data.size()) {
+        *error = file.errorString();
+        file.cancelWriting();
+        return false;
+    }
+    if (!file.commit()) {
+        *error = file.errorString();
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 BytesResult fetchBytes(const QString& url)
 {
     BytesResult result;
 
-    QNetworkAccessManager manager;
-    QNetworkRequest request{ QUrl(url) };
-    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
-    QNetworkReply* reply = manager.get(request);
+    QNetworkReply* reply = manager().get(makeRequest(url));
 
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
@@ -50,6 +83,76 @@ BytesResult fetchBytes(const QString& url)
     reply->deleteLater();
     result.ok = true;
     return result;
+}
+FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress)
+{
+    FetchSummary summary;
+
+    // What is already on disk does not need a request: an interrupted install resumes for free.
+    QList<FetchJob> pending;
+    pending.reserve(jobs.size());
+    for (const auto& job : jobs) {
+        if (!job.sha1.isEmpty() && QFileInfo::exists(job.target) && fileSha1(job.target) == job.sha1) {
+            ++summary.skipped;
+            continue;
+        }
+        pending.append(job);
+    }
+
+    const int total = jobs.size();
+    int done = summary.skipped;
+    if (onProgress)
+        onProgress(done, total);
+    if (pending.isEmpty())
+        return summary;
+
+    QEventLoop loop;
+    int active = 0;
+    int next = 0;
+
+    // it calls itself when a request finishes, so it needs a name before its body
+    std::function<void()> startNext;
+    startNext = [&] {
+        while (active < qMax(1, concurrency) && next < pending.size()) {
+            const FetchJob job = pending.at(next++);
+            QNetworkReply* reply = manager().get(makeRequest(job.url));
+            ++active;
+
+            QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job] {
+                --active;
+                if (reply->error() != QNetworkReply::NoError) {
+                    summary.failed << QStringLiteral("%1 (%2)").arg(job.target, reply->errorString());
+                } else {
+                    const QByteArray data = reply->readAll();
+                    QString error;
+                    if (!writeAtomically(job.target, data, &error)) {
+                        summary.failed << QStringLiteral("%1 (%2)").arg(job.target, error);
+                    } else if (!job.sha1.isEmpty()) {
+                        const QString actual = QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
+                        if (actual != job.sha1)
+                            summary.failed << QStringLiteral("%1 (hash mismatch)").arg(job.target);
+                        else
+                            ++summary.downloaded;
+                    } else {
+                        ++summary.downloaded;
+                    }
+                }
+                reply->deleteLater();
+                ++done;
+                if (onProgress)
+                    onProgress(done, total);
+                if (next >= pending.size() && active == 0)
+                    loop.quit();
+                else
+                    startNext();
+            });
+        }
+    };
+
+    startNext();
+    if (active > 0)
+        loop.exec();
+    return summary;
 }
 QString fileSha1(const QString& path)
 {
@@ -79,11 +182,7 @@ FetchResult fetchFile(const QString& url, const QString& target, const QString& 
         return result;
     }
 
-    QNetworkAccessManager manager;
-    QNetworkRequest request{ QUrl(url) };
-    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
-    QNetworkReply* reply = manager.get(request);
+    QNetworkReply* reply = manager().get(makeRequest(url));
 
     // A server that accepts the connection and then says nothing would otherwise hang the launcher
     // forever: the loop needs its own way out.
