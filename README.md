@@ -33,7 +33,8 @@ Lite 用**自己的一份 Qt**，默认装在 `%LOCALAPPDATA%\KomorebiLauncherLi
 
 ```powershell
 build.bat            # 配置 + 全量编译到 build\
-run.bat              # 打开窗口
+run.bat              # 打开窗口（数据目录 %APPDATA%\KomorebiLauncherLite）
+run-local.bat        # 打开窗口（数据目录 build\data，用于这台机器上 %APPDATA% 写不进去的情况）
 ```
 
 `build.bat` 故意每次都全量编译：增量编译保留过旧的 .obj 会在启动时崩溃，排查成本远高于多等一分钟。
