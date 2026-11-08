@@ -26,4 +26,4 @@ cmake --build "%HERE%build"
 if errorlevel 1 exit /b 1
 
 echo.
-echo Built: %HERE%build\komorebi-next.exe
+echo Built: %HERE%build\komorebi-lite.exe

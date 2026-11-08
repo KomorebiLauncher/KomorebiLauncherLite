@@ -13,7 +13,7 @@ chcp 65001 >nul
 
 set "HERE=%~dp0"
 set "QT=D:\Qt\6.11.2\msvc2022_64"
-set "EXE=%HERE%build\komorebi-next.exe"
+set "EXE=%HERE%build\komorebi-lite.exe"
 
 if not exist "%EXE%" (
     echo Not built yet. Run build.bat first.
