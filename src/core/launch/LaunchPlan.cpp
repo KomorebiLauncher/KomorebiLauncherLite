@@ -3,6 +3,8 @@
 
 #include "core/util/Archive.h"
 
+#include "core/JavaScan.h"
+
 #include <QDir>
 #include "core/Paths.h"
 #include <QFileInfo>
@@ -73,33 +75,28 @@ int javaMajorOf(const QString& javaPath)
 
 QString findJava(int requiredMajor)
 {
+    // 1. an explicit choice wins, as it does everywhere else in the launcher
+    const QString fromEnvironment = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_JAVA"));
+    if (!fromEnvironment.isEmpty() && QFileInfo::exists(fromEnvironment))
+        return fromEnvironment;
+
+    // 2. the runtimes the launcher can see -- the ones it downloaded itself, then the usual install
+    // places. This is the same scan the Java page and the installer use, so a runtime installed
+    // anywhere the launcher knows about is a runtime the launch can use; looking only at JAVA_HOME
+    // and PATH missed a Java 25 sitting in Program Files while the game asked for 25.
+    const QList<JavaRuntime> runtimes = JavaScan::find();
+    const JavaRuntime picked = JavaScan::pick(runtimes, requiredMajor);
+    if (!picked.path.isEmpty())
+        return picked.path;
+
+    // 3. last resort: JAVA_HOME and PATH, for a layout none of the known places describe
     const QString executable = javaExecutableName(Environment::current());
     QStringList candidates;
-
-    // 1. an explicit setting wins
-    const QString fromEnvironment = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_JAVA"));
-    if (!fromEnvironment.isEmpty())
-        candidates << fromEnvironment;
-
-    // 2. the launcher's own runtimes, newest first
-    const QString runtimes = QDir(dataRoot()).filePath(QStringLiteral("java"));
-    const QDir runtimeDir(runtimes);
-    if (runtimeDir.exists()) {
-        for (const auto& entry : runtimeDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name | QDir::Reversed)) {
-            const QDir bin(QDir(entry.absoluteFilePath()).filePath(QStringLiteral("bin")));
-            if (QFileInfo::exists(bin.filePath(executable)))
-                candidates << bin.filePath(executable);
-        }
-    }
-
-    // 3. JAVA_HOME, then whatever is on PATH
     const QString home = QProcessEnvironment::systemEnvironment().value(QStringLiteral("JAVA_HOME"));
     if (!home.isEmpty())
         candidates << QDir(home).filePath(QStringLiteral("bin/") + executable);
     candidates << QStandardPaths::findExecutable(QStringLiteral("java"));
 
-    // A version of Java that cannot load the game's classes is worse than none: pick the one that
-    // matches what the version asks for, and only then the newest available.
     QString best;
     int bestDistance = std::numeric_limits<int>::max();
     for (const auto& candidate : candidates) {

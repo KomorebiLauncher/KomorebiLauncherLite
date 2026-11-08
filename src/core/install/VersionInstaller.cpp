@@ -11,6 +11,7 @@
 #include <QSaveFile>
 #include <QSet>
 
+#include "core/JavaScan.h"
 #include "core/Paths.h"
 #include "core/install/JavaRuntime.h"
 #include "services/net/Fetcher.h"
@@ -187,8 +188,19 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
     result.failed += libraryResult.failed;
 
     // 4. the runtime the version was built against, when this machine has no matching one. Without it
-    // the game cannot start at all, and downloading it here is cheaper than failing at launch.
-    if (!parsed.javaComponent.isEmpty() && !hasJavaRuntime(m_dataRoot, parsed.javaMajor)) {
+    // the game cannot start at all, and downloading it here is cheaper than failing at launch. A
+    // system Java of the same major counts: there is no reason to fetch a second copy of what is
+    // already installed.
+    const auto hasMatchingJava = [this](int major) {
+        if (hasJavaRuntime(m_dataRoot, major))
+            return true;
+        for (const auto& runtime : JavaScan::find()) {
+            if (runtime.major == major)
+                return true;
+        }
+        return false;
+    };
+    if (!parsed.javaComponent.isEmpty() && !hasMatchingJava(parsed.javaMajor)) {
         report(QStringLiteral("java"), 0, 0, parsed.javaComponent);
         const JavaRuntimeResult runtime = installJavaRuntime(m_dataRoot, parsed.javaComponent, parsed.javaMajor,
                                                              [&](const InstallProgress& progress) {

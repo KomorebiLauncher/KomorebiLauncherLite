@@ -105,18 +105,34 @@ QString mirrorUrl(const QString& url, const QString& mirrorBase)
     return {};
 }
 
-/// Where the same public artifact can be found when the repository the version names is out of
-/// reach. A loader's own repository is often the only place its patched jars live, but the ordinary
-/// libraries it depends on are published to Maven Central, and Central answers from anywhere.
-QString centralUrl(const QString& url)
+/// Repositories that hold the same artifact under the same path when the one a version names is out
+/// of reach. A loader's repository is often the only place its own patched jars live, but the
+/// libraries it leans on are republished -- Forge keeps its own copies of Mojang's and Central's, and
+/// Central keeps most of everything -- so the same path is worth trying there before failing a file.
+const QStringList kMavenFallbacks = {
+    QStringLiteral("https://maven.minecraftforge.net"),
+    QStringLiteral("https://libraries.minecraft.net"),
+    QStringLiteral("https://repo1.maven.org/maven2"),
+};
+
+QStringList fallbackMavenUrls(const QString& url)
 {
+    QStringList fallbacks;
     const QUrl source(url, QUrl::TolerantMode);
     if (!source.isValid() || !kMavenHosts.contains(source.host().toLower()))
-        return {};
+        return fallbacks;
+
     const QString path = mavenTree(source);
     if (path.isEmpty() || !path.startsWith(QLatin1Char('/')))
-        return {};
-    return QStringLiteral("https://repo1.maven.org/maven2") + path;
+        return fallbacks;
+
+    const QString sourceHost = source.host().toLower();
+    for (const QString& root : kMavenFallbacks) {
+        if (QUrl(root).host().compare(sourceHost, Qt::CaseInsensitive) == 0)
+            continue;
+        fallbacks << root + path;
+    }
+    return fallbacks;
 }
 
 QStringList candidateUrls(const QString& url)
@@ -147,12 +163,14 @@ QStringList candidateUrls(const QString& url)
     if (candidates.isEmpty())
         candidates << url;
 
-    // Last resort for a maven artifact the loader's own repository hosts but nobody can reach: the
-    // same coordinates usually exist on Central. "Mirror only" still means no fallback at all.
+    // Last resort for a maven artifact whose own repository is out of reach: the same path exists on
+    // the other public repositories often enough to be worth trying. "Mirror only" still means no
+    // fallback at all.
     if (officialAllowed) {
-        const QString central = centralUrl(url);
-        if (!central.isEmpty() && !candidates.contains(central))
-            candidates << central;
+        for (const QString& fallback : fallbackMavenUrls(url)) {
+            if (!candidates.contains(fallback))
+                candidates << fallback;
+        }
     }
     return candidates;
 }
