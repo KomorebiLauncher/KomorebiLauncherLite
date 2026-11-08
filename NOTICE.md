@@ -23,14 +23,18 @@ All of the above are distributed under GPL-3.0-only.
 Where a file is taken from the full edition rather than written for this one, it keeps the original
 copyright header, and the modification is noted in the header and in the commit that brought it in.
 
-## What came from upstream
+## What this launcher implements itself
 
-| Part | Upstream origin |
+The code in this repository was written for it. It does not contain source code from Prism Launcher,
+MultiMC or the full edition; what it follows is their public behaviour and public documentation:
+
+| Part | Follows |
 | --- | --- |
-| Microsoft account sign-in (device code → Xbox Live → XSTS → Minecraft Services) | Prism Launcher implementation, Prism Launcher and MultiMC contributors |
-| CurseForge modpack parsing and download flow | same |
-| Version manifests, library rules, native library conventions | data formats published by Mojang Studios |
+| Microsoft account sign-in | Microsoft's and Xbox Live's published OAuth and identity protocols |
+| Version manifests, library rules, native conventions | the manifest formats Mojang publishes |
+| Loader installation | Fabric's and Quilt's published install endpoints; Forge's own installer, run headless |
 
+The lineage above is historical context for the project, not a claim about this code's origin.
 ## Qt
 
 Qt 6 (Widgets, Svg, Network, LinguistTools), Copyright (C) The Qt Company Ltd. and contributors,

@@ -36,6 +36,7 @@
 #include "ui/AppWindow.h"
 #include "ui/InstallDialog.h"
 #include "ui/SettingsDialog.h"
+#include "ui/LoginDialog.h"
 
 int main(int argc, char** argv)
 {
@@ -599,6 +600,19 @@ int main(int argc, char** argv)
 
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.
+    // A development hook for the sign-in dialog.
+    const int shotLoginIndex = app.arguments().indexOf(QStringLiteral("--shot-login"));
+    if (shotLoginIndex >= 0) {
+        const QString path = shotLoginIndex + 1 < app.arguments().size() ? app.arguments().at(shotLoginIndex + 1)
+                                                                         : QStringLiteral("login.png");
+        auto* dialog = new LoginDialog(&window);
+        dialog->show();
+        QTimer::singleShot(2500, dialog, [dialog, path] {
+            dialog->grab().save(path);
+            QApplication::quit();
+        });
+    }
+
     // A development hook for the settings dialog.
     const int shotSettingsIndex = app.arguments().indexOf(QStringLiteral("--shot-settings"));
     if (shotSettingsIndex >= 0) {

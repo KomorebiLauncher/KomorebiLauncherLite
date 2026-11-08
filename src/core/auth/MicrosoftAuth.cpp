@@ -231,6 +231,61 @@ bool MicrosoftAuth::signIn(const DeviceCode& code, MinecraftAccount* account, QS
     return exchangeXbox(accessToken, account, error);
 }
 
+PollResult MicrosoftAuth::poll(const DeviceCode& code)
+{
+    PollResult result;
+
+    const QString client = clientId();
+    if (client.isEmpty()) {
+        result.state = PollResult::State::Failed;
+        result.error = QStringLiteral("no Microsoft app id is configured");
+        return result;
+    }
+
+    const QByteArray body = form({
+        { QStringLiteral("grant_type"), QStringLiteral("urn:ietf:params:oauth:grant-type:device_code") },
+        { QStringLiteral("client_id"), client },
+        { QStringLiteral("device_code"), code.deviceCode },
+    });
+    const JsonResult answer = postJson(QString::fromLatin1(kTokenUrl), body,
+                                       { { QStringLiteral("Content-Type"), QStringLiteral("application/x-www-form-urlencoded") } });
+    const QJsonObject object = parse(answer.body);
+
+    if (!answer.ok) {
+        const QString pending = object.value(QStringLiteral("error")).toString();
+        if (pending == QLatin1String("authorization_pending")) {
+            result.state = PollResult::State::Pending;
+            return result;
+        }
+        if (pending == QLatin1String("slow_down")) {
+            result.state = PollResult::State::SlowDown;
+            return result;
+        }
+        result.state = PollResult::State::Failed;
+        result.error = object.value(QStringLiteral("error_description")).toString(pending);
+        if (result.error.isEmpty())
+            result.error = QStringLiteral("sign-in failed");
+        return result;
+    }
+
+    const QString accessToken = object.value(QStringLiteral("access_token")).toString();
+    if (accessToken.isEmpty()) {
+        result.state = PollResult::State::Failed;
+        result.error = QStringLiteral("no access token came back");
+        return result;
+    }
+
+    result.account.refreshToken = object.value(QStringLiteral("refresh_token")).toString();
+    QString error;
+    if (!exchangeXbox(accessToken, &result.account, &error)) {
+        result.state = PollResult::State::Failed;
+        result.error = error;
+        return result;
+    }
+
+    result.state = PollResult::State::Done;
+    return result;
+}
 bool MicrosoftAuth::refresh(MinecraftAccount* account, QString* error)
 {
     const QString client = clientId();

@@ -3,7 +3,7 @@
 <context>
     <name>AboutPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="310" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="283" />
         <source>A small Minecraft launcher: install a version, press Play.
 
 GPL-3.0. The mark and the interface are original work.
@@ -18,17 +18,21 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
         <translation type="vanished">Microsoft サインインと CurseForge 整合パックの手順は &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;（&lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; の fork、いずれも GPL-3.0）の実装を参考にしています。全文はランチャー同梱の NOTICE.md にあります。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
         <source>Komorebi Lite is the light edition of KomorebiLauncher, whose lineage is &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; and, before it, MultiMC. The account and modpack handling descends from those projects (GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
-        <translation>Komorebi Lite は KomorebiLauncher の軽量版で、系譜は &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; とその前身の MultiMC です。アカウントと整合パックの処理はこれらのプロジェクト由来です（GPL-3.0）。全文はランチャー同梱の NOTICE.md にあります。</translation>
+        <translation type="vanished">Komorebi Lite は KomorebiLauncher の軽量版で、系譜は &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; とその前身の MultiMC です。アカウントと整合パックの処理はこれらのプロジェクト由来です（GPL-3.0）。全文はランチャー同梱の NOTICE.md にあります。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="329" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="295" />
+        <source>Komorebi Lite is the light edition of KomorebiLauncher. The project's lineage is &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; and, before it, MultiMC -- this edition's code is written independently, following the public protocols those projects also rely on. Details in NOTICE.md next to this launcher.</source>
+        <translation>Komorebi Lite は KomorebiLauncher の軽量版です。プロジェクトの系譜は &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; とその前身の MultiMC ですが、本版のコードは独立に実装されており、同じ公開プロトコルに従っています。詳細は同梱の NOTICE.md にあります。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="302" />
         <source>Source code</source>
         <translation>ソースコード</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="330" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="303" />
         <source>Licence</source>
         <translation>ライセンス</translation>
     </message>
@@ -36,66 +40,66 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
 <context>
     <name>AccountsPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="201" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="202" />
         <source>Accounts</source>
         <translation>アカウント</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="203" />
-        <location filename="../src/ui/pages/SimplePages.cpp" line="262" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="204" />
         <source>Sign in with Microsoft</source>
         <translation>Microsoft でサインイン</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="205" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="206" />
         <source>Sign out</source>
         <translation>サインアウト</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="210" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="211" />
         <source>A Microsoft account is what lets the game join servers that require one.</source>
         <translation>Microsoft アカウントは、認証が必要なサーバーに参加するために使います。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="230" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="231" />
         <source>Signed out</source>
         <translation>サインアウトしました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="246" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="247" />
         <source>No account signed in</source>
         <translation>サインインしているアカウントはありません</translation>
     </message>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="256" />
-        <source>Could not start the sign-in: %1</source>
-        <translation>サインインを開始できません: %1</translation>
+        <source>Sign-in cancelled</source>
+        <translation>サインインを中止しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="263" />
+        <source>Could not start the sign-in: %1</source>
+        <translation type="vanished">サインインを開始できません: %1</translation>
+    </message>
+    <message>
         <source>Open %1 and enter the code:
 
 %2
 
 The launcher will continue by itself once you approve.</source>
-        <translation>%1 を開いて次のコードを入力してください:
+        <translation type="vanished">%1 を開いて次のコードを入力してください:
 
 %2
 
 承認すると自動で続行します。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="266" />
         <source>Open the page</source>
-        <translation>ページを開く</translation>
+        <translation type="vanished">ページを開く</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="283" />
         <source>Sign-in failed: %1</source>
-        <translation>サインインに失敗しました: %1</translation>
+        <translation type="vanished">サインインに失敗しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="289" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="263" />
         <source>Signed in as %1</source>
         <translation>%1 でサインインしました</translation>
     </message>
@@ -232,7 +236,7 @@ This version can be started.</source>
         <translation type="vanished">起動中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="138" />
+        <location filename="../src/ui/AppWindow.cpp" line="144" />
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>設定を保存しました（言語は次回起動時に反映されます）</translation>
     </message>
@@ -360,52 +364,52 @@ This version can be started.</source>
 <context>
     <name>JavaPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="48" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="49" />
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="50" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="51" />
         <source>Look again</source>
         <translation>再検索</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="51" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="52" />
         <source>Use this one</source>
         <translation>これを使う</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="57" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="58" />
         <source>A version starts with the runtime closest to what it asks for. Pick one here to pin it.</source>
         <translation>バージョンは要求に最も近い実行環境で起動します。ここで選ぶと固定されます。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="76" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="77" />
         <source>Java pinned: %1</source>
         <translation>Java を固定しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="89" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="90" />
         <source>unknown vendor</source>
         <translation>不明なベンダー</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="98" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="99" />
         <source>No Java found. Install one, or set the path in the settings.</source>
         <translation>Java が見つかりません。インストールするか、設定でパスを指定してください。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="99" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="100" />
         <source>No Java found</source>
         <translation>Java が見つかりません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="113" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="114" />
         <source>%1 runtime(s) found.</source>
         <translation>%1 個の実行環境が見つかりました。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="114" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="115" />
         <source>%1 Java runtime(s)</source>
         <translation>%1 個の Java 実行環境</translation>
     </message>
@@ -581,59 +585,143 @@ Started %1 time(s), last %2</source>
     </message>
 </context>
 <context>
+    <name>LoginDialog</name>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="20" />
+        <location filename="../src/ui/LoginDialog.cpp" line="27" />
+        <source>Sign in with Microsoft</source>
+        <translation>Microsoft でサインイン</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="34" />
+        <source>Open this page in a browser:</source>
+        <translation>ブラウザでこのページを開きます:</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="43" />
+        <source>and enter this code:</source>
+        <translation>次のコードを入力します:</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="57" />
+        <source>Copy the code</source>
+        <translation>コードをコピー</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="59" />
+        <source>Open the page</source>
+        <translation>ページを開く</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="60" />
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="67" />
+        <source>Waiting for the browser…</source>
+        <translation>ブラウザでの承認を待っています…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="73" />
+        <source>Copied</source>
+        <translation>コピーしました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="91" />
+        <source>Could not start the sign-in: %1</source>
+        <translation>サインインを開始できません: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="97" />
+        <source>Waiting for the browser… the code is good for %1 minutes.</source>
+        <translation>ブラウザでの承認を待っています…コードの有効期限は %1 分です。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="110" />
+        <source>The code expired. Close this and try again.</source>
+        <translation>コードの有効期限が切れました。閉じてやり直してください。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="117" />
+        <source>Waiting for the browser… %1: enter the code and approve.</source>
+        <translation>ブラウザでの承認を待っています…%1: コードを入力して承認してください。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="117" />
+        <source>still waiting</source>
+        <translation>まだ待機中</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="117" />
+        <source>waiting</source>
+        <translation>待機中</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="121" />
+        <source>Waiting a little longer…</source>
+        <translation>もう少し待っています…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/LoginDialog.cpp" line="130" />
+        <source>Sign-in failed: %1</source>
+        <translation>サインインに失敗しました: %1</translation>
+    </message>
+</context>
+<context>
     <name>LogsPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="127" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="128" />
         <source>Logs</source>
         <translation>ログ</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="129" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="130" />
         <source>Open folder</source>
         <translation>フォルダーを開く</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="130" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="131" />
         <source>Export</source>
         <translation>エクスポート</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="131" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="132" />
         <source>Clear</source>
         <translation>消去</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="137" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="138" />
         <source>Every game start writes a log here.</source>
         <translation>ゲームを起動するたびにログが残ります。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="160" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="161" />
         <source>Exported to %1</source>
         <translation>%1 にエクスポートしました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="162" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="163" />
         <source>Could not export %1</source>
         <translation>%1 をエクスポートできません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="169" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="170" />
         <source>Logs cleared</source>
         <translation>ログを消去しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="188" />
         <source>No logs yet.</source>
         <translation>まだログがありません。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="188" />
         <source>%1 log file(s).</source>
         <translation>%1 個のログファイル。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="188" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="189" />
         <source>%1 log file(s)</source>
         <translation>%1 個のログファイル</translation>
     </message>

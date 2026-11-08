@@ -32,6 +32,20 @@ struct MinecraftAccount {
     QString xuid;
 };
 
+/// What one poll of the token endpoint said.
+struct PollResult {
+    enum class State {
+        Pending,   ///< the player has not approved yet
+        SlowDown,  ///< approved too slowly; poll less often
+        Done,      ///< the tokens are in `account`
+        Failed,    ///< give up, `error` says why
+    };
+
+    State state = State::Pending;
+    QString error;
+    MinecraftAccount account;
+};
+
 class MicrosoftAuth {
    public:
     /// The client id the launcher is registered under; empty means signing in is not configured.
@@ -48,6 +62,14 @@ class MicrosoftAuth {
      */
     static bool signIn(const DeviceCode& code, MinecraftAccount* account, QString* error,
                        const std::function<bool()>& keepWaiting = {});
+
+    /**
+     * One attempt at the token endpoint, then the rest of the chain when it succeeds.
+     *
+     * Returns immediately: the caller polls on its own timer, so a window stays responsive while a
+     * player is still typing the code in a browser.
+     */
+    static PollResult poll(const DeviceCode& code);
 
     /// Turns a stored refresh token into a fresh account, without the player doing anything.
     static bool refresh(MinecraftAccount* account, QString* error);

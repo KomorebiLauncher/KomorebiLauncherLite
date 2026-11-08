@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include "core/auth/AccountStore.h"
+#include "ui/LoginDialog.h"
 #include <QLabel>
 #include <QListWidget>
 #include <QUrl>
@@ -250,45 +251,17 @@ void AccountsPage::reload()
 
 void AccountsPage::signIn()
 {
-    QString error;
-    const DeviceCode code = MicrosoftAuth::startDeviceCode(&error);
-    if (code.deviceCode.isEmpty()) {
-        emit status(tr("Could not start the sign-in: %1").arg(error));
+    LoginDialog dialog(this);
+    if (dialog.exec() != QDialog::Accepted) {
+        emit status(tr("Sign-in cancelled"));
         return;
     }
 
-    // The player needs the code and the address; the launcher waits for them in the browser.
-    QMessageBox box(this);
-    box.setWindowTitle(tr("Sign in with Microsoft"));
-    box.setText(tr("Open %1 and enter the code:\n\n%2\n\nThe launcher will continue by itself once you approve.")
-                    .arg(code.verificationUri, code.userCode));
-    box.setStandardButtons(QMessageBox::Cancel);
-    auto* open = box.addButton(tr("Open the page"), QMessageBox::ActionRole);
-    connect(open, &QPushButton::clicked, &box, [&code] {
-        QDesktopServices::openUrl(QUrl(code.verificationUri));
-    });
-    box.setModal(true);
-    box.show();
-    QApplication::processEvents();
-
-    // Waiting for the browser takes as long as it takes; the dialog stays up meanwhile.
-    MinecraftAccount account;
-    const bool ok = MicrosoftAuth::signIn(code, &account, &error, [&box] {
-        QApplication::processEvents();
-        return box.isVisible();
-    });
-    box.close();
-
-    if (!ok) {
-        emit status(tr("Sign-in failed: %1").arg(error));
-        return;
-    }
-
+    const MinecraftAccount account = dialog.account();
     AccountStore::add(account);
     reload();
     emit status(tr("Signed in as %1").arg(account.name));
 }
-
 QString AccountsPage::activeName()
 {
     const QList<MinecraftAccount> accounts = AccountStore::load();
@@ -319,10 +292,10 @@ AboutPage::AboutPage(QWidget* parent)
     credits->setWordWrap(true);
     credits->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     credits->setOpenExternalLinks(true);
-    credits->setText(tr("Komorebi Lite is the light edition of KomorebiLauncher, whose lineage is "
+    credits->setText(tr("Komorebi Lite is the light edition of KomorebiLauncher. The project's lineage is "
                         "<a href=\"https://github.com/PrismLauncher/PrismLauncher\">Prism Launcher</a> and, before it, "
-                        "MultiMC. The account and modpack handling descends from those projects (GPL-3.0). "
-                        "The full notices are in NOTICE.md next to this launcher."));
+                        "MultiMC -- this edition's code is written independently, following the public protocols those "
+                        "projects also rely on. Details in NOTICE.md next to this launcher."));
     layout->addWidget(credits);
 
     auto* links = new QHBoxLayout();
