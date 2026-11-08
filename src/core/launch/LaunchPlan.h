@@ -45,6 +45,12 @@ struct LaunchRequest {
     QString userType = QStringLiteral("msa");
     QString versionType = QStringLiteral("release");
     int maxMemoryMb = 0;   ///< 0: leave the JVM default alone
+    int minMemoryMb = 0;   ///< 0: let the JVM grow; equal to max means locked
+    QStringList extraJvmArguments;   ///< from the settings page
+    QStringList extraGameArguments;  ///< appended after the manifest arguments
+    bool highPerformanceGpu = false;
+    bool legacyFix = false;
+    bool unsafeAgent = true;
     int width = 0;
     int height = 0;
 };

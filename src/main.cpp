@@ -21,6 +21,7 @@
 #include <QLocale>
 #include "core/VersionStore.h"
 #include "core/launch/LaunchPlan.h"
+#include "core/launch/LaunchService.h"
 #include "services/net/Fetcher.h"
 #include "core/version/ComponentResolver.h"
 #include "core/version/VersionJson.h"
@@ -35,7 +36,6 @@
 
 int main(int argc, char** argv)
 {
-    QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("KomorebiLite"));
 
     // The language is decided before the first window exists: a translator installed later leaves
@@ -64,7 +64,6 @@ int main(int argc, char** argv)
     // Themes travel next to the binary while the launcher is young; a packaged build would read
     // them from the data directory instead.
     const QString themeDir = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("theme/light"));
-    const Komorebi::Theme theme = Komorebi::Theme::load(themeDir);
     theme.apply(app);
 
     // While the rewrite is young it reads the instances the installed launcher already has, so the
@@ -166,60 +165,25 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        const QString directory = Komorebi::versionDirectory(versionId);
-        const QString description = QDir(directory).filePath(versionId + QStringLiteral(".json"));
-        const Komorebi::ResolvedVersion resolved = Komorebi::resolveVersion(Komorebi::versionsRoot(), versionId);
-        if (!resolved.ok()) {
-            note(QStringLiteral("cannot resolve %1: %2 (chain=%3)")
-                     .arg(versionId, resolved.error, resolved.chain.join(QLatin1Char('>'))));
-            return 1;
-        }
-        const Komorebi::VersionJson version = resolved.version;
-        note(QStringLiteral("version %1: main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
-        if (version.id.isEmpty()) {
-            note(QStringLiteral("not installed: %1").arg(description));
-            return 1;
-        }
-
+        // One place knows how settings, instance overrides and the version come together, so the
+        // command line below is exactly what the window would run.
         const int gameDirIndex = arguments.indexOf(QStringLiteral("--game-dir"));
         const QString gameDirectory = gameDirIndex >= 0 && gameDirIndex + 1 < arguments.size()
                                           ? arguments.at(gameDirIndex + 1)
-                                          : directory;  // versions are isolated from each other by default
-        QDir().mkpath(gameDirectory);
-
-        Komorebi::LaunchRequest request;
-        request.version = version;
-        request.librariesRoot = Komorebi::librariesRoot();
-        request.assetsRoot = Komorebi::assetsRoot();
-        request.nativesRoot = QDir(directory).filePath(QStringLiteral("natives"));
-        request.gameDirectory = gameDirectory;
-        // A loader does not ship the game; the jar belongs to the version at the bottom of the chain.
-        request.clientJar = QDir(Komorebi::versionDirectory(resolved.baseId))
-                                .filePath(resolved.baseId + QStringLiteral(".jar"));
-        request.playerName = QStringLiteral("Player");
-        // the same settings the window would apply
-        {
-            const Komorebi::Settings settings = Komorebi::Settings::load();
-            request.maxMemoryMb = settings.memoryMb;
-            request.javaPath = settings.javaPath;
-        }
-
-        // A temp directory next to the game
-
-        const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
-        if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
-            request.tempDirectory = tempRoot;
-
-        const Komorebi::LaunchPlan plan = Komorebi::buildLaunchPlan(request);
-        note(QStringLiteral("java: %1").arg(plan.program));
-        note(QStringLiteral("missing files: %1").arg(plan.missingFiles.size()));
-        for (const auto& entry : plan.missingFiles.mid(0, 8))
-            note(QStringLiteral("  %1").arg(entry));
-        if (!plan.valid() || !plan.missingFiles.isEmpty()) {
-            note(QStringLiteral("cannot launch: %1").arg(plan.valid() ? QStringLiteral("files are missing") : plan.error));
+                                          : QString();
+        const Komorebi::PreparedLaunch prepared = Komorebi::prepareLaunch(Komorebi::Settings::load(), versionId, gameDirectory);
+        if (!prepared.ok()) {
+            note(QStringLiteral("cannot launch: %1").arg(prepared.error.isEmpty()
+                                                             ? QStringLiteral("%1 file(s) are missing").arg(prepared.plan.missingFiles.size())
+                                                             : prepared.error));
+            for (const auto& entry : prepared.plan.missingFiles.mid(0, 8))
+                note(QStringLiteral("  %1").arg(entry));
             return 1;
         }
-
+        const Komorebi::LaunchPlan plan = prepared.plan;
+        note(QStringLiteral("version %1: main %2, java %3").arg(prepared.versionId, plan.program).arg(plan.arguments.value(0)));
+        note(QStringLiteral("java: %1").arg(plan.program));
+        note(QStringLiteral("missing files: %1").arg(plan.missingFiles.size()));
         QProcess process;
         process.setWorkingDirectory(plan.workingDirectory);
         process.setProcessChannelMode(QProcess::MergedChannels);

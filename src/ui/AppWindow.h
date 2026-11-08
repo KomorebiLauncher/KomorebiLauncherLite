@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
- *  The window, in the shape PCL has: the installed versions on the left, the selected one open on
- *  the right, and the launcher does its work from the bottom of the page.
+ *  The window: a rail down the left with the pages a launcher of this size needs, and the work of
+ *  each page in its own class.
  */
 
 #pragma once
@@ -9,13 +9,15 @@
 #include <QMainWindow>
 
 #include "core/Settings.h"
-#include "core/VersionStore.h"
 #include "theme/Theme.h"
 
-class QLabel;
 class QListWidget;
-class QProcess;
-class QTimer;
+class QLabel;
+class QStackedWidget;
+class LaunchPage;
+class JavaPage;
+class LogsPage;
+class AboutPage;
 
 namespace Komorebi {
 class Button;
@@ -26,33 +28,24 @@ class AppWindow : public QMainWindow {
 
    public:
     explicit AppWindow(Komorebi::Theme theme, QWidget* parent = nullptr);
-    ~AppWindow() override;
 
    protected:
     void paintEvent(QPaintEvent* event) override;
 
    private:
-    void reload();
-    void selectVersion(int row);
-    void launchSelected();
-    void installVersion();
-    void openGameFolder();
     void openSettings();
     void setStatus(const QString& text);
+    void reloadEverything();
 
     Komorebi::Theme m_theme;
-    Komorebi::VersionStore m_store;
     Komorebi::Settings m_settings;
 
-    QListWidget* m_list = nullptr;
-    QLabel* m_detailTitle = nullptr;
-    QLabel* m_detailBody = nullptr;
+    QListWidget* m_rail = nullptr;
+    QStackedWidget* m_pages = nullptr;
     QLabel* m_status = nullptr;
-    Komorebi::Button* m_playButton = nullptr;
 
-    QList<Komorebi::InstalledVersion> m_versions;
-    QString m_selected;
-
-    QProcess* m_game = nullptr;
-    QTimer* m_statusTimer = nullptr;
+    LaunchPage* m_launchPage = nullptr;
+    JavaPage* m_javaPage = nullptr;
+    LogsPage* m_logsPage = nullptr;
+    AboutPage* m_aboutPage = nullptr;
 };

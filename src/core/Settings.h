@@ -9,16 +9,35 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 namespace Komorebi {
 
 struct Settings {
+    // appearance
     QString language = QStringLiteral("auto");  ///< "auto", "zh_CN", "en", "ja"
-    int memoryMb = 2048;                        ///< the maximum heap handed to the game
-    QString javaPath;                           ///< empty: let the launcher choose by version
+    bool darkTheme = false;
+    int wallpaperOpacity = 100;  ///< 0-100, how much of the wallpaper shows through
+
+    // launching
+    int memoryMb = 2048;
+    bool lockMemory = false;  ///< also pass -Xms, so the heap is reserved up front
+    int width = 0;            ///< 0: let the game pick
+    int height = 0;
+    QString javaPath;      ///< empty: choose by version
+    QString jvmArguments;  ///< extra JVM arguments, space separated
+    QString gameArguments;  ///< extra game arguments
+    QString preLaunchCommand;
+    bool highPerformanceGpu = false;
+    bool legacyFix = false;
+    bool unsafeAgent = true;
+    QString processPriority;  ///< empty, "high", "above", "below"
 
     static Settings load();
     void save() const;
+
+    /// The arguments as a list, quotes respected.
+    static QStringList splitArguments(const QString& text);
 };
 
 }  // namespace Komorebi

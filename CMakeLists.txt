@@ -8,12 +8,19 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Network LinguistTools)
 
 qt_standard_project_setup()
 
+# Headers are listed as well as sources: moc only runs for files the target knows about, and every
+# page that declares signals lives in a subdirectory.
 file(GLOB_RECURSE NEXT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
 qt_add_executable(komorebi-lite WIN32 ${NEXT_SOURCES})
+
+# Every header that declares a Q_OBJECT has to reach the target, or its moc output is missing.
+file(GLOB_RECURSE NEXT_HEADERS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
+target_sources(komorebi-lite PRIVATE ${NEXT_HEADERS})
+set_target_properties(komorebi-lite PROPERTIES AUTOMOC ON)
 
 # The mark travels with the binary: the window icon comes from a Qt resource, the shell icon from
 # a Windows resource script generated with an absolute path so it builds from any directory.

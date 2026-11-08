@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
- *  The settings a player actually changes: the language, how much memory the game may use, and
- *  which Java to run it with. Nothing here needs the launcher to be clever.
+ *  Everything a player can change about the launcher, on one page: how the game starts, and how
+ *  the launcher looks.
  */
 
 #pragma once
@@ -10,11 +10,13 @@
 
 #include "core/Settings.h"
 
+class QCheckBox;
 class QComboBox;
 class QLineEdit;
 
 namespace Komorebi {
 class Button;
+class Slider;
 }
 
 class SettingsDialog : public QDialog {
@@ -28,7 +30,18 @@ class SettingsDialog : public QDialog {
 
    private:
     Komorebi::Settings m_result;
+
     QComboBox* m_language = nullptr;
-    QLineEdit* m_java = nullptr;
     QLineEdit* m_memory = nullptr;
+    QLineEdit* m_width = nullptr;
+    QLineEdit* m_height = nullptr;
+    QLineEdit* m_java = nullptr;
+    QLineEdit* m_jvmArguments = nullptr;
+    QLineEdit* m_gameArguments = nullptr;
+    QLineEdit* m_preLaunch = nullptr;
+    QCheckBox* m_lockMemory = nullptr;
+    QCheckBox* m_highPerformanceGpu = nullptr;
+    QCheckBox* m_legacyFix = nullptr;
+    QCheckBox* m_unsafeAgent = nullptr;
+    Komorebi::Slider* m_wallpaperOpacity = nullptr;
 };

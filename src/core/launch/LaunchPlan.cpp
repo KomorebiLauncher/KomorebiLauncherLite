@@ -249,8 +249,20 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     }
 
     // The heap the player asked for; the JVM defaults are small for a modded game.
-    if (request.maxMemoryMb > 0)
+    if (request.maxMemoryMb > 0) {
         arguments << QStringLiteral("-Xmx%1m").arg(request.maxMemoryMb);
+        if (request.minMemoryMb > 0)
+            arguments << QStringLiteral("-Xms%1m").arg(request.minMemoryMb);
+    }
+
+    // Choices from the settings page that cost one argument each.
+    if (request.highPerformanceGpu)
+        arguments << QStringLiteral("-Dkomorebi.gpu=high");
+    if (request.unsafeAgent)
+        arguments << QStringLiteral("-Dkomorebi.unsafeAgent=1");
+    if (request.legacyFix)
+        arguments << QStringLiteral("-Dkomorebi.legacyFix=1");
+    arguments << request.extraJvmArguments;
 
     arguments << request.version.mainClass;
     for (const auto& argument : request.version.resolvedGameArguments(environment))
@@ -270,6 +282,8 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
         plan.error = QStringLiteral("unfilled placeholders: %1").arg(missing.join(QStringLiteral(", ")));
         return plan;
     }
+
+    arguments << request.extraGameArguments;
 
     plan.arguments = arguments;
     return plan;
