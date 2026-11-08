@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-3.0-only
+/*
+ *  CurseForge, as far as a launcher needs it: search modpacks, list the files of one, and download a
+ *  file. The API wants a key; the launcher ships with the project's own and lets it be replaced.
+ */
+
+#pragma once
+
+#include <QList>
+#include <QString>
+
+namespace Komorebi {
+
+struct CurseForgeProject {
+    int id = 0;
+    QString name;
+    QString slug;
+    QString summary;
+    QString logoUrl;
+    qint64 downloads = 0;
+};
+
+struct CurseForgeFile {
+    int id = 0;
+    QString displayName;
+    QString fileName;
+    QString version;       ///< the pack's own version string
+    QStringList gameVersions;
+    QString releaseType;   ///< release, beta, alpha
+};
+
+class CurseForge {
+   public:
+    /// The key in use: the settings value, or the one the project ships with.
+    static QString apiKey();
+
+    /// Modpacks matching a search, newest and most downloaded first when `query` is empty.
+    static QList<CurseForgeProject> searchModpacks(const QString& query, int pageSize, QString* error);
+
+    /// Files of a project, newest first.
+    static QList<CurseForgeFile> files(int projectId, QString* error);
+
+    /// The file itself, through the download url the API hands out for it.
+    static bool downloadFile(int projectId, int fileId, const QString& target, QString* error);
+};
+
+}  // namespace Komorebi

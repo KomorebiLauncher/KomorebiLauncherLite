@@ -63,6 +63,30 @@ LoaderResult installLoader(const QString& dataRoot, const QString& minecraftVers
             onProgress({ stage, done, total, current });
     };
 
+    // A loader version that is already on disk needs nothing from the network: a pack that asks for
+    // one that is installed must install even when the metadata service is slow or down.
+    {
+        QString candidate = choice.version;
+        if (candidate.isEmpty()) {
+            const QDir versions(QDir(dataRoot).filePath(QStringLiteral("versions")));
+            const QString prefix = QStringLiteral("%1-loader-").arg(choice.kind);
+            for (const auto& entry : versions.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name | QDir::Reversed)) {
+                if (entry.startsWith(prefix) && entry.endsWith(QLatin1Char('-') + minecraftVersion)) {
+                    result.versionId = entry;
+                    result.ok = true;
+                    return result;
+                }
+            }
+        } else {
+            const QString id = QStringLiteral("%1-loader-%2-%3").arg(choice.kind, candidate, minecraftVersion);
+            if (QFileInfo::exists(QDir(dataRoot).filePath(QStringLiteral("versions/%1/%1.json").arg(id)))) {
+                result.versionId = id;
+                result.ok = true;
+                return result;
+            }
+        }
+    }
+
     const QString base = QString::fromLatin1(choice.kind == QLatin1String("fabric") ? kFabricLoader : kQuiltLoader);
 
     QString loaderVersion = choice.version;

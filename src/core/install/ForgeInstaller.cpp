@@ -110,6 +110,13 @@ ForgeInstallResult installForge(const QString& dataRoot, const QString& minecraf
         version = versions.first();
     }
 
+    // Already installed: nothing to download, nothing to patch again.
+    if (const QString existing = installedVersionId(dataRoot, minecraftVersion, version); !existing.isEmpty()) {
+        result.ok = true;
+        result.versionId = existing;
+        return result;
+    }
+
     const QString full = QStringLiteral("%1-%2").arg(minecraftVersion, version);
     const QString installerRelative = QStringLiteral("net/minecraftforge/forge/%1/forge-%1-installer.jar").arg(full);
     const QString installerPath = QDir(dataRoot).filePath(QStringLiteral("libraries/") + installerRelative);

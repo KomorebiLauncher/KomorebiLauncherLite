@@ -21,6 +21,7 @@ struct Settings {
 
     // accounts
     QString msaClientId;   ///< the Azure app id the launcher signs in with
+    QString curseForgeApiKey;  ///< empty: the key the project ships with
 
     // downloads
     QString downloadSite = QStringLiteral("official");  ///< "official" or "mirror"

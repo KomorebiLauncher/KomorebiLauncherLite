@@ -20,7 +20,9 @@ namespace Komorebi {
 
 namespace {
 /// How long a single file may take before the download is given up on.
-constexpr int kTimeoutMs = 20000;
+constexpr int kTimeoutMs = 30000;
+/// Small documents from metadata services can be slow without being broken.
+constexpr int kJsonTimeoutMs = 60000;
 
 /// One connection pool for everything the launcher fetches.
 QNetworkAccessManager& manager()
@@ -111,7 +113,7 @@ JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>&
         reply->abort();
         loop.quit();
     });
-    timer.start(kTimeoutMs);
+    timer.start(kJsonTimeoutMs);
     loop.exec();
 
     result.status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -119,6 +121,11 @@ JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>&
     if (reply->error() != QNetworkReply::NoError && result.body.isEmpty())
         result.error = reply->errorString();
     reply->deleteLater();
+
+    // Nothing came back at all: a metadata service that is slow once usually answers on a second
+    // try, and failing an install over it is worse than waiting.
+    if (result.status == 0)
+        return requestJson(url, headers, body);
 
     // A service that answers with a JSON error body is still an answer: the caller reads the error
     // code out of it, which is how "authorization_pending" arrives.

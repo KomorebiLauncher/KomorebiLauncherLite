@@ -25,6 +25,8 @@
 #include "core/launch/LaunchService.h"
 #include "core/util/Archive.h"
 #include "core/util/Cleanup.h"
+#include "core/content/CurseForge.h"
+#include "core/install/ModpackInstaller.h"
 #include "core/launch/WindowsTweaks.h"
 #include "services/net/Fetcher.h"
 #include "services/net/DownloadSite.h"
@@ -248,6 +250,72 @@ int main(int argc, char** argv)
         out.flush();
         note(QStringLiteral("exited with code %1").arg(process.exitCode()));
         return process.exitCode() == 0 ? 0 : 1;
+    }
+
+    // CurseForge: search, or install a pack.
+    const int searchPacksIndex = arguments.indexOf(QStringLiteral("--search-packs"));
+    if (searchPacksIndex >= 0) {
+        const QString query = searchPacksIndex + 1 < arguments.size() ? arguments.at(searchPacksIndex + 1) : QString();
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        QString error;
+        const auto packs = Komorebi::CurseForge::searchModpacks(query, 10, &error);
+        if (packs.isEmpty()) {
+            out.write(QStringLiteral("no packs: %1\n").arg(error).toUtf8());
+            return 1;
+        }
+        for (const auto& pack : packs) {
+            out.write(QStringLiteral("%1  %2  (%3 downloads)\n").arg(pack.id).arg(pack.name).arg(pack.downloads).toUtf8());
+        }
+        return 0;
+    }
+
+    const int downloadPackIndex = arguments.indexOf(QStringLiteral("--download-pack"));
+    if (downloadPackIndex >= 0 && downloadPackIndex + 1 < arguments.size()) {
+        const int projectId = arguments.at(downloadPackIndex + 1).toInt();
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+
+        QString error;
+        const auto files = Komorebi::CurseForge::files(projectId, &error);
+        if (files.isEmpty()) {
+            out.write(QStringLiteral("no files: %1\n").arg(error).toUtf8());
+            return 1;
+        }
+        // the newest release, or the newest file when the pack has no release
+        const Komorebi::CurseForgeFile chosen = files.first();
+        out.write(QStringLiteral("chosen: %1 (%2)\n").arg(chosen.displayName, chosen.fileName).toUtf8());
+
+        const QString target = QDir(QCoreApplication::applicationDirPath()).filePath(chosen.fileName);
+        if (!Komorebi::CurseForge::downloadFile(projectId, chosen.id, target, &error)) {
+            out.write(QStringLiteral("download failed: %1\n").arg(error).toUtf8());
+            return 1;
+        }
+        out.write(QStringLiteral("saved %1\n").arg(target).toUtf8());
+        return 0;
+    }
+
+    const int modpackIndex = arguments.indexOf(QStringLiteral("--modpack"));
+    if (modpackIndex >= 0 && modpackIndex + 1 < arguments.size()) {
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("pack-install.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+
+        const Komorebi::ModpackResult result = Komorebi::installModpack(
+            arguments.at(modpackIndex + 1), true, [&note](const Komorebi::InstallProgress& progress) {
+                note(QStringLiteral("%1 %2/%3 %4").arg(progress.stage).arg(progress.done).arg(progress.total).arg(progress.current));
+            });
+        if (!result.ok) {
+            note(QStringLiteral("failed: %1").arg(result.error));
+            return 1;
+        }
+        note(QStringLiteral("installed as %1 (%2 downloaded, %3 present, %4 failed)")
+                 .arg(result.versionId).arg(result.downloaded).arg(result.skipped).arg(result.failed.size()));
+        return 0;
     }
 
     // A development hook: clean up the junk the game leaves behind, and say how much went.
