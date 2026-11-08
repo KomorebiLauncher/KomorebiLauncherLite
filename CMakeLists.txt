@@ -44,6 +44,10 @@ qt_add_translations(TARGETS komorebi-lite
 )
 
 target_link_libraries(komorebi-lite PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
+if(WIN32)
+    # CryptProtectData, for the account tokens
+    target_link_libraries(komorebi-lite PRIVATE Crypt32)
+endif()
 target_include_directories(komorebi-lite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # The theme travels with the binary: tokens and the sheet are read at startup, not compiled in.

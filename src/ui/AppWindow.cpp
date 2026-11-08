@@ -70,6 +70,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));
     m_rail->addItem(tr("Play"));
     m_rail->addItem(tr("Java"));
+    m_rail->addItem(tr("Accounts"));
     m_rail->addItem(tr("Logs"));
     m_rail->addItem(tr("About"));
     bodyLayout->addWidget(m_rail, 0);
@@ -77,10 +78,12 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     m_pages = new QStackedWidget(body);
     m_launchPage = new LaunchPage(m_settings, m_pages);
     m_javaPage = new JavaPage(m_pages);
+    m_accountsPage = new AccountsPage(m_pages);
     m_logsPage = new LogsPage(m_pages);
     m_aboutPage = new AboutPage(m_pages);
     m_pages->addWidget(m_launchPage);
     m_pages->addWidget(m_javaPage);
+    m_pages->addWidget(m_accountsPage);
     m_pages->addWidget(m_logsPage);
     m_pages->addWidget(m_aboutPage);
     bodyLayout->addWidget(m_pages, 1);
@@ -106,6 +109,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     connect(m_launchPage, &LaunchPage::status, this, &AppWindow::setStatus);
     connect(m_javaPage, &JavaPage::status, this, &AppWindow::setStatus);
     connect(m_logsPage, &LogsPage::status, this, &AppWindow::setStatus);
+    connect(m_accountsPage, &AccountsPage::status, this, &AppWindow::setStatus);
     connect(m_javaPage, &JavaPage::javaChosen, this, [this](const QString& path) {
         m_settings.javaPath = path;
         m_settings.save();

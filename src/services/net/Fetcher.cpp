@@ -88,6 +88,55 @@ BytesResult fetchBytes(const QString& url)
     result.ok = true;
     return result;
 }
+namespace {
+
+JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>& headers, const QByteArray* body)
+{
+    JsonResult result;
+
+    QNetworkRequest request{ QUrl(url) };
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("KomorebiLite/0.1"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+    for (const auto& header : headers)
+        request.setRawHeader(header.first.toUtf8(), header.second.toUtf8());
+
+    QNetworkReply* reply = body ? manager().post(request, *body) : manager().get(request);
+
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
+        reply->abort();
+        loop.quit();
+    });
+    timer.start(kTimeoutMs);
+    loop.exec();
+
+    result.status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    result.body = reply->readAll();
+    if (reply->error() != QNetworkReply::NoError && result.body.isEmpty())
+        result.error = reply->errorString();
+    reply->deleteLater();
+
+    // A service that answers with a JSON error body is still an answer: the caller reads the error
+    // code out of it, which is how "authorization_pending" arrives.
+    result.ok = result.status >= 200 && result.status < 300;
+    return result;
+}
+
+}  // namespace
+
+JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers)
+{
+    return requestJson(url, headers, &body);
+}
+
+JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& headers)
+{
+    return requestJson(url, headers, nullptr);
+}
 FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress)
 {
     FetchSummary summary;

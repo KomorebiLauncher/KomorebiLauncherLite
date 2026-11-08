@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QByteArray>
+#include <QPair>
 #include <QList>
 #include <QString>
 #include <QStringList>
@@ -55,6 +56,19 @@ BytesResult fetchBytes(const QString& url);
  * interrupted install cheap to resume.
  */
 FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress = {});
+
+struct JsonResult {
+    bool ok = false;
+    QString error;
+    QByteArray body;
+    int status = 0;
+};
+
+/// A JSON (or form) POST, for the services that want one. Headers are given as name/value pairs.
+JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers = {});
+
+/// A GET with headers, for the services that want a bearer token.
+JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& headers = {});
 
 /// The sha1 of a file, lowercase hex, or empty when it cannot be read.
 QString fileSha1(const QString& path);

@@ -17,6 +17,7 @@ class QStackedWidget;
 class LaunchPage;
 class JavaPage;
 class LogsPage;
+class AccountsPage;
 class AboutPage;
 
 namespace Komorebi {
@@ -47,5 +48,6 @@ class AppWindow : public QMainWindow {
     LaunchPage* m_launchPage = nullptr;
     JavaPage* m_javaPage = nullptr;
     LogsPage* m_logsPage = nullptr;
+    AccountsPage* m_accountsPage = nullptr;
     AboutPage* m_aboutPage = nullptr;
 };

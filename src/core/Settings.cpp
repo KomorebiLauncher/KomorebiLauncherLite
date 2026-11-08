@@ -44,6 +44,7 @@ Settings Settings::load()
     if (memory >= 512)
         settings.memoryMb = memory;
 
+    settings.msaClientId = root.value(QStringLiteral("msaClientId")).toString();
     settings.downloadSite = root.value(QStringLiteral("downloadSite")).toString(QStringLiteral("official"));
     settings.maxConcurrency = qMax(1, root.value(QStringLiteral("maxConcurrency")).toInt(8));
     settings.speedLimitKb = qMax(0, root.value(QStringLiteral("speedLimitKb")).toInt(0));
@@ -74,6 +75,7 @@ void Settings::save() const
     root.insert(QStringLiteral("darkTheme"), darkTheme);
     root.insert(QStringLiteral("wallpaperOpacity"), wallpaperOpacity);
     root.insert(QStringLiteral("memoryMb"), memoryMb);
+    root.insert(QStringLiteral("msaClientId"), msaClientId);
     root.insert(QStringLiteral("downloadSite"), downloadSite);
     root.insert(QStringLiteral("maxConcurrency"), maxConcurrency);
     root.insert(QStringLiteral("speedLimitKb"), speedLimitKb);

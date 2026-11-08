@@ -49,6 +49,27 @@ class LogsPage : public QWidget {
     QLabel* m_hint = nullptr;
 };
 
+/// Microsoft accounts: sign one in, see who is signed in, sign out.
+class AccountsPage : public QWidget {
+    Q_OBJECT
+
+   public:
+    explicit AccountsPage(QWidget* parent = nullptr);
+
+    void reload();
+
+    /// The account a launch should use, empty when nobody is signed in.
+    static QString activeName();
+
+   signals:
+    void status(const QString& text);
+
+   private:
+    void signIn();
+    QListWidget* m_list = nullptr;
+    QLabel* m_hint = nullptr;
+};
+
 /// The name, the version and the licence. Nothing else has to be here.
 class AboutPage : public QWidget {
     Q_OBJECT

@@ -6,6 +6,9 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QApplication>
+#include <QMessageBox>
+#include "core/auth/AccountStore.h"
 #include <QLabel>
 #include <QListWidget>
 #include <QUrl>
@@ -185,6 +188,112 @@ void LogsPage::reload()
     emit status(tr("%1 log file(s)").arg(entries.size()));
 }
 
+// ---------------------------------------------------------------- accounts
+
+AccountsPage::AccountsPage(QWidget* parent)
+    : QWidget(parent)
+{
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(10);
+
+    auto* top = new QHBoxLayout();
+    top->addWidget(heading(tr("Accounts"), this));
+    top->addStretch(1);
+    auto* add = new Button(tr("Sign in with Microsoft"), this);
+    add->setPrimary(true);
+    auto* remove = new Button(tr("Sign out"), this);
+    top->addWidget(add);
+    top->addWidget(remove);
+    layout->addLayout(top);
+
+    m_hint = new QLabel(tr("A Microsoft account is what lets the game join servers that require one."), this);
+    m_hint->setWordWrap(true);
+    layout->addWidget(m_hint);
+
+    m_list = new QListWidget(this);
+    m_list->setFrameShape(QFrame::NoFrame);
+    m_list->setStyleSheet(QStringLiteral(
+        "QListWidget { background: rgba(250, 247, 240, 0.66); border: 1px solid rgba(201, 194, 180, 0.9);"
+        " border-radius: 6px; padding: 6px; }"
+        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); }"));
+    layout->addWidget(m_list, 1);
+
+    connect(add, &QPushButton::clicked, this, &AccountsPage::signIn);
+    connect(remove, &QPushButton::clicked, this, [this] {
+        const auto* item = m_list->currentItem();
+        if (!item)
+            return;
+        AccountStore::remove(item->data(Qt::UserRole).toString());
+        reload();
+        emit status(tr("Signed out"));
+    });
+
+    reload();
+}
+
+void AccountsPage::reload()
+{
+    m_list->clear();
+    const QList<MinecraftAccount> accounts = AccountStore::load();
+    for (const auto& account : accounts) {
+        auto* item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(account.name, account.uuid));
+        item->setData(Qt::UserRole, account.uuid);
+        m_list->addItem(item);
+    }
+    if (accounts.isEmpty())
+        emit status(tr("No account signed in"));
+    else if (m_list->count() > 0)
+        m_list->setCurrentRow(0);
+}
+
+void AccountsPage::signIn()
+{
+    QString error;
+    const DeviceCode code = MicrosoftAuth::startDeviceCode(&error);
+    if (code.deviceCode.isEmpty()) {
+        emit status(tr("Could not start the sign-in: %1").arg(error));
+        return;
+    }
+
+    // The player needs the code and the address; the launcher waits for them in the browser.
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Sign in with Microsoft"));
+    box.setText(tr("Open %1 and enter the code:\n\n%2\n\nThe launcher will continue by itself once you approve.")
+                    .arg(code.verificationUri, code.userCode));
+    box.setStandardButtons(QMessageBox::Cancel);
+    auto* open = box.addButton(tr("Open the page"), QMessageBox::ActionRole);
+    connect(open, &QPushButton::clicked, &box, [&code] {
+        QDesktopServices::openUrl(QUrl(code.verificationUri));
+    });
+    box.setModal(true);
+    box.show();
+    QApplication::processEvents();
+
+    // Waiting for the browser takes as long as it takes; the dialog stays up meanwhile.
+    MinecraftAccount account;
+    const bool ok = MicrosoftAuth::signIn(code, &account, &error, [&box] {
+        QApplication::processEvents();
+        return box.isVisible();
+    });
+    box.close();
+
+    if (!ok) {
+        emit status(tr("Sign-in failed: %1").arg(error));
+        return;
+    }
+
+    AccountStore::add(account);
+    reload();
+    emit status(tr("Signed in as %1").arg(account.name));
+}
+
+QString AccountsPage::activeName()
+{
+    const QList<MinecraftAccount> accounts = AccountStore::load();
+    return accounts.isEmpty() ? QString() : accounts.first().name;
+}
 // ---------------------------------------------------------------- about
 
 AboutPage::AboutPage(QWidget* parent)
@@ -201,7 +310,20 @@ AboutPage::AboutPage(QWidget* parent)
     body->setText(tr("A small Minecraft launcher: install a version, press Play.\n\n"
                      "GPL-3.0. The mark and the interface are original work.\n"
                      "Not an official Minecraft product; not approved by or associated with Mojang or Microsoft."));
+    body->setTextInteractionFlags(Qt::TextSelectableByMouse);
     layout->addWidget(body);
+
+    // Who wrote what: the licence asks for the attribution, and a player deserves to know where
+    // the account and modpack handling came from.
+    auto* credits = new QLabel(this);
+    credits->setWordWrap(true);
+    credits->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+    credits->setOpenExternalLinks(true);
+    credits->setText(tr("Microsoft sign-in and CurseForge modpacks follow the protocol work of "
+                        "<a href=\"https://github.com/KomorebiLauncher/KomorebiLauncher\">KomorebiLauncher</a>, "
+                        "which is a fork of <a href=\"https://github.com/PrismLauncher/PrismLauncher\">Prism Launcher</a> "
+                        "(both GPL-3.0). The full notices are in NOTICE.md next to this launcher."));
+    layout->addWidget(credits);
 
     auto* links = new QHBoxLayout();
     auto* source = new Button(tr("Source code"), this);

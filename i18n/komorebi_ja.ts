@@ -3,7 +3,7 @@
 <context>
     <name>AboutPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="201" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="310" />
         <source>A small Minecraft launcher: install a version, press Play.
 
 GPL-3.0. The mark and the interface are original work.
@@ -14,14 +14,86 @@ GPL-3.0。マークと画面は独自制作です。
 Minecraft の公式製品ではなく、Mojang や Microsoft とは関係ありません。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="207" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
+        <source>Microsoft sign-in and CurseForge modpacks follow the protocol work of &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;, which is a fork of &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; (both GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
+        <translation>Microsoft サインインと CurseForge 整合パックの手順は &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;（&lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; の fork、いずれも GPL-3.0）の実装を参考にしています。全文はランチャー同梱の NOTICE.md にあります。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="329" />
         <source>Source code</source>
         <translation>ソースコード</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="208" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="330" />
         <source>Licence</source>
         <translation>ライセンス</translation>
+    </message>
+</context>
+<context>
+    <name>AccountsPage</name>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="201" />
+        <source>Accounts</source>
+        <translation>アカウント</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="203" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="262" />
+        <source>Sign in with Microsoft</source>
+        <translation>Microsoft でサインイン</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="205" />
+        <source>Sign out</source>
+        <translation>サインアウト</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="210" />
+        <source>A Microsoft account is what lets the game join servers that require one.</source>
+        <translation>Microsoft アカウントは、認証が必要なサーバーに参加するために使います。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="230" />
+        <source>Signed out</source>
+        <translation>サインアウトしました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="246" />
+        <source>No account signed in</source>
+        <translation>サインインしているアカウントはありません</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="256" />
+        <source>Could not start the sign-in: %1</source>
+        <translation>サインインを開始できません: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="263" />
+        <source>Open %1 and enter the code:
+
+%2
+
+The launcher will continue by itself once you approve.</source>
+        <translation>%1 を開いて次のコードを入力してください:
+
+%2
+
+承認すると自動で続行します。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="266" />
+        <source>Open the page</source>
+        <translation>ページを開く</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="283" />
+        <source>Sign-in failed: %1</source>
+        <translation>サインインに失敗しました: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="289" />
+        <source>Signed in as %1</source>
+        <translation>%1 でサインインしました</translation>
     </message>
 </context>
 <context>
@@ -38,11 +110,16 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
     </message>
     <message>
         <location filename="../src/ui/AppWindow.cpp" line="73" />
+        <source>Accounts</source>
+        <translation>アカウント</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="74" />
         <source>Logs</source>
         <translation>ログ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="74" />
+        <location filename="../src/ui/AppWindow.cpp" line="75" />
         <source>About</source>
         <translation>このアプリについて</translation>
     </message>
@@ -64,8 +141,8 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
         <translation type="vanished">バージョンを選ぶ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="94" />
-        <location filename="../src/ui/AppWindow.cpp" line="116" />
+        <location filename="../src/ui/AppWindow.cpp" line="97" />
+        <location filename="../src/ui/AppWindow.cpp" line="120" />
         <source>Ready</source>
         <translation>準備完了</translation>
     </message>
@@ -151,7 +228,7 @@ This version can be started.</source>
         <translation type="vanished">起動中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="134" />
+        <location filename="../src/ui/AppWindow.cpp" line="138" />
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>設定を保存しました（言語は次回起動時に反映されます）</translation>
     </message>
@@ -279,52 +356,52 @@ This version can be started.</source>
 <context>
     <name>JavaPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="45" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="48" />
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="47" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="50" />
         <source>Look again</source>
         <translation>再検索</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="48" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="51" />
         <source>Use this one</source>
         <translation>これを使う</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="54" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="57" />
         <source>A version starts with the runtime closest to what it asks for. Pick one here to pin it.</source>
         <translation>バージョンは要求に最も近い実行環境で起動します。ここで選ぶと固定されます。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="73" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="76" />
         <source>Java pinned: %1</source>
         <translation>Java を固定しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="86" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="89" />
         <source>unknown vendor</source>
         <translation>不明なベンダー</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="95" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="98" />
         <source>No Java found. Install one, or set the path in the settings.</source>
         <translation>Java が見つかりません。インストールするか、設定でパスを指定してください。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="96" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="99" />
         <source>No Java found</source>
         <translation>Java が見つかりません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="110" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="113" />
         <source>%1 runtime(s) found.</source>
         <translation>%1 個の実行環境が見つかりました。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="111" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="114" />
         <source>%1 Java runtime(s)</source>
         <translation>%1 個の Java 実行環境</translation>
     </message>
@@ -502,57 +579,57 @@ Started %1 time(s), last %2</source>
 <context>
     <name>LogsPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="124" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="127" />
         <source>Logs</source>
         <translation>ログ</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="126" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="129" />
         <source>Open folder</source>
         <translation>フォルダーを開く</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="127" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="130" />
         <source>Export</source>
         <translation>エクスポート</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="128" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="131" />
         <source>Clear</source>
         <translation>消去</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="134" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="137" />
         <source>Every game start writes a log here.</source>
         <translation>ゲームを起動するたびにログが残ります。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="157" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="160" />
         <source>Exported to %1</source>
         <translation>%1 にエクスポートしました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="159" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="162" />
         <source>Could not export %1</source>
         <translation>%1 をエクスポートできません</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="166" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="169" />
         <source>Logs cleared</source>
         <translation>ログを消去しました</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="184" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
         <source>No logs yet.</source>
         <translation>まだログがありません。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="184" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
         <source>%1 log file(s).</source>
         <translation>%1 個のログファイル。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="185" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="188" />
         <source>%1 log file(s)</source>
         <translation>%1 個のログファイル</translation>
     </message>

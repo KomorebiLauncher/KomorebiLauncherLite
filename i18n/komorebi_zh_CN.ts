@@ -3,7 +3,7 @@
 <context>
     <name>AboutPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="201" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="310" />
         <source>A small Minecraft launcher: install a version, press Play.
 
 GPL-3.0. The mark and the interface are original work.
@@ -14,14 +14,86 @@ GPL-3.0 授权。标志与界面均为原创。
 非 MINECRAFT 官方产品，未经 MOJANG 或 MICROSOFT 批准，也与 MOJANG 或 MICROSOFT 无关。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="207" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
+        <source>Microsoft sign-in and CurseForge modpacks follow the protocol work of &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;, which is a fork of &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; (both GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
+        <translation>微软登录与 CurseForge 整合包的协议流程参考自 &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;，它是 &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; 的 fork（两者均为 GPL-3.0）。完整声明见随启动器附带的 NOTICE.md。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="329" />
         <source>Source code</source>
         <translation>源代码</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="208" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="330" />
         <source>Licence</source>
         <translation>许可证</translation>
+    </message>
+</context>
+<context>
+    <name>AccountsPage</name>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="201" />
+        <source>Accounts</source>
+        <translation>账户</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="203" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="262" />
+        <source>Sign in with Microsoft</source>
+        <translation>微软账户登录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="205" />
+        <source>Sign out</source>
+        <translation>退出登录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="210" />
+        <source>A Microsoft account is what lets the game join servers that require one.</source>
+        <translation>微软账户用于进入需要正版验证的服务器。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="230" />
+        <source>Signed out</source>
+        <translation>已退出登录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="246" />
+        <source>No account signed in</source>
+        <translation>尚未登录账户</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="256" />
+        <source>Could not start the sign-in: %1</source>
+        <translation>无法开始登录：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="263" />
+        <source>Open %1 and enter the code:
+
+%2
+
+The launcher will continue by itself once you approve.</source>
+        <translation>打开 %1 并输入以下代码：
+
+%2
+
+批准后启动器会自动继续。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="266" />
+        <source>Open the page</source>
+        <translation>打开页面</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="283" />
+        <source>Sign-in failed: %1</source>
+        <translation>登录失败：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="289" />
+        <source>Signed in as %1</source>
+        <translation>已登录为 %1</translation>
     </message>
 </context>
 <context>
@@ -38,11 +110,16 @@ GPL-3.0 授权。标志与界面均为原创。
     </message>
     <message>
         <location filename="../src/ui/AppWindow.cpp" line="73" />
+        <source>Accounts</source>
+        <translation>账户</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="74" />
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="74" />
+        <location filename="../src/ui/AppWindow.cpp" line="75" />
         <source>About</source>
         <translation>关于</translation>
     </message>
@@ -64,8 +141,8 @@ GPL-3.0 授权。标志与界面均为原创。
         <translation type="vanished">选择一个版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="94" />
-        <location filename="../src/ui/AppWindow.cpp" line="116" />
+        <location filename="../src/ui/AppWindow.cpp" line="97" />
+        <location filename="../src/ui/AppWindow.cpp" line="120" />
         <source>Ready</source>
         <translation>准备就绪</translation>
     </message>
@@ -151,7 +228,7 @@ This version can be started.</source>
         <translation type="vanished">正在启动…</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="134" />
+        <location filename="../src/ui/AppWindow.cpp" line="138" />
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>设置已保存（语言在下次启动生效）</translation>
     </message>
@@ -279,52 +356,52 @@ This version can be started.</source>
 <context>
     <name>JavaPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="45" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="48" />
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="47" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="50" />
         <source>Look again</source>
         <translation>重新扫描</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="48" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="51" />
         <source>Use this one</source>
         <translation>使用这个</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="54" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="57" />
         <source>A version starts with the runtime closest to what it asks for. Pick one here to pin it.</source>
         <translation>版本会用最接近它要求的运行环境启动；在这里选一个就固定用它。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="73" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="76" />
         <source>Java pinned: %1</source>
         <translation>已固定 Java：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="86" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="89" />
         <source>unknown vendor</source>
         <translation>未知厂商</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="95" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="98" />
         <source>No Java found. Install one, or set the path in the settings.</source>
         <translation>没有找到 Java。请安装一个，或在设置里填写路径。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="96" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="99" />
         <source>No Java found</source>
         <translation>没有找到 Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="110" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="113" />
         <source>%1 runtime(s) found.</source>
         <translation>找到 %1 个运行环境。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="111" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="114" />
         <source>%1 Java runtime(s)</source>
         <translation>%1 个 Java 运行环境</translation>
     </message>
@@ -502,57 +579,57 @@ Started %1 time(s), last %2</source>
 <context>
     <name>LogsPage</name>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="124" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="127" />
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="126" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="129" />
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="127" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="130" />
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="128" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="131" />
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="134" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="137" />
         <source>Every game start writes a log here.</source>
         <translation>每次启动游戏都会在这里留下日志。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="157" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="160" />
         <source>Exported to %1</source>
         <translation>已导出到 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="159" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="162" />
         <source>Could not export %1</source>
         <translation>无法导出 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="166" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="169" />
         <source>Logs cleared</source>
         <translation>日志已清空</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="184" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
         <source>No logs yet.</source>
         <translation>还没有日志。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="184" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="187" />
         <source>%1 log file(s).</source>
         <translation>%1 个日志文件。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="185" />
+        <location filename="../src/ui/pages/SimplePages.cpp" line="188" />
         <source>%1 log file(s)</source>
         <translation>%1 个日志文件</translation>
     </message>

@@ -21,6 +21,7 @@
 #include <QLocale>
 #include "core/VersionStore.h"
 #include "core/launch/LaunchPlan.h"
+#include "core/auth/MicrosoftAuth.h"
 #include "core/launch/LaunchService.h"
 #include "services/net/Fetcher.h"
 #include "services/net/DownloadSite.h"
@@ -254,6 +255,39 @@ int main(int argc, char** argv)
                       .arg(resolved.version.libraries.size())
                       .toUtf8());
         return resolved.ok() ? 0 : 1;
+    }
+
+    // Signing in: ask for a device code and print what the player has to type.
+    const int loginIndex = arguments.indexOf(QStringLiteral("--login"));
+    if (loginIndex >= 0) {
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("login.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+
+        note(QStringLiteral("app id: %1").arg(Komorebi::MicrosoftAuth::clientId().isEmpty() ? QStringLiteral("(none)") : QStringLiteral("configured")));
+        QString error;
+        const Komorebi::DeviceCode code = Komorebi::MicrosoftAuth::startDeviceCode(&error);
+        if (code.deviceCode.isEmpty()) {
+            note(QStringLiteral("no device code: %1").arg(error));
+            return 1;
+        }
+        note(QStringLiteral("open %1 and enter %2").arg(code.verificationUri, code.userCode));
+        note(QStringLiteral("polling every %1s, expires in %2s").arg(code.interval).arg(code.expiresIn));
+
+        if (arguments.contains(QStringLiteral("--code-only")))
+            return 0;
+
+        Komorebi::MinecraftAccount account;
+        if (!Komorebi::MicrosoftAuth::signIn(code, &account, &error)) {
+            note(QStringLiteral("sign-in failed: %1").arg(error));
+            return 1;
+        }
+        note(QStringLiteral("signed in as %1 (%2)").arg(account.name, account.uuid));
+        return 0;
     }
 
     const int planIndex = arguments.indexOf(QStringLiteral("--launch-plan"));

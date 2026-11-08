@@ -19,6 +19,9 @@ struct Settings {
     bool darkTheme = false;
     int wallpaperOpacity = 100;  ///< 0-100, how much of the wallpaper shows through
 
+    // accounts
+    QString msaClientId;   ///< the Azure app id the launcher signs in with
+
     // downloads
     QString downloadSite = QStringLiteral("official");  ///< "official" or "mirror"
     int maxConcurrency = 8;

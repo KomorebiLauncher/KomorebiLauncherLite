@@ -6,6 +6,8 @@
 #include <QProcess>
 
 #include "core/InstanceConfig.h"
+#include "core/auth/AccountStore.h"
+#include "core/auth/MicrosoftAuth.h"
 #include "core/Paths.h"
 #include "core/version/VersionResolver.h"
 
@@ -39,7 +41,23 @@ PreparedLaunch prepareLaunch(const Settings& settings, const QString& versionId,
     request.gameDirectory = gameDirectory.isEmpty() ? directory : gameDirectory;  // versions are isolated
     // A loader does not ship the game; the jar belongs to the version at the bottom of the chain.
     request.clientJar = QDir(versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"));
-    request.playerName = QStringLiteral("Player");
+    // Whoever is signed in plays as themselves; without an account the game still starts, offline.
+    const QList<MinecraftAccount> accounts = AccountStore::load();
+    if (!accounts.isEmpty()) {
+        MinecraftAccount account = accounts.first();
+        QString refreshError;
+        if (account.refreshToken.isEmpty() || !MicrosoftAuth::refresh(&account, &refreshError)) {
+            // The stored token may be old; the launch goes on offline rather than failing.
+            request.playerName = account.name.isEmpty() ? QStringLiteral("Player") : account.name;
+        } else {
+            AccountStore::add(account);
+            request.playerName = account.name;
+            request.uuid = account.uuid;
+            request.accessToken = account.accessToken;
+        }
+    } else {
+        request.playerName = QStringLiteral("Player");
+    }
 
     // memory: the instance wins over the launcher's setting
     request.maxMemoryMb = instance.memoryMb > 0 ? instance.memoryMb : settings.memoryMb;
