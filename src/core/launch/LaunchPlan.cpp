@@ -149,6 +149,14 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     if (!arguments.contains(QStringLiteral("-cp")) && !arguments.contains(QStringLiteral("-classpath")))
         arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath")) << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
 
+    // The JVM unpacks natives and, for a loader, its installer work into java.io.tmpdir. The system
+    // one is not always writable (a locked Temp, a policy, another user's leftovers), so the
+    // launcher hands over a directory it owns.
+    if (!request.tempDirectory.isEmpty()) {
+        QDir().mkpath(request.tempDirectory);
+        arguments << QStringLiteral("-Djava.io.tmpdir=") + request.tempDirectory;
+    }
+
     if (wrappedLoader) {
         arguments << QStringLiteral("-Dforgewrapper.librariesDir=") + request.librariesRoot;
         arguments << QStringLiteral("-Dforgewrapper.minecraft=") + request.clientJar;

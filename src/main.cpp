@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QStandardPaths>
 #include <QElapsedTimer>
 #include <QProcess>
@@ -137,6 +138,11 @@ int main(int argc, char** argv)
         request.gameDirectory = gameDirectory;
         request.clientJar = clientJar;
         request.playerName = QStringLiteral("Player");
+        // A temp directory the launcher owns, but only when it really can be created: handing the
+        // JVM a path that does not exist makes every unpack fail.
+        const QString tempRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("tmp"));
+        if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
+            request.tempDirectory = tempRoot;
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
@@ -253,6 +259,11 @@ int main(int argc, char** argv)
         request.clientJar = QDir(Komorebi::librariesRoot())
                                 .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         request.playerName = QStringLiteral("Player");
+        // A temp directory the launcher owns, but only when it really can be created: handing the
+        // JVM a path that does not exist makes every unpack fail.
+        const QString tempRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("tmp"));
+        if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
+            request.tempDirectory = tempRoot;
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
@@ -303,23 +314,21 @@ int main(int argc, char** argv)
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
 
-        QString collected;
-        QElapsedTimer timer;
-        timer.start();
-        while (timer.elapsed() < 60000) {
-            process.waitForReadyRead(500);
-            collected += QString::fromLocal8Bit(process.readAll());
-            if (process.state() == QProcess::NotRunning)
-                break;
-        }
-        const bool stillRunning = process.state() != QProcess::NotRunning;
-        if (stillRunning)
-            process.kill();
-        collected += QString::fromLocal8Bit(process.readAll());
+        // A launch by instance is someone playing: the game stays up until it closes, and its
+        // output goes to the log as it arrives.
         note(QStringLiteral("--- output ---"));
-        note(collected.right(6000));
-        note(stillRunning ? QStringLiteral("still running after 60s: launched") : QStringLiteral("exited on its own"));
-        return stillRunning ? 0 : 1;
+        while (process.state() != QProcess::NotRunning) {
+            process.waitForReadyRead(1000);
+            const QByteArray chunk = process.readAll();
+            if (!chunk.isEmpty()) {
+                out.write(chunk);
+                out.flush();
+            }
+        }
+        out.write(process.readAll());
+        out.flush();
+        note(QStringLiteral("exited with code %1").arg(process.exitCode()));
+        return process.exitCode() == 0 ? 0 : 1;
     }
 
     AppWindow window(theme, instancesRoot);

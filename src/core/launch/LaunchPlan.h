@@ -35,6 +35,7 @@ struct LaunchRequest {
     QString gameDirectory;
     QString clientJar;       ///< the game jar, added to the end of the classpath
     QString installerJar;    ///< a loader installer, handed to its wrapper as a property
+    QString tempDirectory;   ///< where the game may unpack things; empty means the system default
     QString javaPath;        ///< empty: search for one
     QString playerName = QStringLiteral("Player");
     QString uuid;
