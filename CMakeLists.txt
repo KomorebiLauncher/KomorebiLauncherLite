@@ -54,6 +54,11 @@ qt_add_translations(TARGETS komorebi-lite
 
 target_link_libraries(komorebi-lite PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
 if(WIN32)
+    # A map next to the binary turns a crash address from a dump into a function name; a debug build
+    # without symbols is only half a debug build.
+    target_link_options(komorebi-lite PRIVATE "/MAP:${CMAKE_CURRENT_BINARY_DIR}/komorebi-lite.map")
+endif()
+if(WIN32)
     # CryptProtectData, for the account tokens; DbgHelp, for the stack a fatal check leaves behind
     target_link_libraries(komorebi-lite PRIVATE Crypt32 dbghelp)
 endif()

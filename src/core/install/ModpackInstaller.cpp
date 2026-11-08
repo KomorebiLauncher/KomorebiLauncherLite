@@ -13,6 +13,7 @@
 
 #include "core/Paths.h"
 #include "core/content/CurseForge.h"
+#include "core/content/PrismMeta.h"
 #include "core/install/ForgeInstaller.h"
 #include "core/install/LoaderInstaller.h"
 #include "core/util/Archive.h"
@@ -21,6 +22,18 @@
 namespace Komorebi {
 
 namespace {
+
+/// NeoForge through its component metadata: nothing is installed at install time except the files the
+/// component lists, and the wrapper it names patches the game on the first launch. Its own installer
+/// is the fragile path -- it fetches processor data while it runs and fails where that host is slow.
+QString installNeoForgeComponent(const QString& minecraftVersion, const QString& loaderVersion, QString* error)
+{
+    QString installed;
+    const QString id = PrismMeta::install(QStringLiteral("net.neoforged"), minecraftVersion, loaderVersion, &installed, error);
+    if (id.isEmpty() && error->isEmpty())
+        *error = QStringLiteral("the component metadata did not describe NeoForge %1").arg(loaderVersion);
+    return id;
+}
 
 QJsonObject readManifest(const QString& zipPath, QString* tempPath, ScratchDirectory** holder, QString* error)
 {
@@ -197,9 +210,20 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
 
     // 2. the loader the index names
     QString baseVersion = index.minecraftVersion;
-    if (index.loaderKind == QLatin1String("forge") || index.loaderKind == QLatin1String("neoforge")) {
-        const auto family = index.loaderKind == QLatin1String("forge") ? LoaderFamily::Forge : LoaderFamily::NeoForge;
-        const ForgeInstallResult loader = installLoader(family, dataRoot(), index.minecraftVersion, index.loaderVersion, onProgress);
+    if (index.loaderKind == QLatin1String("neoforge")) {
+        // NeoForge comes as component metadata: no installer to run, nothing to download at install
+        // time beyond the files the component lists. Its own installer is the fragile path -- it
+        // fetches processor data while it runs and fails when neoforged's maven is unreachable.
+        QString error;
+        const QString installed = installNeoForgeComponent(index.minecraftVersion, index.loaderVersion, &error);
+        if (installed.isEmpty()) {
+            result.error = QStringLiteral("the loader could not be installed: %1").arg(error);
+            cleanup();
+            return result;
+        }
+        baseVersion = installed;
+    } else if (index.loaderKind == QLatin1String("forge")) {
+        const ForgeInstallResult loader = installLoader(LoaderFamily::Forge, dataRoot(), index.minecraftVersion, index.loaderVersion, onProgress);
         if (!loader.ok) {
             result.error = QStringLiteral("the loader could not be installed: %1").arg(loader.error);
             cleanup();
@@ -321,7 +345,17 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
 
     // 2. the loader it wants, which is what the pack's mods were built against
     QString baseVersion = info.minecraftVersion;
-    if (info.loaderKind == QLatin1String("forge")) {
+    if (info.loaderKind == QLatin1String("neoforge")) {
+        report(QStringLiteral("neoforge"), 0, 0, info.loaderVersion);
+        QString error;
+        const QString installed = installNeoForgeComponent(info.minecraftVersion, info.loaderVersion, &error);
+        if (installed.isEmpty()) {
+            result.error = QStringLiteral("NeoForge could not be installed: %1").arg(error);
+            cleanup();
+            return result;
+        }
+        baseVersion = installed;
+    } else if (info.loaderKind == QLatin1String("forge")) {
         report(QStringLiteral("forge"), 0, 0, info.loaderVersion);
         const ForgeInstallResult forge = installForge(dataRoot(), info.minecraftVersion, info.loaderVersion, onProgress);
         if (!forge.ok) {
