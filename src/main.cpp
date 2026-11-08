@@ -5,6 +5,7 @@
  */
 
 #include <QApplication>
+#include <QIcon>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -19,6 +20,7 @@
 #include "services/net/Fetcher.h"
 #include "core/version/ComponentResolver.h"
 #include "core/version/VersionJson.h"
+#include "core/install/VersionInstaller.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
@@ -26,8 +28,9 @@
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("KomorebiNext"));
-    QApplication::setOrganizationName(QStringLiteral("KomorebiLauncher"));
+    QApplication::setApplicationName(QStringLiteral("KomorebiLite"));
+    QApplication::setOrganizationName(QStringLiteral("KomorebiLite"));
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/komorebi-lite-256.png")));
 
     // Themes travel next to the binary while the launcher is young; a packaged build would read
     // them from the data directory instead.
@@ -50,6 +53,127 @@ int main(int argc, char** argv)
     // Build the command line without starting anything: the plan can be read, compared and checked
     // by whoever is looking, which is how the launch path is developed before it is trusted.
     const QStringList arguments = app.arguments();
+    // Installing a version: this is what a player does first, and what the Lite launcher is built
+    // around. It writes the standard layout, so the result can be launched by anything.
+    const int installIndex = arguments.indexOf(QStringLiteral("--install"));
+    if (installIndex >= 0 && installIndex + 1 < arguments.size()) {
+        const QString versionId = arguments.at(installIndex + 1);
+        const bool withAssets = !arguments.contains(QStringLiteral("--no-assets"));
+
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("install.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+        note(QStringLiteral("installing %1 into %2 (assets: %3)")
+                 .arg(versionId, Komorebi::dataRoot(), withAssets ? QStringLiteral("yes") : QStringLiteral("no")));
+
+        Komorebi::VersionInstaller installer(Komorebi::dataRoot());
+        QString lastStage;
+        int lastPercent = -1;
+        installer.onProgress = [&](const Komorebi::InstallProgress& progress) {
+            const int percent = progress.total > 0 ? progress.done * 100 / progress.total : -1;
+            if (progress.stage != lastStage || (percent != lastPercent && percent % 10 == 0)) {
+                note(QStringLiteral("%1 %2%3 %4")
+                         .arg(progress.stage)
+                         .arg(percent >= 0 ? QString::number(percent) + QStringLiteral("%") : QString())
+                         .arg(progress.total > 0 ? QStringLiteral(" (%1/%2)").arg(progress.done).arg(progress.total) : QString())
+                         .arg(progress.current));
+                lastStage = progress.stage;
+                lastPercent = percent;
+            }
+        };
+
+        const Komorebi::InstallResult result = installer.install(versionId, withAssets);
+        note(result.summary());
+        for (const auto& failure : result.failed.mid(0, 10))
+            note(QStringLiteral("  %1").arg(failure));
+        return result.ok ? 0 : 1;
+    }
+
+    // Launching a version the Lite launcher installed itself: the layout is the standard one, so
+    // there is nothing to merge -- the file on disk is the whole description.
+    const int versionLaunchIndex = arguments.indexOf(QStringLiteral("--launch-version"));
+    if (versionLaunchIndex >= 0 && versionLaunchIndex + 1 < arguments.size()) {
+        const QString versionId = arguments.at(versionLaunchIndex + 1);
+
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+
+        if (!Komorebi::isSafeComponent(versionId)) {
+            note(QStringLiteral("refused: %1 is not a version id").arg(versionId));
+            return 1;
+        }
+
+        const QString directory = Komorebi::versionDirectory(versionId);
+        const QString description = QDir(directory).filePath(versionId + QStringLiteral(".json"));
+        const Komorebi::VersionJson version = Komorebi::VersionJson::fromFile(description);
+        note(QStringLiteral("version %1: main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
+        if (version.id.isEmpty()) {
+            note(QStringLiteral("not installed: %1").arg(description));
+            return 1;
+        }
+
+        const int gameDirIndex = arguments.indexOf(QStringLiteral("--game-dir"));
+        const QString gameDirectory = gameDirIndex >= 0 && gameDirIndex + 1 < arguments.size()
+                                          ? arguments.at(gameDirIndex + 1)
+                                          : directory;  // versions are isolated from each other by default
+        QDir().mkpath(gameDirectory);
+
+        Komorebi::LaunchRequest request;
+        request.version = version;
+        request.librariesRoot = Komorebi::librariesRoot();
+        request.assetsRoot = Komorebi::assetsRoot();
+        request.nativesRoot = QDir(directory).filePath(QStringLiteral("natives"));
+        request.gameDirectory = gameDirectory;
+        request.clientJar = QDir(directory).filePath(versionId + QStringLiteral(".jar"));
+        request.playerName = QStringLiteral("Player");
+
+        const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
+        if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
+            request.tempDirectory = tempRoot;
+
+        const Komorebi::LaunchPlan plan = Komorebi::buildLaunchPlan(request);
+        note(QStringLiteral("java: %1").arg(plan.program));
+        note(QStringLiteral("missing files: %1").arg(plan.missingFiles.size()));
+        for (const auto& entry : plan.missingFiles.mid(0, 8))
+            note(QStringLiteral("  %1").arg(entry));
+        if (!plan.valid() || !plan.missingFiles.isEmpty()) {
+            note(QStringLiteral("cannot launch: %1").arg(plan.valid() ? QStringLiteral("files are missing") : plan.error));
+            return 1;
+        }
+
+        QProcess process;
+        process.setWorkingDirectory(plan.workingDirectory);
+        process.setProcessChannelMode(QProcess::MergedChannels);
+        process.start(plan.program, plan.arguments);
+        if (!process.waitForStarted(15000)) {
+            note(QStringLiteral("java did not start"));
+            return 1;
+        }
+        note(QStringLiteral("started, pid %1").arg(process.processId()));
+        note(QStringLiteral("--- output ---"));
+        while (process.state() != QProcess::NotRunning) {
+            process.waitForReadyRead(1000);
+            const QByteArray chunk = process.readAll();
+            if (!chunk.isEmpty()) {
+                out.write(chunk);
+                out.flush();
+            }
+        }
+        out.write(process.readAll());
+        out.flush();
+        note(QStringLiteral("exited with code %1").arg(process.exitCode()));
+        return process.exitCode() == 0 ? 0 : 1;
+    }
+
     const int planIndex = arguments.indexOf(QStringLiteral("--launch-plan"));
     if (planIndex >= 0 && planIndex + 1 < arguments.size()) {
         Komorebi::LaunchRequest request;

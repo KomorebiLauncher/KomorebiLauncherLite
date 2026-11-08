@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <QByteArray>
 #include <QString>
 
 namespace Komorebi {
@@ -19,6 +20,15 @@ struct FetchResult {
 
 /// Downloads `url` to `target` unless the file is already there with the right hash.
 FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1);
+
+struct BytesResult {
+    bool ok = false;
+    QString error;
+    QByteArray data;
+};
+
+/// Downloads `url` into memory; for small documents such as a version manifest.
+BytesResult fetchBytes(const QString& url);
 
 /// The sha1 of a file, lowercase hex, or empty when it cannot be read.
 QString fileSha1(const QString& path);

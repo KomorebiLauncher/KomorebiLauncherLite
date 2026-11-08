@@ -19,6 +19,38 @@ namespace {
 constexpr int kTimeoutMs = 20000;
 }  // namespace
 
+BytesResult fetchBytes(const QString& url)
+{
+    BytesResult result;
+
+    QNetworkAccessManager manager;
+    QNetworkRequest request{ QUrl(url) };
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
+    QNetworkReply* reply = manager.get(request);
+
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
+        reply->abort();
+        loop.quit();
+    });
+    timer.start(kTimeoutMs);
+    loop.exec();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        result.error = QStringLiteral("network: %1").arg(reply->errorString());
+        reply->deleteLater();
+        return result;
+    }
+
+    result.data = reply->readAll();
+    reply->deleteLater();
+    result.ok = true;
+    return result;
+}
 QString fileSha1(const QString& path)
 {
     QFile file(path);

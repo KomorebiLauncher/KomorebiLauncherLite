@@ -26,6 +26,12 @@ QString librariesRoot();
 /// `<dataRoot>/assets`
 QString assetsRoot();
 
+/// `<dataRoot>/versions`
+QString versionsRoot();
+
+/// `<dataRoot>/versions/<id>`
+QString versionDirectory(const QString& versionId);
+
 /**
  * Joins `relative` onto `root`, or returns an empty string when the result would leave it.
  *

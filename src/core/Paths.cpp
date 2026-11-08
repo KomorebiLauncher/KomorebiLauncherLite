@@ -18,11 +18,11 @@ QString dataRoot()
 #if defined(Q_OS_WIN)
     const QString roaming = QProcessEnvironment::systemEnvironment().value(QStringLiteral("APPDATA"));
     if (!roaming.isEmpty())
-        return QDir::cleanPath(QDir(roaming).filePath(QStringLiteral("KomorebiLauncher")));
+        return QDir::cleanPath(QDir(roaming).filePath(QStringLiteral("KomorebiLauncherLite")));
 #endif
 
     return QDir::cleanPath(QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation))
-                               .filePath(QStringLiteral("KomorebiLauncher")));
+                               .filePath(QStringLiteral("KomorebiLauncherLite")));
 }
 
 QString instancesRoot()
@@ -85,4 +85,13 @@ QString safeJoin(const QString& root, const QString& relative)
     return staysInside(root, joined) ? QDir::cleanPath(joined) : QString();
 }
 
+QString versionsRoot()
+{
+    return QDir(dataRoot()).filePath(QStringLiteral("versions"));
+}
+
+QString versionDirectory(const QString& versionId)
+{
+    return QDir(versionsRoot()).filePath(versionId);
+}
 }  // namespace Komorebi
