@@ -8,7 +8,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QStandardPaths>
-#include <QTemporaryDir>
+
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -17,7 +17,9 @@
 #include <thread>
 
 #include "core/Paths.h"
+#include "core/content/Modrinth.h"
 #include "core/install/ModpackInstaller.h"
+#include "core/util/Scratch.h"
 #include "kit/Kit.h"
 
 using namespace Komorebi;
@@ -51,8 +53,12 @@ ModpacksPage::ModpacksPage(QWidget* parent)
 
     auto* searchRow = new QHBoxLayout();
     searchRow->setSpacing(8);
+    m_source = new Komorebi::Combo(this);
+    m_source->addItem(tr("CurseForge"), QStringLiteral("curseforge"));
+    m_source->addItem(tr("Modrinth"), QStringLiteral("modrinth"));
     m_query = new Komorebi::Field(this);
     m_query->setPlaceholderText(tr("Search CurseForge modpacks, or leave empty for the popular ones"));
+    searchRow->addWidget(m_source);
     searchRow->addWidget(m_query, 1);
     auto* searchButton = new Button(tr("Search"), this);
     searchButton->setPrimary(true);
@@ -86,6 +92,7 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     connect(m_query, &QLineEdit::returnPressed, this, &ModpacksPage::search);
     connect(m_install, &QPushButton::clicked, this, &ModpacksPage::installSelected);
     connect(m_import, &QPushButton::clicked, this, &ModpacksPage::importZip);
+    connect(m_source, &QComboBox::currentIndexChanged, this, &ModpacksPage::sourceChanged);
     connect(m_results, &QListWidget::itemSelectionChanged, this, [this] {
         m_install->setEnabled(m_results->currentRow() >= 0);
     });
@@ -97,11 +104,29 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     emit status(tr("Search for a pack, or import one you already have"));
 }
 
+bool ModpacksPage::usingModrinth() const
+{
+    return m_source && m_source->currentData().toString() == QLatin1String("modrinth");
+}
+
+void ModpacksPage::sourceChanged()
+{
+    m_query->setPlaceholderText(usingModrinth()
+                                    ? tr("Search Modrinth modpacks, or leave empty for the popular ones")
+                                    : tr("Search CurseForge modpacks, or leave empty for the popular ones"));
+    m_results->clear();
+    m_projects.clear();
+    m_install->setEnabled(false);
+}
+
 void ModpacksPage::search()
 {
     m_hint->setText(tr("Searching…"));
     QString error;
-    m_projects = CurseForge::searchModpacks(m_query->text().trimmed(), 30, &error);
+    if (usingModrinth())
+        m_projects = Modrinth::searchModpacks(m_query->text().trimmed(), 30, &error);
+    else
+        m_projects = CurseForge::searchModpacks(m_query->text().trimmed(), 30, &error);
 
     m_results->clear();
     for (const auto& project : m_projects) {
@@ -128,6 +153,57 @@ void ModpacksPage::installSelected()
     const CurseForgeProject project = m_projects.at(row);
     m_install->setEnabled(false);
 
+    if (usingModrinth()) {
+        // A Modrinth version carries its own file url; the pack itself is the same .mrpack the
+        // importer accepts, so the two paths end in the same installer.
+        startJob(
+            [this, project](Job& job) {
+                QString error;
+                const QList<CurseForgeFile> versions = Modrinth::versions(project.slug, {}, {}, &error);
+                if (versions.isEmpty()) {
+                    std::lock_guard<std::mutex> lock(job.mutex);
+                    job.error = tr("the pack has no downloadable version: %1").arg(error);
+                    return;
+                }
+
+                CurseForgeFile chosen = versions.first();
+                for (const auto& file : versions) {
+                    if (file.releaseType == QLatin1String("release")) {
+                        chosen = file;
+                        break;
+                    }
+                }
+
+                ScratchDirectory temp("pack");
+                const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));
+                {
+                    std::lock_guard<std::mutex> lock(job.mutex);
+                    job.stage = tr("downloading the pack");
+                    job.current = chosen.version;
+                }
+                if (!Modrinth::download(chosen.url, zip, &error)) {
+                    std::lock_guard<std::mutex> lock(job.mutex);
+                    job.error = tr("could not download the pack: %1").arg(error);
+                    return;
+                }
+
+                const ModpackResult result = installMrpack(zip, true, [&job](const InstallProgress& progress) {
+                    std::lock_guard<std::mutex> lock(job.mutex);
+                    job.stage = progress.stage;
+                    job.current = progress.current;
+                });
+                std::lock_guard<std::mutex> lock(job.mutex);
+                job.ok = result.ok;
+                job.error = result.error;
+                job.versionId = result.versionId;
+                job.downloaded = result.downloaded;
+                job.skipped = result.skipped;
+                job.failed = result.failed.size();
+            },
+            project.name);
+        return;
+    }
+
     startJob(
         [this, project](Job& job) {
             QString error;
@@ -147,7 +223,7 @@ void ModpacksPage::installSelected()
                 }
             }
 
-            QTemporaryDir temp;
+            ScratchDirectory temp("pack");
             const QString zip = QDir(temp.path()).filePath(chosen.fileName);
             {
                 std::lock_guard<std::mutex> lock(job.mutex);
@@ -187,7 +263,7 @@ void ModpacksPage::importZip()
     m_install->setEnabled(false);
     startJob(
         [this, path](Job& job) {
-            const ModpackResult result = installModpack(path, true, [&job](const InstallProgress& progress) {
+            const ModpackResult result = installPack(path, true, [&job](const InstallProgress& progress) {
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.stage = progress.stage;
                 job.current = progress.current;

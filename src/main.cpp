@@ -25,6 +25,7 @@
 #include "core/launch/LaunchService.h"
 #include "core/util/Archive.h"
 #include "core/util/Cleanup.h"
+#include "core/util/Scratch.h"
 #include "core/content/CurseForge.h"
 #include "core/content/PrismMeta.h"
 #include "core/content/Modrinth.h"
@@ -281,6 +282,18 @@ int main(int argc, char** argv)
         note(QStringLiteral("version %1: main %2, java %3").arg(prepared.versionId, plan.program).arg(plan.arguments.value(0)));
         note(QStringLiteral("java: %1").arg(plan.program));
         note(QStringLiteral("missing files: %1").arg(plan.missingFiles.size()));
+        note(QStringLiteral("command: %1").arg(plan.commandLine()));
+        {
+            // One argument per line, next to the log: a command line this long cannot be copied into
+            // a shell, and comparing a launch outside the launcher is how environment problems are
+            // told apart from launcher problems.
+            QFile args(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch-args.txt")));
+            if (args.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                args.write(plan.program.toUtf8() + '\n');
+                for (const auto& argument : plan.arguments)
+                    args.write(argument.toUtf8() + '\n');
+            }
+        }
         QProcess process;
         process.setWorkingDirectory(plan.workingDirectory);
         process.setProcessChannelMode(QProcess::MergedChannels);
@@ -325,6 +338,72 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    // Modrinth: the same two jobs, without a key.
+    const int searchModrinthIndex = arguments.indexOf(QStringLiteral("--search-modrinth"));
+    if (searchModrinthIndex >= 0) {
+        const QString query = searchModrinthIndex + 1 < arguments.size() ? arguments.at(searchModrinthIndex + 1) : QString();
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        QString error;
+        const auto packs = Komorebi::Modrinth::searchModpacks(query, 10, &error);
+        if (packs.isEmpty()) {
+            out.write(QStringLiteral("no packs: %1\n").arg(error).toUtf8());
+            return 1;
+        }
+        for (const auto& pack : packs) {
+            out.write(QStringLiteral("%1  %2  (%3 downloads)\n").arg(pack.slug, pack.name).arg(pack.downloads).toUtf8());
+        }
+        return 0;
+    }
+
+    const int installModrinthIndex = arguments.indexOf(QStringLiteral("--install-modrinth"));
+    if (installModrinthIndex >= 0 && installModrinthIndex + 1 < arguments.size()) {
+        const QString projectId = arguments.at(installModrinthIndex + 1);
+        const QString gameVersion = installModrinthIndex + 2 < arguments.size() ? arguments.at(installModrinthIndex + 2) : QString();
+
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("pack-install.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+
+        QString error;
+        const auto versions = Komorebi::Modrinth::versions(projectId, gameVersion, {}, &error);
+        if (versions.isEmpty()) {
+            note(QStringLiteral("no versions: %1").arg(error));
+            return 1;
+        }
+        Komorebi::CurseForgeFile chosen = versions.first();
+        for (const auto& file : versions) {
+            if (file.releaseType == QLatin1String("release")) {
+                chosen = file;
+                break;
+            }
+        }
+        note(QStringLiteral("chosen: %1 (%2)").arg(chosen.version, chosen.fileName));
+
+        Komorebi::ScratchDirectory temp(QStringLiteral("pack"));
+        const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));        if (!Komorebi::Modrinth::download(chosen.url, zip, &error)) {
+            note(QStringLiteral("could not download the pack: %1").arg(error));
+            return 1;
+        }
+        const Komorebi::ModpackResult result = Komorebi::installMrpack(zip, true, [&note](const Komorebi::InstallProgress& progress) {
+            note(QStringLiteral("%1 %2/%3 %4").arg(progress.stage).arg(progress.done).arg(progress.total).arg(progress.current));
+        });
+        if (!result.ok) {
+            note(QStringLiteral("failed: %1").arg(result.error));
+            return 1;
+        }
+        note(QStringLiteral("installed as %1 (%2 downloaded, %3 present, %4 failed)")
+                 .arg(result.versionId)
+                 .arg(result.downloaded)
+                 .arg(result.skipped)
+                 .arg(result.failed.size()));
+        return 0;
+    }
+
     const int downloadPackIndex = arguments.indexOf(QStringLiteral("--download-pack"));
     if (downloadPackIndex >= 0 && downloadPackIndex + 1 < arguments.size()) {
         const int projectId = arguments.at(downloadPackIndex + 1).toInt();
@@ -360,7 +439,7 @@ int main(int argc, char** argv)
             out.flush();
         };
 
-        const Komorebi::ModpackResult result = Komorebi::installModpack(
+        const Komorebi::ModpackResult result = Komorebi::installPack(
             arguments.at(modpackIndex + 1), true, [&note](const Komorebi::InstallProgress& progress) {
                 note(QStringLiteral("%1 %2/%3 %4").arg(progress.stage).arg(progress.done).arg(progress.total).arg(progress.current));
             });

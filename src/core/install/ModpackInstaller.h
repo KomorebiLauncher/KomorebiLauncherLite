@@ -49,4 +49,13 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
 ModpackResult installModpack(const QString& zipPath, bool withAssets,
                              const std::function<void(const InstallProgress&)>& onProgress = {});
 
+/**
+ * Installs a pack whose format is not known in advance.
+ *
+ * A Modrinth pack carries `modrinth.index.json`; anything else is read as a CurseForge-style zip.
+ * This is what "import a zip" uses, so the player does not have to know which one they downloaded.
+ */
+ModpackResult installPack(const QString& zipPath, bool withAssets,
+                          const std::function<void(const InstallProgress&)>& onProgress = {});
+
 }  // namespace Komorebi

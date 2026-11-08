@@ -8,7 +8,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
-#include <QTemporaryDir>
+
+#include "core/util/Scratch.h"
 
 #include "core/Paths.h"
 #include "core/content/CurseForge.h"
@@ -21,9 +22,9 @@ namespace Komorebi {
 
 namespace {
 
-QJsonObject readManifest(const QString& zipPath, QString* tempPath, QTemporaryDir** holder, QString* error)
+QJsonObject readManifest(const QString& zipPath, QString* tempPath, ScratchDirectory** holder, QString* error)
 {
-    auto* temp = new QTemporaryDir;
+    auto* temp = new ScratchDirectory("pack");
     *holder = temp;
     if (!temp->isValid()) {
         *error = QStringLiteral("no place to unpack the pack");
@@ -81,7 +82,7 @@ QString packVersionId(const ModpackInfo& info)
 
 bool readModpack(const QString& zipPath, ModpackInfo* info, QString* error)
 {
-    QTemporaryDir* holder = nullptr;
+    ScratchDirectory* holder = nullptr;
     QString tempPath;
     const QJsonObject manifest = readManifest(zipPath, &tempPath, &holder, error);
     const auto cleanup = [holder] { delete holder; };
@@ -121,9 +122,9 @@ struct MrpackIndex {
     QJsonArray files;
 };
 
-bool readMrpackIndex(const QString& zipPath, MrpackIndex* index, QTemporaryDir** holder, QString* error)
+bool readMrpackIndex(const QString& zipPath, MrpackIndex* index, ScratchDirectory** holder, QString* error)
 {
-    auto* temp = new QTemporaryDir;
+    auto* temp = new ScratchDirectory("pack");
     *holder = temp;
     if (!temp->isValid()) {
         *error = QStringLiteral("no place to unpack the pack");
@@ -173,7 +174,7 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
             onProgress({ stage, done, total, current });
     };
 
-    QTemporaryDir* holder = nullptr;
+    ScratchDirectory* holder = nullptr;
     QString error;
     MrpackIndex index;
     if (!readMrpackIndex(zipPath, &index, &holder, &error)) {
@@ -283,7 +284,7 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             onProgress({ stage, done, total, current });
     };
 
-    QTemporaryDir* holder = nullptr;
+    ScratchDirectory* holder = nullptr;
     QString tempPath;
     QString error;
     const QJsonObject manifest = readManifest(zipPath, &tempPath, &holder, &error);
@@ -426,6 +427,20 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     result.versionId = packId;
     result.ok = true;
     return result;
+}
+
+ModpackResult installPack(const QString& zipPath, bool withAssets, const std::function<void(const InstallProgress&)>& onProgress)
+{
+    // Which kind of pack this is, read from the one file that says so rather than from the name the
+    // player downloaded it under.
+    ScratchDirectory probe("probe");
+    QString error;
+    const QString index = QStringLiteral("modrinth.index.json");
+    const bool isModrinth = probe.isValid() && extractArchive(zipPath, probe.path(), &error, { index })
+                            && QFileInfo::exists(QDir(probe.path()).filePath(index));
+    if (isModrinth)
+        return installMrpack(zipPath, withAssets, onProgress);
+    return installModpack(zipPath, withAssets, onProgress);
 }
 
 }  // namespace Komorebi

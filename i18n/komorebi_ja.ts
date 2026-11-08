@@ -854,6 +854,16 @@ Started %1 time(s), last %2</source>
         <translation>CurseForge の整合パックを検索します。空欄なら人気順</translation>
     </message>
     <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="56"/>
+        <source>Modrinth</source>
+        <translation>Modrinth</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="60"/>
+        <source>Search Modrinth modpacks, or leave empty for the popular ones</source>
+        <translation>Modrinth の整合パックを検索します。空欄なら人気順</translation>
+    </message>
+    <message>
         <location filename="../src/ui/pages/ModpacksPage.cpp" line="57"/>
         <source>Search</source>
         <translation>検索</translation>

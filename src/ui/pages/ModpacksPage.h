@@ -18,6 +18,7 @@ class QTimer;
 
 namespace Komorebi {
 class Button;
+class Combo;
 }
 
 class ModpacksPage : public QWidget {
@@ -35,10 +36,13 @@ class ModpacksPage : public QWidget {
     void installSelected();
     void importZip();
     void pollInstall();
+    bool usingModrinth() const;
+    void sourceChanged();
     struct Job;
     void startJob(const std::function<void(Job&)>& work, const QString& label);
 
     QLineEdit* m_query = nullptr;
+    Komorebi::Combo* m_source = nullptr;
     QListWidget* m_results = nullptr;
     QLabel* m_hint = nullptr;
     Komorebi::Button* m_install = nullptr;

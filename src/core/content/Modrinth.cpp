@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "core/content/Modrinth.h"
 
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -80,7 +81,7 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
     for (const auto& entry : QJsonDocument::fromJson(result.body).array()) {
         const auto item = entry.toObject();
         CurseForgeFile file;
-        file.id = 0;
+        file.remoteId = item.value(QStringLiteral("id")).toString();
         file.displayName = item.value(QStringLiteral("name")).toString();
         file.version = item.value(QStringLiteral("version_number")).toString();
         file.releaseType = item.value(QStringLiteral("version_type")).toString();
@@ -89,9 +90,12 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
 
         // The file itself is the first entry of `files`, which carries the url.
         const auto list = item.value(QStringLiteral("files")).toArray();
-        if (!list.isEmpty())
-            file.fileName = list.first().toObject().value(QStringLiteral("url")).toString();
-        if (!file.fileName.isEmpty())
+        if (!list.isEmpty()) {
+            const auto entryFile = list.first().toObject();
+            file.url = entryFile.value(QStringLiteral("url")).toString();
+            file.fileName = QFileInfo(entryFile.value(QStringLiteral("filename")).toString()).fileName();
+        }
+        if (!file.url.isEmpty())
             files.append(file);
     }
     return files;

@@ -22,8 +22,10 @@ struct CurseForgeProject {
 
 struct CurseForgeFile {
     int id = 0;
+    QString remoteId;      ///< the source's own id as text: Modrinth version ids are not numbers
     QString displayName;
     QString fileName;
+    QString url;           ///< where the file lives, when the source hands a url out directly
     QString version;       ///< the pack's own version string
     QStringList gameVersions;
     QString releaseType;   ///< release, beta, alpha
