@@ -251,10 +251,15 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
             const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (reply->error() != QNetworkReply::NoError || status >= 400) {
                 reply->deleteLater();
-                // Retry a refusal once before giving up on the source: mirror hosts answer a burst
-                // of parallel requests with a 4xx now and then, and the next attempt goes through.
-                if (status >= 400 && status < 600 && retries < 1) {
-                    QTimer::singleShot(400, &loop, [&, job, index, retries] { attempt(job, index, retries + 1); });
+                // Retry before giving up on a source. A mirror answers a burst of parallel requests
+                // with a 4xx now and then, and its payload hosts hand out a reset instead of a file
+                // often enough that one more try is the difference between a broken install and a
+                // slow one. The last candidate gets the retries because the official host, when it is
+                // the one timing out, is not going to answer the second time either.
+                const bool refused = status >= 400 && status < 600;
+                const bool lastCandidate = index + 1 >= candidates.size();
+                if (retries < 2 && (refused || lastCandidate)) {
+                    QTimer::singleShot(500, &loop, [&, job, index, retries] { attempt(job, index, retries + 1); });
                     return;
                 }
                 attempt(job, index + 1, 0);

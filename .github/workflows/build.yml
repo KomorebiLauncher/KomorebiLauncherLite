@@ -1,0 +1,55 @@
+name: build
+
+# Build check only: nothing here publishes a release. A push says whether the launcher still compiles
+# and whether its own rendering self-test still passes; when a change breaks the build, the log says
+# where, and that is the whole point of this file.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Qt 6.11.2 for MSVC 2022, the same Qt the launcher is developed against. Svg and the Linguist
+      # tools are the two extras the project asks for besides Qt's base modules.
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.2'
+          arch: win64_msvc2022_64
+          modules: 'qtsvg qttools'
+          cache: true
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
+
+      - name: Build
+        run: cmake --build build --clean-first
+
+      # The window is drawn without a screen: the self-test checks pixels, not visibility.
+      - name: Rendering self-test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $process = Start-Process -FilePath .\build\komorebi-lite.exe -ArgumentList '--selftest' -Wait -PassThru
+          Get-Content .\build\selftest.log -ErrorAction SilentlyContinue
+          if ($process.ExitCode -ne 0) { throw "self-test failed with exit code $($process.ExitCode)" }
+
+      - name: Keep the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: komorebi-lite-windows
+          path: |
+            build/komorebi-lite.exe
+            build/selftest.log
+          if-no-files-found: warn
