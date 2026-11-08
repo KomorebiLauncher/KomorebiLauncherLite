@@ -16,6 +16,9 @@
 
 #include "core/Instance.h"
 #include "core/Paths.h"
+#include "core/Settings.h"
+#include <QTranslator>
+#include <QLocale>
 #include "core/VersionStore.h"
 #include "core/launch/LaunchPlan.h"
 #include "services/net/Fetcher.h"
@@ -28,11 +31,33 @@
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
 #include "ui/InstallDialog.h"
+#include "ui/SettingsDialog.h"
 
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("KomorebiLite"));
+
+    // The language is decided before the first window exists: a translator installed later leaves
+    // whatever was already built in the old language.
+    {
+        const Komorebi::Settings settings = Komorebi::Settings::load();
+        QString language = settings.language;
+        if (language.isEmpty() || language == QLatin1String("auto"))
+            language = QLocale::system().name();
+        if (language.startsWith(QLatin1String("zh")))
+            language = QStringLiteral("zh_CN");
+        else if (language.startsWith(QLatin1String("ja")))
+            language = QStringLiteral("ja");
+        else
+            language.clear();  // English is the source language: no translator needed
+
+        if (!language.isEmpty()) {
+            auto* translator = new QTranslator(&app);
+            if (translator->load(QStringLiteral(":/i18n/komorebi_%1.qm").arg(language)))
+                QApplication::installTranslator(translator);
+        }
+    }
     QApplication::setOrganizationName(QStringLiteral("KomorebiLite"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/komorebi-lite-256.png")));
 
@@ -172,6 +197,14 @@ int main(int argc, char** argv)
         request.clientJar = QDir(Komorebi::versionDirectory(resolved.baseId))
                                 .filePath(resolved.baseId + QStringLiteral(".jar"));
         request.playerName = QStringLiteral("Player");
+        // the same settings the window would apply
+        {
+            const Komorebi::Settings settings = Komorebi::Settings::load();
+            request.maxMemoryMb = settings.memoryMb;
+            request.javaPath = settings.javaPath;
+        }
+
+        // A temp directory next to the game
 
         const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
         if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
@@ -294,6 +327,14 @@ int main(int argc, char** argv)
         request.gameDirectory = gameDirectory;
         request.clientJar = clientJar;
         request.playerName = QStringLiteral("Player");
+        // the same settings the window would apply
+        {
+            const Komorebi::Settings settings = Komorebi::Settings::load();
+            request.maxMemoryMb = settings.memoryMb;
+            request.javaPath = settings.javaPath;
+        }
+
+        // A temp directory next to the game
         // A temp directory next to the game, because that directory is ours: the data directory
         // may belong to another install, and handing the JVM a path that does not exist makes
         // every unpack fail -- which is how loading JNA ends with "access denied".
@@ -425,6 +466,14 @@ int main(int argc, char** argv)
         request.clientJar = Komorebi::safeJoin(Komorebi::librariesRoot(),
                                                QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         request.playerName = QStringLiteral("Player");
+        // the same settings the window would apply
+        {
+            const Komorebi::Settings settings = Komorebi::Settings::load();
+            request.maxMemoryMb = settings.memoryMb;
+            request.javaPath = settings.javaPath;
+        }
+
+        // A temp directory next to the game
         // A temp directory next to the game, because that directory is ours: the data directory
         // may belong to another install, and handing the JVM a path that does not exist makes
         // every unpack fail -- which is how loading JNA ends with "access denied".
@@ -514,6 +563,19 @@ int main(int argc, char** argv)
 
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.
+    // A development hook for the settings dialog.
+    const int shotSettingsIndex = app.arguments().indexOf(QStringLiteral("--shot-settings"));
+    if (shotSettingsIndex >= 0) {
+        const QString path = shotSettingsIndex + 1 < app.arguments().size() ? app.arguments().at(shotSettingsIndex + 1)
+                                                                            : QStringLiteral("settings.png");
+        auto* dialog = new SettingsDialog(Komorebi::Settings::load(), &window);
+        dialog->show();
+        QTimer::singleShot(1200, dialog, [dialog, path] {
+            dialog->grab().save(path);
+            QApplication::quit();
+        });
+    }
+
     // A development hook for the install dialog: open it, let it fetch the list, then grab it.
     const int shotInstallIndex = app.arguments().indexOf(QStringLiteral("--shot-install"));
     if (shotInstallIndex >= 0) {

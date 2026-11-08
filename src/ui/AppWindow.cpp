@@ -21,6 +21,8 @@
 #include "core/version/VersionResolver.h"
 #include "kit/Kit.h"
 #include "ui/InstallDialog.h"
+#include "ui/SettingsDialog.h"
+#include "core/Settings.h"
 
 using namespace Komorebi;
 
@@ -74,13 +76,15 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     barLayout->addWidget(title);
     barLayout->addStretch(1);
 
-    auto* install = new Button(tr("安装新版本"), bar);
+    auto* install = new Button(tr("Install a version"), bar);
     install->setPrimary(true);
-    auto* folder = new Button(tr("游戏目录"), bar);
-    auto* refresh = new Button(tr("刷新"), bar);
+    auto* folder = new Button(tr("Game folder"), bar);
+    auto* refresh = new Button(tr("Refresh"), bar);
+    auto* settingsButton = new Button(tr("Settings"), bar);
     barLayout->addWidget(install);
     barLayout->addWidget(folder);
     barLayout->addWidget(refresh);
+    barLayout->addWidget(settingsButton);
     layout->addWidget(bar);
 
     // ---- the page: versions on the left, the selected one on the right
@@ -110,7 +114,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     detailLayout->setContentsMargins(22, 20, 22, 20);
     detailLayout->setSpacing(10);
 
-    m_detailTitle = new QLabel(tr("选择一个版本"), detailPlate);
+    m_detailTitle = new QLabel(tr("Select a version"), detailPlate);
     QFont detailFont = m_detailTitle->font();
     detailFont.setPointSize(detailFont.pointSize() + 5);
     detailFont.setBold(true);
@@ -126,11 +130,11 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     // ---- the bar along the bottom: what the page is for
     auto* bottom = new QHBoxLayout();
     bottom->setSpacing(12);
-    m_status = new QLabel(tr("准备就绪"), detailPlate);
+    m_status = new QLabel(tr("Ready"), detailPlate);
     m_status->setObjectName(QStringLiteral("status"));
     bottom->addWidget(m_status, 1);
 
-    m_playButton = new Button(tr("启动游戏"), detailPlate);
+    m_playButton = new Button(tr("Play"), detailPlate);
     m_playButton->setPrimary(true);
     m_playButton->setEnabled(false);
     bottom->addWidget(m_playButton);
@@ -144,6 +148,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     connect(install, &QPushButton::clicked, this, &AppWindow::installVersion);
     connect(refresh, &QPushButton::clicked, this, &AppWindow::reload);
     connect(folder, &QPushButton::clicked, this, &AppWindow::openGameFolder);
+    connect(settingsButton, &QPushButton::clicked, this, &AppWindow::openSettings);
     connect(m_playButton, &QPushButton::clicked, this, &AppWindow::launchSelected);
     connect(m_list, &QListWidget::currentRowChanged, this, &AppWindow::selectVersion);
     connect(m_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem*) { launchSelected(); });
@@ -177,10 +182,10 @@ void AppWindow::reload()
 
     if (m_versions.isEmpty()) {
         m_selected.clear();
-        m_detailTitle->setText(tr("还没有安装任何版本"));
-        m_detailBody->setText(tr("点右上角的「安装新版本」，选一个版本下载。装好之后这里会出现它，点「启动游戏」就能玩。"));
+        m_detailTitle->setText(tr("No versions installed yet"));
+        m_detailBody->setText(tr("Use Install a version in the top right corner to download one. It shows up here, and Play starts it."));
         m_playButton->setEnabled(false);
-        setStatus(tr("尚未安装版本"));
+        setStatus(tr("Nothing installed"));
         return;
     }
 
@@ -206,12 +211,12 @@ void AppWindow::selectVersion(int row)
     m_playButton->setEnabled(version.hasGameJar);
 
     m_detailTitle->setText(version.id);
-    m_detailBody->setText(tr("Java %1 · %2\n安装位置：%3\n游戏文件：%4\n\n这个版本已经可以直接启动。")
-                               .arg(version.javaMajor > 0 ? QString::number(version.javaMajor) : tr("未知"))
+    m_detailBody->setText(tr("Java %1 · %2\nInstalled at: %3\nGame files: %4\n\nThis version can be started.")
+                               .arg(version.javaMajor > 0 ? QString::number(version.javaMajor) : tr("unknown"))
                                .arg(formatSize(version.size))
                                .arg(QDir::toNativeSeparators(version.path))
-                               .arg(version.hasGameJar ? tr("完整") : tr("缺少 %1.jar").arg(version.id)));
-    setStatus(version.hasGameJar ? tr("准备就绪") : tr("这个版本缺少游戏文件，重新安装一次"));
+                               .arg(version.hasGameJar ? tr("complete") : tr("missing %1.jar").arg(version.id)));
+    setStatus(version.hasGameJar ? tr("Ready") : tr("The game files of this version are missing; install it again"));
 }
 
 void AppWindow::launchSelected()
@@ -219,14 +224,14 @@ void AppWindow::launchSelected()
     if (m_selected.isEmpty())
         return;
     if (m_game && m_game->state() != QProcess::NotRunning) {
-        setStatus(tr("游戏已经在运行了"));
+        setStatus(tr("The game is already running"));
         return;
     }
 
     const QString directory = versionDirectory(m_selected);
     const ResolvedVersion resolved = resolveVersion(versionsRoot(), m_selected);
     if (!resolved.ok()) {
-        setStatus(tr("这个版本的描述读不出来：%1").arg(resolved.error));
+        setStatus(tr("The description of this version cannot be read: %1").arg(resolved.error));
         return;
     }
     const VersionJson version = resolved.version;
@@ -239,12 +244,14 @@ void AppWindow::launchSelected()
     request.gameDirectory = directory;
     request.clientJar = QDir(versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"));
     request.playerName = QStringLiteral("Player");
+    request.maxMemoryMb = m_settings.memoryMb;
+    request.javaPath = m_settings.javaPath;
     request.tempDirectory = QDir(directory).filePath(QStringLiteral("tmp"));
     QDir().mkpath(request.tempDirectory);
 
     const LaunchPlan plan = buildLaunchPlan(request);
     if (!plan.valid() || !plan.missingFiles.isEmpty()) {
-        setStatus(tr("无法启动：%1").arg(plan.valid() ? tr("缺少 %1 个文件").arg(plan.missingFiles.size()) : plan.error));
+        setStatus(tr("Cannot start: %1").arg(plan.valid() ? tr("%1 file(s) are missing").arg(plan.missingFiles.size()) : plan.error));
         return;
     }
 
@@ -252,16 +259,16 @@ void AppWindow::launchSelected()
         m_game = new QProcess(this);
         m_game->setProcessChannelMode(QProcess::MergedChannels);
         connect(m_game, &QProcess::started, this, [this] {
-            setStatus(tr("游戏已启动"));
+            setStatus(tr("Game started"));
             m_playButton->setEnabled(false);
         });
         connect(m_game, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [this](int code, QProcess::ExitStatus) {
-            setStatus(code == 0 ? tr("游戏已退出") : tr("游戏异常退出（%1）").arg(code));
+            setStatus(code == 0 ? tr("Game exited") : tr("The game exited with code %1").arg(code));
             m_playButton->setEnabled(true);
         });
         connect(m_game, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
             if (error == QProcess::FailedToStart) {
-                setStatus(tr("启动失败：Java 没有运行起来"));
+                setStatus(tr("Could not start: Java did not run"));
                 m_playButton->setEnabled(true);
             }
         });
@@ -269,7 +276,7 @@ void AppWindow::launchSelected()
 
     m_game->setWorkingDirectory(plan.workingDirectory);
     m_game->start(plan.program, plan.arguments);
-    setStatus(tr("正在启动…"));
+    setStatus(tr("Starting…"));
 }
 
 void AppWindow::installVersion()
@@ -279,6 +286,16 @@ void AppWindow::installVersion()
         m_selected = dialog.installedId();
         reload();
     }
+}
+
+void AppWindow::openSettings()
+{
+    SettingsDialog dialog(m_settings, this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+    m_settings = dialog.result();
+    m_settings.save();
+    setStatus(tr("Settings saved (the language changes next time the launcher starts)"));
 }
 
 void AppWindow::openGameFolder()

@@ -4,7 +4,7 @@ project(KomorebiNext LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Network LinguistTools)
 
 qt_standard_project_setup()
 
@@ -27,6 +27,15 @@ if(WIN32)
     configure_file(resources/windows.rc.in ${CMAKE_CURRENT_BINARY_DIR}/windows.rc @ONLY)
     target_sources(komorebi-lite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/windows.rc)
 endif()
+# Three languages, compiled in: the source is English, and the two translation files next to it
+# carry 简体中文 and 日本語.
+qt_add_translations(TARGETS komorebi-lite
+    TS_FILES
+        i18n/komorebi_zh_CN.ts
+        i18n/komorebi_ja.ts
+    RESOURCE_PREFIX "/i18n"
+)
+
 target_link_libraries(komorebi-lite PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
 target_include_directories(komorebi-lite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

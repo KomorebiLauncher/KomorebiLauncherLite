@@ -248,6 +248,10 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
             arguments << QStringLiteral("-Dforgewrapper.installer=") + request.installerJar;
     }
 
+    // The heap the player asked for; the JVM defaults are small for a modded game.
+    if (request.maxMemoryMb > 0)
+        arguments << QStringLiteral("-Xmx%1m").arg(request.maxMemoryMb);
+
     arguments << request.version.mainClass;
     for (const auto& argument : request.version.resolvedGameArguments(environment))
         arguments << substitute(argument, values);

@@ -39,7 +39,7 @@ struct InstallDialog::State {
 InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     : QDialog(parent), m_store(store), m_state(new State)
 {
-    setWindowTitle(tr("安装新版本"));
+    setWindowTitle(tr("Install a version"));
     setMinimumWidth(520);
     resize(620, 460);
 
@@ -47,7 +47,7 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     layout->setContentsMargins(20, 18, 20, 18);
     layout->setSpacing(10);
 
-    auto* title = new QLabel(tr("选择一个版本"), this);
+    auto* title = new QLabel(tr("Select a version"), this);
     QFont titleFont = title->font();
     titleFont.setPointSize(titleFont.pointSize() + 3);
     titleFont.setBold(true);
@@ -57,9 +57,9 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     auto* row = new QHBoxLayout();
     row->setSpacing(8);
     m_kind = new Komorebi::Combo(this);
-    m_kind->addItem(tr("正式版"));
-    m_kind->addItem(tr("快照"));
-    m_kind->addItem(tr("全部"));
+    m_kind->addItem(tr("Releases"));
+    m_kind->addItem(tr("Snapshots"));
+    m_kind->addItem(tr("All"));
     row->addWidget(m_kind);
 
     m_versions = new Komorebi::Combo(this);
@@ -68,30 +68,30 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
 
     auto* loaderRow = new QHBoxLayout();
     loaderRow->setSpacing(8);
-    loaderRow->addWidget(new QLabel(tr("加载器"), this));
+    loaderRow->addWidget(new QLabel(tr("Loader"), this));
     m_loader = new Komorebi::Combo(this);
-    m_loader->addItem(tr("原版（不装加载器）"), QString());
+    m_loader->addItem(tr("Vanilla (no loader)"), QString());
     m_loader->addItem(tr("Fabric"), QStringLiteral("fabric"));
     m_loader->addItem(tr("Quilt"), QStringLiteral("quilt"));
     loaderRow->addWidget(m_loader, 1);
     layout->addLayout(loaderRow);
 
-    m_hint = new QLabel(tr("正在获取版本列表…"), this);
+    m_hint = new QLabel(tr("Fetching the version list…"), this);
     m_hint->setWordWrap(true);
     layout->addWidget(m_hint);
 
     m_progressLog = new QPlainTextEdit(this);
     m_progressLog->setReadOnly(true);
     m_progressLog->setMaximumBlockCount(200);
-    m_progressLog->setPlaceholderText(tr("安装过程会显示在这里"));
+    m_progressLog->setPlaceholderText(tr("Install progress shows up here"));
     layout->addWidget(m_progressLog, 1);
 
     auto* buttons = new QHBoxLayout();
     buttons->addStretch(1);
-    m_install = new Komorebi::Button(tr("安装"), this);
+    m_install = new Komorebi::Button(tr("Install"), this);
     m_install->setPrimary(true);
     m_install->setEnabled(false);
-    m_close = new Komorebi::Button(tr("关闭"), this);
+    m_close = new Komorebi::Button(tr("Close"), this);
     buttons->addWidget(m_install);
     buttons->addWidget(m_close);
     layout->addLayout(buttons);
@@ -112,7 +112,7 @@ void InstallDialog::loadManifest()
     if (m_state->running)
         return;
 
-    m_hint->setText(tr("正在获取版本列表…"));
+    m_hint->setText(tr("Fetching the version list…"));
     m_install->setEnabled(false);
     QApplication::setOverrideCursor(Qt::BusyCursor);
     QApplication::processEvents();
@@ -123,7 +123,7 @@ void InstallDialog::loadManifest()
     QApplication::restoreOverrideCursor();
 
     if (manifest.versions.isEmpty()) {
-        m_hint->setText(tr("获取版本列表失败：%1").arg(error));
+        m_hint->setText(tr("Could not fetch the version list: %1").arg(error));
         return;
     }
 
@@ -137,7 +137,7 @@ void InstallDialog::loadManifest()
         m_versions->addItem(version.id, version.id);
     }
 
-    m_hint->setText(tr("共 %1 个可选版本，最新正式版 %2，最新快照 %3")
+    m_hint->setText(tr("%1 versions available, newest release %2, newest snapshot %3")
                         .arg(m_versions->count())
                         .arg(manifest.latestRelease, manifest.latestSnapshot));
     m_install->setEnabled(m_versions->count() > 0);
@@ -157,8 +157,8 @@ void InstallDialog::startInstall()
     m_state->total = 0;
     m_install->setEnabled(false);
     m_progressLog->clear();
-    m_progressLog->appendPlainText(tr("开始安装 %1 …").arg(id));
-    m_hint->setText(tr("正在安装 %1").arg(id));
+    m_progressLog->appendPlainText(tr("Installing %1…").arg(id));
+    m_hint->setText(tr("Installing %1").arg(id));
 
     const QString dataRoot = Komorebi::dataRoot();
     const QString loader = m_loader->currentData().toString();
@@ -222,7 +222,7 @@ void InstallDialog::pollProgress()
 
     if (total > 0) {
         const int percent = done * 100 / total;
-        m_hint->setText(tr("%1 %2%（%3/%4）").arg(stage).arg(percent).arg(done).arg(total));
+        m_hint->setText(tr("%1 %2%% (%3/%4)").arg(stage).arg(percent).arg(done).arg(total));
     } else if (!stage.isEmpty()) {
         m_hint->setText(stage);
     }
@@ -237,20 +237,20 @@ void InstallDialog::pollProgress()
             error = m_state->error;
         }
         const bool ok = m_state->ok.load();
-        m_progressLog->appendPlainText(ok ? tr("安装完成：下载 %1 个文件，跳过 %2 个已存在的文件")
+        m_progressLog->appendPlainText(ok ? tr("Installed: %1 file(s) downloaded, %2 already present")
                                                .arg(m_state->downloaded.load())
                                                .arg(m_state->skipped.load())
-                                         : tr("安装失败：%1").arg(error));
+                                         : tr("Install failed: %1").arg(error));
         if (ok) {
             {
                 std::lock_guard<std::mutex> lock(m_state->mutex);
                 m_installed = m_state->versionId.isEmpty() ? m_versions->currentData().toString() : m_state->versionId;
             }
-            m_hint->setText(tr("%1 已安装").arg(m_installed));
+            m_hint->setText(tr("%1 is installed").arg(m_installed));
             m_install->setEnabled(true);
-            m_close->setText(tr("完成"));
+            m_close->setText(tr("Done"));
         } else {
-            m_hint->setText(tr("安装失败：%1").arg(error));
+            m_hint->setText(tr("Install failed: %1").arg(error));
             m_install->setEnabled(true);
         }
         return;

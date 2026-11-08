@@ -8,6 +8,7 @@
 
 #include <QMainWindow>
 
+#include "core/Settings.h"
 #include "core/VersionStore.h"
 #include "theme/Theme.h"
 
@@ -36,10 +37,12 @@ class AppWindow : public QMainWindow {
     void launchSelected();
     void installVersion();
     void openGameFolder();
+    void openSettings();
     void setStatus(const QString& text);
 
     Komorebi::Theme m_theme;
     Komorebi::VersionStore m_store;
+    Komorebi::Settings m_settings;
 
     QListWidget* m_list = nullptr;
     QLabel* m_detailTitle = nullptr;

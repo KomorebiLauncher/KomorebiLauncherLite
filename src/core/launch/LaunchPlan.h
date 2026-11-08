@@ -44,6 +44,7 @@ struct LaunchRequest {
     QString xuid;                              ///< Xbox user id, from the account
     QString userType = QStringLiteral("msa");
     QString versionType = QStringLiteral("release");
+    int maxMemoryMb = 0;   ///< 0: leave the JVM default alone
     int width = 0;
     int height = 0;
 };
