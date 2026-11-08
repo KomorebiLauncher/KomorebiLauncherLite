@@ -107,37 +107,42 @@ The launcher will continue by itself once you approve.</source>
 <context>
     <name>AppWindow</name>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="52" />
+        <location filename="../src/ui/AppWindow.cpp" line="53" />
         <source>Install a version</source>
         <translation>バージョンをインストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="74" />
+        <location filename="../src/ui/AppWindow.cpp" line="75" />
         <source>Modpacks</source>
         <translation>整合パック</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="75" />
+        <location filename="../src/ui/AppWindow.cpp" line="76" />
+        <source>Content</source>
+        <translation>コンテンツ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="77" />
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="76" />
+        <location filename="../src/ui/AppWindow.cpp" line="78" />
         <source>Accounts</source>
         <translation>アカウント</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="77" />
+        <location filename="../src/ui/AppWindow.cpp" line="79" />
         <source>Logs</source>
         <translation>ログ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="78" />
+        <location filename="../src/ui/AppWindow.cpp" line="80" />
         <source>Tools</source>
         <translation>ツール</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="79" />
+        <location filename="../src/ui/AppWindow.cpp" line="81" />
         <source>About</source>
         <translation>このアプリについて</translation>
     </message>
@@ -150,7 +155,7 @@ The launcher will continue by itself once you approve.</source>
         <translation type="vanished">更新</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="54" />
+        <location filename="../src/ui/AppWindow.cpp" line="55" />
         <source>Settings</source>
         <translation>設定</translation>
     </message>
@@ -159,13 +164,13 @@ The launcher will continue by itself once you approve.</source>
         <translation type="vanished">バージョンを選ぶ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="105" />
-        <location filename="../src/ui/AppWindow.cpp" line="134" />
+        <location filename="../src/ui/AppWindow.cpp" line="109" />
+        <location filename="../src/ui/AppWindow.cpp" line="140" />
         <source>Ready</source>
         <translation>準備完了</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="73" />
+        <location filename="../src/ui/AppWindow.cpp" line="74" />
         <source>Play</source>
         <translation>ゲームを起動</translation>
     </message>
@@ -246,9 +251,122 @@ This version can be started.</source>
         <translation type="vanished">起動中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="158" />
+        <location filename="../src/ui/AppWindow.cpp" line="164" />
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>設定を保存しました（言語は次回起動時に反映されます）</translation>
+    </message>
+</context>
+<context>
+    <name>ContentPage</name>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="30" />
+        <source>Mods</source>
+        <translation>MOD</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="31" />
+        <source>Resource packs</source>
+        <translation>リソースパック</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="32" />
+        <source>Shader packs</source>
+        <translation>シェーダー</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="33" />
+        <source>Worlds</source>
+        <translation>ワールド</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="34" />
+        <source>Screenshots</source>
+        <translation>スクリーンショット</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="51" />
+        <source>Content</source>
+        <translation>コンテンツ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="68" />
+        <source>Refresh</source>
+        <translation>更新</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="72" />
+        <source>Pick a version to see what is inside it.</source>
+        <translation>バージョンを選ぶと中身が表示されます。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="87" />
+        <source>Turn off</source>
+        <translation>無効化</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="89" />
+        <source>Delete</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="90" />
+        <source>Open folder</source>
+        <translation>フォルダーを開く</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="111" />
+        <source>Turned on %1</source>
+        <translation>%1 を有効にしました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="111" />
+        <source>Turned off %1</source>
+        <translation>%1 を無効にしました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="129" />
+        <source>No versions installed yet.</source>
+        <translation>インストール済みのバージョンはありません。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="158" />
+        <source>This version has no %1 folder yet.</source>
+        <translation>このバージョンにはまだ %1 フォルダーがありません。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="160" />
+        <source>Empty</source>
+        <translation>空</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="169" />
+        <source>%1 (off)</source>
+        <translation>%1（無効）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="176" />
+        <source>Nothing here yet.</source>
+        <translation>まだ何もありません。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="176" />
+        <source>%1 item(s) in %2.</source>
+        <translation>%2 に %1 件あります。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="178" />
+        <source>%1 item(s)</source>
+        <translation>%1 件</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="195" />
+        <source>Deleted %1</source>
+        <translation>%1 を削除しました</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="195" />
+        <source>Could not delete %1</source>
+        <translation>%1 を削除できません</translation>
     </message>
 </context>
 <context>
@@ -304,69 +422,74 @@ This version can be started.</source>
         <translation>Forge（最新）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="81" />
-        <location filename="../src/ui/InstallDialog.cpp" line="117" />
+        <location filename="../src/ui/InstallDialog.cpp" line="78" />
+        <source>NeoForge (newest)</source>
+        <translation>NeoForge（最新）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstallDialog.cpp" line="82" />
+        <location filename="../src/ui/InstallDialog.cpp" line="118" />
         <source>Fetching the version list…</source>
         <translation>バージョン一覧を取得中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="88" />
+        <location filename="../src/ui/InstallDialog.cpp" line="89" />
         <source>Install progress shows up here</source>
         <translation>インストールの進捗がここに表示されます</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="93" />
+        <location filename="../src/ui/InstallDialog.cpp" line="94" />
         <source>Install</source>
         <translation>インストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="96" />
+        <location filename="../src/ui/InstallDialog.cpp" line="97" />
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="128" />
+        <location filename="../src/ui/InstallDialog.cpp" line="129" />
         <source>Could not fetch the version list: %1</source>
         <translation>バージョン一覧の取得に失敗しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="142" />
+        <location filename="../src/ui/InstallDialog.cpp" line="143" />
         <source>%1 versions available, newest release %2, newest snapshot %3</source>
         <translation>選択可能なバージョンは %1 個、最新リリース %2、最新スナップショット %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="162" />
+        <location filename="../src/ui/InstallDialog.cpp" line="163" />
         <source>Installing %1…</source>
         <translation>%1 をインストール中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="163" />
+        <location filename="../src/ui/InstallDialog.cpp" line="164" />
         <source>Installing %1</source>
         <translation>%1 をインストールしています</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="236" />
+        <location filename="../src/ui/InstallDialog.cpp" line="238" />
         <source>%1 %2%% (%3/%4)</source>
         <translation>%1 %2%%（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="251" />
+        <location filename="../src/ui/InstallDialog.cpp" line="253" />
         <source>Installed: %1 file(s) downloaded, %2 already present</source>
         <translation>インストール完了: %1 個をダウンロード、%2 個は既にありました</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="254" />
-        <location filename="../src/ui/InstallDialog.cpp" line="264" />
+        <location filename="../src/ui/InstallDialog.cpp" line="256" />
+        <location filename="../src/ui/InstallDialog.cpp" line="266" />
         <source>Install failed: %1</source>
         <translation>インストールに失敗しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="260" />
+        <location filename="../src/ui/InstallDialog.cpp" line="262" />
         <source>%1 is installed</source>
         <translation>%1 をインストールしました</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="262" />
+        <location filename="../src/ui/InstallDialog.cpp" line="264" />
         <source>Done</source>
         <translation>完了</translation>
     </message>
@@ -1061,51 +1184,74 @@ Started %1 time(s), last %2</source>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="143" />
-        <source>Official servers</source>
-        <translation>公式サーバー</translation>
+        <source>Official first</source>
+        <translation>公式を優先</translation>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="144" />
-        <source>Mirror (BG)</source>
-        <translation>ミラー（BG）</translation>
+        <source>Mirror first</source>
+        <translation>ミラーを優先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="151" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="145" />
+        <source>Official only</source>
+        <translation>公式のみ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="146" />
+        <source>Mirror only</source>
+        <translation>ミラーのみ</translation>
+    </message>
+    <message>
+        <source>Official servers</source>
+        <translation type="vanished">公式サーバー</translation>
+    </message>
+    <message>
+        <source>Mirror (BG)</source>
+        <translation type="vanished">ミラー（BG）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="153" />
         <source>Download from</source>
         <translation>ダウンロード元</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="154" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="158" />
+        <source>Mirror address</source>
+        <translation>ミラーのアドレス</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="161" />
         <source>Files at once</source>
         <translation>同時ダウンロード数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="157" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="164" />
         <source>0: no limit</source>
         <translation>0: 制限なし</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="158" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="165" />
         <source>Speed limit (KB/s)</source>
         <translation>速度制限（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="167" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="174" />
         <source>Wallpaper</source>
         <translation>壁紙</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="170" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="177" />
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>言語の変更は次回ランチャー起動時に反映されます。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="178" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="185" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="180" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="187" />
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

@@ -46,6 +46,7 @@ class SettingsDialog : public QDialog {
     QCheckBox* m_unsafeAgent = nullptr;
     Komorebi::Slider* m_wallpaperOpacity = nullptr;
     QComboBox* m_downloadSite = nullptr;
+    QLineEdit* m_mirrorBase = nullptr;
     QLineEdit* m_concurrency = nullptr;
     QLineEdit* m_speedLimit = nullptr;
 };

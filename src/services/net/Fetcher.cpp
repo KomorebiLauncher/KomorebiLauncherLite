@@ -1,30 +1,34 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "services/net/Fetcher.h"
 
-#include "services/net/DownloadSite.h"
-
+#include <QCryptographicHash>
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
-#include <QSaveFile>
-#include <QThread>
-#include <QTimer>
 #include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QCryptographicHash>
+#include <QSaveFile>
+#include <QThread>
+#include <QTimer>
+
 #include <functional>
+#include <memory>
+
+#include "services/net/DownloadSite.h"
 
 namespace Komorebi {
 
 namespace {
-/// How long a single file may take before the download is given up on.
+
+/// How long one file may take before that source is given up on.
 constexpr int kTimeoutMs = 30000;
+
 /// Small documents from metadata services can be slow without being broken.
 constexpr int kJsonTimeoutMs = 60000;
 
-/// One connection pool for everything the launcher fetches.
+/// One connection pool for the whole process.
 QNetworkAccessManager& manager()
 {
     static QNetworkAccessManager instance;
@@ -38,6 +42,27 @@ QNetworkRequest makeRequest(const QString& url)
     request.setHeader(QNetworkRequest::UserAgentHeader,
                       QStringLiteral("Mozilla/5.0 (Windows NT 10.0; Win64; x64) KomorebiLite/0.1 (+https://github.com/KomorebiLauncher/KomorebiLauncherLite)"));
     return request;
+}
+
+/// A reply read to completion, with a way out when the server says nothing.
+QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error)
+{
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
+        reply->abort();
+        loop.quit();
+    });
+    timer.start(timeoutMs);
+    loop.exec();
+
+    const QByteArray data = reply->readAll();
+    if (reply->error() != QNetworkReply::NoError && data.isEmpty())
+        *error = QStringLiteral("network: %1").arg(reply->errorString());
+    reply->deleteLater();
+    return data;
 }
 
 bool writeAtomically(const QString& target, const QByteArray& data, QString* error)
@@ -60,45 +85,11 @@ bool writeAtomically(const QString& target, const QByteArray& data, QString* err
     return true;
 }
 
-}  // namespace
-
-BytesResult fetchBytes(const QString& url)
-{
-    BytesResult result;
-
-    QNetworkReply* reply = manager().get(makeRequest(url));
-
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    QTimer timer;
-    timer.setSingleShot(true);
-    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
-        reply->abort();
-        loop.quit();
-    });
-    timer.start(kTimeoutMs);
-    loop.exec();
-
-    if (reply->error() != QNetworkReply::NoError) {
-        result.error = QStringLiteral("network: %1").arg(reply->errorString());
-        reply->deleteLater();
-        return result;
-    }
-
-    result.data = reply->readAll();
-    reply->deleteLater();
-    result.ok = true;
-    return result;
-}
-namespace {
-
-JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>& headers, const QByteArray* body)
+JsonResult requestOnce(const QString& url, const QList<QPair<QString, QString>>& headers, const QByteArray* body)
 {
     JsonResult result;
 
-    QNetworkRequest request{ QUrl(url) };
-    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("KomorebiLite/0.1"));
+    QNetworkRequest request = makeRequest(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
     for (const auto& header : headers)
         request.setRawHeader(header.first.toUtf8(), header.second.toUtf8());
@@ -121,14 +112,6 @@ JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>&
     if (reply->error() != QNetworkReply::NoError && result.body.isEmpty())
         result.error = reply->errorString();
     reply->deleteLater();
-
-    // Nothing came back at all: a metadata service that is slow once usually answers on a second
-    // try, and failing an install over it is worse than waiting.
-    if (result.status == 0)
-        return requestJson(url, headers, body);
-
-    // A service that answers with a JSON error body is still an answer: the caller reads the error
-    // code out of it, which is how "authorization_pending" arrives.
     result.ok = result.status >= 200 && result.status < 300;
     return result;
 }
@@ -137,13 +120,65 @@ JsonResult requestJson(const QString& url, const QList<QPair<QString, QString>>&
 
 JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers)
 {
-    return requestJson(url, headers, &body);
+    // A POST goes where it says: mirrors hold files, not services.
+    return requestOnce(url, headers, &body);
 }
 
 JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& headers)
 {
-    return requestJson(url, headers, nullptr);
+    JsonResult result;
+    for (const QString& candidate : candidateUrls(url)) {
+        result = requestOnce(candidate, headers, nullptr);
+        if (result.status >= 200 && result.status < 400)
+            return result;
+    }
+    return result;
 }
+
+FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1)
+{
+    FetchResult result;
+
+    if (QFileInfo::exists(target) && !sha1.isEmpty() && fileSha1(target) == sha1) {
+        result.ok = true;
+        result.alreadyPresent = true;
+        result.bytes = QFileInfo(target).size();
+        return result;
+    }
+
+    // One candidate after another: the policy decides the order, the file is the same either way.
+    for (const QString& candidate : candidateUrls(url)) {
+        QNetworkReply* reply = manager().get(makeRequest(candidate));
+        QString error;
+        const QByteArray data = readReply(reply, kTimeoutMs, &error);
+        if (data.isEmpty()) {
+            result.error = error.isEmpty() ? QStringLiteral("no data from %1").arg(candidate) : error;
+            continue;
+        }
+
+        if (!sha1.isEmpty()) {
+            const QString actual = QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
+            if (actual != sha1) {
+                result.error = QStringLiteral("hash mismatch from %1").arg(candidate);
+                continue;
+            }
+        }
+
+        if (!writeAtomically(target, data, &error)) {
+            result.error = QStringLiteral("write %1: %2").arg(target, error);
+            return result;
+        }
+
+        result.bytes = data.size();
+        result.ok = true;
+        return result;
+    }
+
+    if (result.error.isEmpty())
+        result.error = QStringLiteral("no source answered for %1").arg(url);
+    return result;
+}
+
 FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress)
 {
     FetchSummary summary;
@@ -159,7 +194,6 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         pending.append(job);
     }
 
-    // The policy decides how many files run at once and how fast.
     const DownloadPolicy& policy = downloadPolicy();
     if (concurrency <= 0)
         concurrency = policy.concurrency;
@@ -175,88 +209,69 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     int active = 0;
     int next = 0;
 
-    // it calls itself when a request finishes, so it needs a name before its body
     std::function<void()> startNext;
+
+    const auto finishOne = [&](bool success, const QString& failure) {
+        if (!success)
+            summary.failed << failure;
+        --active;
+        ++doneCount;
+        if (onProgress)
+            onProgress(doneCount, total);
+        if (next >= pending.size() && active == 0)
+            loop.quit();
+        else
+            startNext();
+    };
+
+    std::function<void(const FetchJob&, int)> attempt;
+
     startNext = [&] {
         while (active < qMax(1, concurrency) && next < pending.size()) {
             const FetchJob job = pending.at(next++);
-            // The mirror answers the same paths under its own host. When it does not have a file,
-            // the original server is tried before the file is called failed.
-            const QString preferred = preferredUrl(job.url);
-            QNetworkReply* reply = manager().get(makeRequest(preferred));
-            reply->setProperty("retryUrl", preferred != job.url ? job.url : QString());
             ++active;
-
-            QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job] {
-                --active;
-                const QString retryUrl = reply->property("retryUrl").toString();
-                if (reply->error() != QNetworkReply::NoError && !retryUrl.isEmpty()) {
-                    reply->deleteLater();
-                    QNetworkReply* second = manager().get(makeRequest(retryUrl));
-                    second->setProperty("retryUrl", QString());
-                    QObject::connect(second, &QNetworkReply::finished, &loop, [&, second, job] {
-                        const auto finish = [&](QNetworkReply* answer) {
-                            --active;
-                            if (answer->error() != QNetworkReply::NoError) {
-                                summary.failed << QStringLiteral("%1 (%2)").arg(job.target, answer->errorString());
-                            } else {
-                                const QByteArray data = answer->readAll();
-                                QString error;
-                                if (!writeAtomically(job.target, data, &error))
-                                    summary.failed << QStringLiteral("%1 (%2)").arg(job.target, error);
-                                else if (!job.sha1.isEmpty()
-                                         && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != job.sha1)
-                                    summary.failed << QStringLiteral("%1 (hash mismatch)").arg(job.target);
-                                else
-                                    ++summary.downloaded;
-                            }
-                            answer->deleteLater();
-                            ++doneCount;
-                            if (onProgress)
-                                onProgress(doneCount, total);
-                            if (next >= pending.size() && active == 0)
-                                loop.quit();
-                            else
-                                startNext();
-                        };
-                        finish(second);
-                    });
-                    ++active;
-                    return;
-                }
-                if (reply->error() != QNetworkReply::NoError) {
-                    summary.failed << QStringLiteral("%1 (%2)").arg(job.target, reply->errorString());
-                } else {
-                    const QByteArray data = reply->readAll();
-                    QString error;
-                    if (!writeAtomically(job.target, data, &error)) {
-                        summary.failed << QStringLiteral("%1 (%2)").arg(job.target, error);
-                    } else if (!job.sha1.isEmpty()) {
-                        const QString actual = QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
-                        if (actual != job.sha1)
-                            summary.failed << QStringLiteral("%1 (hash mismatch)").arg(job.target);
-                        else
-                            ++summary.downloaded;
-                    } else {
-                        ++summary.downloaded;
-                    }
-                }
-                reply->deleteLater();
-                if (policy.speedLimitKb > 0) {
-                    const qint64 bytes = reply->bytesAvailable();
-                    const qint64 budgetMs = (bytes / 1024) * 1000 / policy.speedLimitKb;
-                    if (budgetMs > 0)
-                        QThread::msleep(static_cast<unsigned long>(qMin<qint64>(budgetMs, 5000)));
-                }
-                ++doneCount;
-                if (onProgress)
-                    onProgress(doneCount, total);
-                if (next >= pending.size() && active == 0)
-                    loop.quit();
-                else
-                    startNext();
-            });
+            attempt(job, 0);
         }
+    };
+
+    attempt = [&](const FetchJob& job, int index) {
+        const QStringList candidates = candidateUrls(job.url);
+        if (index >= candidates.size()) {
+            finishOne(false, QStringLiteral("%1 (no source answered)").arg(job.target));
+            return;
+        }
+
+        QNetworkReply* reply = manager().get(makeRequest(candidates.at(index)));
+        QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index] {
+            if (reply->error() != QNetworkReply::NoError) {
+                reply->deleteLater();
+                attempt(job, index + 1);
+                return;
+            }
+
+            const QByteArray data = reply->readAll();
+            reply->deleteLater();
+
+            if (policy.speedLimitKb > 0) {
+                const qint64 budgetMs = (data.size() / 1024) * 1000 / policy.speedLimitKb;
+                if (budgetMs > 0)
+                    QThread::msleep(static_cast<unsigned long>(qMin<qint64>(budgetMs, 5000)));
+            }
+
+            if (!job.sha1.isEmpty()
+                && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != job.sha1) {
+                attempt(job, index + 1);
+                return;
+            }
+
+            QString error;
+            if (!writeAtomically(job.target, data, &error)) {
+                finishOne(false, QStringLiteral("%1 (%2)").arg(job.target, error));
+                return;
+            }
+            ++summary.downloaded;
+            finishOne(true, {});
+        });
     };
 
     startNext();
@@ -264,6 +279,18 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         loop.exec();
     return summary;
 }
+
+BytesResult fetchBytes(const QString& url)
+{
+    BytesResult result;
+    const JsonResult answer = getJson(url, { { QStringLiteral("Accept"), QStringLiteral("application/json") } });
+    result.ok = answer.status >= 200 && answer.status < 300;
+    result.data = answer.body;
+    if (!result.ok)
+        result.error = answer.error.isEmpty() ? QStringLiteral("no answer for %1").arg(url) : answer.error;
+    return result;
+}
+
 QString fileSha1(const QString& path)
 {
     QFile file(path);
@@ -273,77 +300,6 @@ QString fileSha1(const QString& path)
     if (!hash.addData(&file))
         return {};
     return QString::fromLatin1(hash.result().toHex());
-}
-
-FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1)
-{
-    FetchResult result;
-
-    if (QFileInfo::exists(target) && !sha1.isEmpty() && fileSha1(target) == sha1) {
-        result.ok = true;
-        result.alreadyPresent = true;
-        result.bytes = QFileInfo(target).size();
-        return result;
-    }
-
-    const QString directory = QFileInfo(target).absolutePath();
-    if (!QDir().mkpath(directory)) {
-        result.error = QStringLiteral("cannot create %1 (exists: %2)").arg(directory, QFileInfo(directory).exists() ? QStringLiteral("yes") : QStringLiteral("no"));
-        return result;
-    }
-
-    QNetworkReply* reply = manager().get(makeRequest(url));
-
-    // A server that accepts the connection and then says nothing would otherwise hang the launcher
-    // forever: the loop needs its own way out.
-    QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    QTimer timer;
-    timer.setSingleShot(true);
-    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
-        reply->abort();
-        loop.quit();
-    });
-    timer.start(kTimeoutMs);
-    loop.exec();
-
-    if (reply->error() != QNetworkReply::NoError) {
-        result.error = QStringLiteral("network: %1").arg(reply->errorString());
-        reply->deleteLater();
-        return result;
-    }
-
-    const QByteArray data = reply->readAll();
-    reply->deleteLater();
-    result.bytes = data.size();
-
-    if (!sha1.isEmpty()) {
-        const QString actual = QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
-        if (actual != sha1) {
-            result.error = QStringLiteral("hash mismatch: expected %1, got %2").arg(sha1, actual);
-            return result;
-        }
-    }
-
-    // QSaveFile writes beside the target and renames: a crash leaves the old file, never half of a
-    // new one. The byte count is checked because a full disk reports success otherwise.
-    QSaveFile file(target);
-    if (!file.open(QIODevice::WriteOnly)) {
-        result.error = QStringLiteral("write %1: %2").arg(target, file.errorString());
-        return result;
-    }
-    if (file.write(data) != data.size()) {
-        result.error = QStringLiteral("short write to %1: %2").arg(target, file.errorString());
-        file.cancelWriting();
-        return result;
-    }
-    if (!file.commit()) {
-        result.error = QStringLiteral("could not replace %1: %2").arg(target, file.errorString());
-        return result;
-    }
-
-    result.ok = true;
-    return result;
 }
 
 }  // namespace Komorebi

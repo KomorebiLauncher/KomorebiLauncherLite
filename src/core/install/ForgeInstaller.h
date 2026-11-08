@@ -25,7 +25,13 @@ struct ForgeInstallResult {
     QString error;
 };
 
-/// The Forge versions published for a game version, newest first.
+/// Which loader family an installer belongs to.
+enum class LoaderFamily { Forge, NeoForge };
+
+/// The versions published for a game version, newest first.
+QStringList loaderVersions(LoaderFamily family, const QString& minecraftVersion, QString* error);
+
+/// Kept for the callers that predate the family argument.
 QStringList forgeVersions(const QString& minecraftVersion, QString* error);
 
 /**
@@ -34,6 +40,11 @@ QStringList forgeVersions(const QString& minecraftVersion, QString* error);
  * `forgeVersion` may be empty, in which case the newest published version is used. The installer
  * needs a launcher profile file next to the game, which the launcher writes if it is missing.
  */
+ForgeInstallResult installLoader(LoaderFamily family, const QString& dataRoot, const QString& minecraftVersion,
+                                const QString& loaderVersion,
+                                const std::function<void(const InstallProgress&)>& onProgress = {});
+
+/// Forge, with the family spelled out at the call site.
 ForgeInstallResult installForge(const QString& dataRoot, const QString& minecraftVersion, const QString& forgeVersion,
                                 const std::function<void(const InstallProgress&)>& onProgress = {});
 

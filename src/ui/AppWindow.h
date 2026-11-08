@@ -20,6 +20,7 @@ class LogsPage;
 class AccountsPage;
 class ToolsPage;
 class ModpacksPage;
+class ContentPage;
 class AboutPage;
 
 namespace Komorebi {
@@ -56,5 +57,6 @@ class AppWindow : public QMainWindow {
     AccountsPage* m_accountsPage = nullptr;
     ToolsPage* m_toolsPage = nullptr;
     ModpacksPage* m_modpacksPage = nullptr;
+    ContentPage* m_contentPage = nullptr;
     AboutPage* m_aboutPage = nullptr;
 };

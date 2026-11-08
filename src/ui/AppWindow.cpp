@@ -16,6 +16,7 @@
 #include "ui/pages/SimplePages.h"
 #include "ui/pages/ToolsPage.h"
 #include "ui/pages/ModpacksPage.h"
+#include "ui/pages/ContentPage.h"
 
 using namespace Komorebi;
 
@@ -72,6 +73,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));
     m_rail->addItem(tr("Play"));
     m_rail->addItem(tr("Modpacks"));
+    m_rail->addItem(tr("Content"));
     m_rail->addItem(tr("Java"));
     m_rail->addItem(tr("Accounts"));
     m_rail->addItem(tr("Logs"));
@@ -82,6 +84,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     m_pages = new QStackedWidget(body);
     m_launchPage = new LaunchPage(m_settings, m_pages);
     m_modpacksPage = new ModpacksPage(m_pages);
+    m_contentPage = new ContentPage(m_pages);
     m_javaPage = new JavaPage(m_pages);
     m_accountsPage = new AccountsPage(m_pages);
     m_logsPage = new LogsPage(m_pages);
@@ -89,6 +92,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     m_aboutPage = new AboutPage(m_pages);
     m_pages->addWidget(m_launchPage);
     m_pages->addWidget(m_modpacksPage);
+    m_pages->addWidget(m_contentPage);
     m_pages->addWidget(m_javaPage);
     m_pages->addWidget(m_accountsPage);
     m_pages->addWidget(m_logsPage);
@@ -115,9 +119,11 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     });
     connect(settings, &QPushButton::clicked, this, &AppWindow::openSettings);
     connect(m_launchPage, &LaunchPage::status, this, &AppWindow::setStatus);
+    connect(m_contentPage, &ContentPage::status, this, &AppWindow::setStatus);
     connect(m_modpacksPage, &ModpacksPage::status, this, &AppWindow::setStatus);
     connect(m_modpacksPage, &ModpacksPage::installed, this, [this](const QString& id) {
         m_launchPage->selectVersion(id);
+        m_contentPage->reload();
         m_rail->setCurrentRow(0);
     });
     connect(m_javaPage, &JavaPage::status, this, &AppWindow::setStatus);

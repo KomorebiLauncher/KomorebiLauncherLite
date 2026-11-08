@@ -140,8 +140,10 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     auto* downloadForm = new QFormLayout();
     downloadForm->setSpacing(8);
     m_downloadSite = new Komorebi::Combo(page);
-    m_downloadSite->addItem(tr("Official servers"), QStringLiteral("official"));
-    m_downloadSite->addItem(tr("Mirror (BG)"), QStringLiteral("mirror"));
+    m_downloadSite->addItem(tr("Official first"), QStringLiteral("official-first"));
+    m_downloadSite->addItem(tr("Mirror first"), QStringLiteral("mirror-first"));
+    m_downloadSite->addItem(tr("Official only"), QStringLiteral("official-only"));
+    m_downloadSite->addItem(tr("Mirror only"), QStringLiteral("mirror-only"));
     for (int i = 0; i < m_downloadSite->count(); ++i) {
         if (m_downloadSite->itemData(i).toString() == settings.downloadSite) {
             m_downloadSite->setCurrentIndex(i);
@@ -149,6 +151,11 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         }
     }
     downloadForm->addRow(tr("Download from"), m_downloadSite);
+
+    m_mirrorBase = new Komorebi::Field(page);
+    m_mirrorBase->setPlaceholderText(QStringLiteral("https://bmclapi2.bangbang93.com"));
+    m_mirrorBase->setText(settings.mirrorBase);
+    downloadForm->addRow(tr("Mirror address"), m_mirrorBase);
 
     m_concurrency = numberField(page, 1, 64, settings.maxConcurrency);
     downloadForm->addRow(tr("Files at once"), m_concurrency);
@@ -198,6 +205,7 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.wallpaperOpacity = m_wallpaperOpacity->value();
         m_result.processPriority = m_priority->currentData().toString();
         m_result.downloadSite = m_downloadSite->currentData().toString();
+        m_result.mirrorBase = m_mirrorBase->text().trimmed();
         m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
         m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());
         accept();

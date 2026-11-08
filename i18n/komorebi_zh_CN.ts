@@ -107,37 +107,42 @@ The launcher will continue by itself once you approve.</source>
 <context>
     <name>AppWindow</name>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="52" />
+        <location filename="../src/ui/AppWindow.cpp" line="53" />
         <source>Install a version</source>
         <translation>安装新版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="74" />
+        <location filename="../src/ui/AppWindow.cpp" line="75" />
         <source>Modpacks</source>
         <translation>整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="75" />
+        <location filename="../src/ui/AppWindow.cpp" line="76" />
+        <source>Content</source>
+        <translation>内容</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="77" />
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="76" />
+        <location filename="../src/ui/AppWindow.cpp" line="78" />
         <source>Accounts</source>
         <translation>账户</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="77" />
+        <location filename="../src/ui/AppWindow.cpp" line="79" />
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="78" />
+        <location filename="../src/ui/AppWindow.cpp" line="80" />
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="79" />
+        <location filename="../src/ui/AppWindow.cpp" line="81" />
         <source>About</source>
         <translation>关于</translation>
     </message>
@@ -150,7 +155,7 @@ The launcher will continue by itself once you approve.</source>
         <translation type="vanished">刷新</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="54" />
+        <location filename="../src/ui/AppWindow.cpp" line="55" />
         <source>Settings</source>
         <translation>设置</translation>
     </message>
@@ -159,13 +164,13 @@ The launcher will continue by itself once you approve.</source>
         <translation type="vanished">选择一个版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="105" />
-        <location filename="../src/ui/AppWindow.cpp" line="134" />
+        <location filename="../src/ui/AppWindow.cpp" line="109" />
+        <location filename="../src/ui/AppWindow.cpp" line="140" />
         <source>Ready</source>
         <translation>准备就绪</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="73" />
+        <location filename="../src/ui/AppWindow.cpp" line="74" />
         <source>Play</source>
         <translation>启动游戏</translation>
     </message>
@@ -246,9 +251,122 @@ This version can be started.</source>
         <translation type="vanished">正在启动…</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="158" />
+        <location filename="../src/ui/AppWindow.cpp" line="164" />
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>设置已保存（语言在下次启动生效）</translation>
+    </message>
+</context>
+<context>
+    <name>ContentPage</name>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="30" />
+        <source>Mods</source>
+        <translation>模组</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="31" />
+        <source>Resource packs</source>
+        <translation>资源包</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="32" />
+        <source>Shader packs</source>
+        <translation>光影包</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="33" />
+        <source>Worlds</source>
+        <translation>存档</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="34" />
+        <source>Screenshots</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="51" />
+        <source>Content</source>
+        <translation>内容</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="68" />
+        <source>Refresh</source>
+        <translation>刷新</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="72" />
+        <source>Pick a version to see what is inside it.</source>
+        <translation>选一个版本，看看里面有什么。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="87" />
+        <source>Turn off</source>
+        <translation>禁用</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="89" />
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="90" />
+        <source>Open folder</source>
+        <translation>打开文件夹</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="111" />
+        <source>Turned on %1</source>
+        <translation>已启用 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="111" />
+        <source>Turned off %1</source>
+        <translation>已禁用 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="129" />
+        <source>No versions installed yet.</source>
+        <translation>还没有安装任何版本。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="158" />
+        <source>This version has no %1 folder yet.</source>
+        <translation>这个版本还没有 %1 文件夹。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="160" />
+        <source>Empty</source>
+        <translation>空</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="169" />
+        <source>%1 (off)</source>
+        <translation>%1（已禁用）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="176" />
+        <source>Nothing here yet.</source>
+        <translation>这里还是空的。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="176" />
+        <source>%1 item(s) in %2.</source>
+        <translation>%1 个项目，位于 %2。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="178" />
+        <source>%1 item(s)</source>
+        <translation>%1 个项目</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="195" />
+        <source>Deleted %1</source>
+        <translation>已删除 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ContentPage.cpp" line="195" />
+        <source>Could not delete %1</source>
+        <translation>无法删除 %1</translation>
     </message>
 </context>
 <context>
@@ -304,69 +422,74 @@ This version can be started.</source>
         <translation>Forge（最新）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="81" />
-        <location filename="../src/ui/InstallDialog.cpp" line="117" />
+        <location filename="../src/ui/InstallDialog.cpp" line="78" />
+        <source>NeoForge (newest)</source>
+        <translation>NeoForge（最新）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstallDialog.cpp" line="82" />
+        <location filename="../src/ui/InstallDialog.cpp" line="118" />
         <source>Fetching the version list…</source>
         <translation>正在获取版本列表…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="88" />
+        <location filename="../src/ui/InstallDialog.cpp" line="89" />
         <source>Install progress shows up here</source>
         <translation>安装过程会显示在这里</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="93" />
+        <location filename="../src/ui/InstallDialog.cpp" line="94" />
         <source>Install</source>
         <translation>安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="96" />
+        <location filename="../src/ui/InstallDialog.cpp" line="97" />
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="128" />
+        <location filename="../src/ui/InstallDialog.cpp" line="129" />
         <source>Could not fetch the version list: %1</source>
         <translation>获取版本列表失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="142" />
+        <location filename="../src/ui/InstallDialog.cpp" line="143" />
         <source>%1 versions available, newest release %2, newest snapshot %3</source>
         <translation>共 %1 个可选版本，最新正式版 %2，最新快照 %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="162" />
+        <location filename="../src/ui/InstallDialog.cpp" line="163" />
         <source>Installing %1…</source>
         <translation>开始安装 %1 …</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="163" />
+        <location filename="../src/ui/InstallDialog.cpp" line="164" />
         <source>Installing %1</source>
         <translation>正在安装 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="236" />
+        <location filename="../src/ui/InstallDialog.cpp" line="238" />
         <source>%1 %2%% (%3/%4)</source>
         <translation>%1 %2%%（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="251" />
+        <location filename="../src/ui/InstallDialog.cpp" line="253" />
         <source>Installed: %1 file(s) downloaded, %2 already present</source>
         <translation>安装完成：下载 %1 个文件，跳过 %2 个已存在的文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="254" />
-        <location filename="../src/ui/InstallDialog.cpp" line="264" />
+        <location filename="../src/ui/InstallDialog.cpp" line="256" />
+        <location filename="../src/ui/InstallDialog.cpp" line="266" />
         <source>Install failed: %1</source>
         <translation>安装失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="260" />
+        <location filename="../src/ui/InstallDialog.cpp" line="262" />
         <source>%1 is installed</source>
         <translation>%1 已安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="262" />
+        <location filename="../src/ui/InstallDialog.cpp" line="264" />
         <source>Done</source>
         <translation>完成</translation>
     </message>
@@ -1061,51 +1184,74 @@ Started %1 time(s), last %2</source>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="143" />
-        <source>Official servers</source>
-        <translation>官方源</translation>
+        <source>Official first</source>
+        <translation>官方源优先</translation>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="144" />
-        <source>Mirror (BG)</source>
-        <translation>镜像源（BG）</translation>
+        <source>Mirror first</source>
+        <translation>镜像源优先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="151" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="145" />
+        <source>Official only</source>
+        <translation>仅官方源</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="146" />
+        <source>Mirror only</source>
+        <translation>仅镜像源</translation>
+    </message>
+    <message>
+        <source>Official servers</source>
+        <translation type="vanished">官方源</translation>
+    </message>
+    <message>
+        <source>Mirror (BG)</source>
+        <translation type="vanished">镜像源（BG）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="153" />
         <source>Download from</source>
         <translation>下载源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="154" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="158" />
+        <source>Mirror address</source>
+        <translation>镜像地址</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="161" />
         <source>Files at once</source>
         <translation>同时下载数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="157" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="164" />
         <source>0: no limit</source>
         <translation>0：不限速</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="158" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="165" />
         <source>Speed limit (KB/s)</source>
         <translation>速度限制（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="167" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="174" />
         <source>Wallpaper</source>
         <translation>壁纸</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="170" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="177" />
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>语言切换会在下次启动启动器时生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="178" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="185" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="180" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="187" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>

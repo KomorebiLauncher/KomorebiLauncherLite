@@ -46,7 +46,13 @@ Settings Settings::load()
 
     settings.msaClientId = root.value(QStringLiteral("msaClientId")).toString();
     settings.curseForgeApiKey = root.value(QStringLiteral("curseForgeApiKey")).toString();
-    settings.downloadSite = root.value(QStringLiteral("downloadSite")).toString(QStringLiteral("official"));
+    settings.downloadSite = root.value(QStringLiteral("downloadSite")).toString(QStringLiteral("official-first"));
+    // The first version of this setting said only "official" or "mirror".
+    if (settings.downloadSite == QLatin1String("official"))
+        settings.downloadSite = QStringLiteral("official-only");
+    else if (settings.downloadSite == QLatin1String("mirror"))
+        settings.downloadSite = QStringLiteral("mirror-first");
+    settings.mirrorBase = root.value(QStringLiteral("mirrorBase")).toString(QStringLiteral("https://bmclapi2.bangbang93.com"));
     settings.maxConcurrency = qMax(1, root.value(QStringLiteral("maxConcurrency")).toInt(8));
     settings.speedLimitKb = qMax(0, root.value(QStringLiteral("speedLimitKb")).toInt(0));
 
@@ -79,6 +85,7 @@ void Settings::save() const
     root.insert(QStringLiteral("msaClientId"), msaClientId);
     root.insert(QStringLiteral("curseForgeApiKey"), curseForgeApiKey);
     root.insert(QStringLiteral("downloadSite"), downloadSite);
+    root.insert(QStringLiteral("mirrorBase"), mirrorBase);
     root.insert(QStringLiteral("maxConcurrency"), maxConcurrency);
     root.insert(QStringLiteral("speedLimitKb"), speedLimitKb);
     root.insert(QStringLiteral("lockMemory"), lockMemory);

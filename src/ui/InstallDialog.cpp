@@ -75,6 +75,7 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     m_loader->addItem(tr("Fabric"), QStringLiteral("fabric"));
     m_loader->addItem(tr("Quilt"), QStringLiteral("quilt"));
     m_loader->addItem(tr("Forge (newest)"), QStringLiteral("forge"));
+    m_loader->addItem(tr("NeoForge (newest)"), QStringLiteral("neoforge"));
     loaderRow->addWidget(m_loader, 1);
     layout->addLayout(loaderRow);
 
@@ -187,8 +188,9 @@ void InstallDialog::startInstall()
         // A loader builds on the version that was just installed, so it is a second step.
         LoaderResult loaderResult;
         loaderResult.ok = true;
-        if (loader == QLatin1String("forge")) {
-            const ForgeInstallResult forge = installForge(dataRoot, id, {}, [state](const InstallProgress& progress) {
+        if (loader == QLatin1String("forge") || loader == QLatin1String("neoforge")) {
+            const auto family = loader == QLatin1String("forge") ? LoaderFamily::Forge : LoaderFamily::NeoForge;
+            const ForgeInstallResult forge = installLoader(family, dataRoot, id, {}, [state](const InstallProgress& progress) {
                 std::lock_guard<std::mutex> lock(state->mutex);
                 state->stage = progress.stage;
                 state->current = progress.current;

@@ -24,7 +24,8 @@ struct Settings {
     QString curseForgeApiKey;  ///< empty: the key the project ships with
 
     // downloads
-    QString downloadSite = QStringLiteral("official");  ///< "official" or "mirror"
+    QString downloadSite = QStringLiteral("official-first");  ///< official-first, mirror-first, official-only, mirror-only
+    QString mirrorBase = QStringLiteral("https://bmclapi2.bangbang93.com");
     int maxConcurrency = 8;
     int speedLimitKb = 0;  ///< 0: no limit
 

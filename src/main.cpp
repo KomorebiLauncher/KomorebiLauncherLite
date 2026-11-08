@@ -80,8 +80,15 @@ int main(int argc, char** argv)
     {
         const Komorebi::Settings settings = Komorebi::Settings::load();
         Komorebi::DownloadPolicy policy;
-        policy.site = settings.downloadSite == QLatin1String("mirror") ? Komorebi::DownloadSite::Mirror
-                                                                       : Komorebi::DownloadSite::Official;
+        if (settings.downloadSite == QLatin1String("mirror-first"))
+            policy.mode = Komorebi::MirrorMode::MirrorThenOfficial;
+        else if (settings.downloadSite == QLatin1String("mirror-only"))
+            policy.mode = Komorebi::MirrorMode::MirrorOnly;
+        else if (settings.downloadSite == QLatin1String("official-only"))
+            policy.mode = Komorebi::MirrorMode::OfficialOnly;
+        else
+            policy.mode = Komorebi::MirrorMode::OfficialThenMirror;
+        policy.mirrorBase = settings.mirrorBase;
         policy.concurrency = settings.maxConcurrency;
         policy.speedLimitKb = settings.speedLimitKb;
         Komorebi::setDownloadPolicy(policy);
@@ -148,6 +155,24 @@ int main(int argc, char** argv)
         // A loader is a second step: it builds on the version that was just installed.
         const int loaderIndex = arguments.indexOf(QStringLiteral("--loader"));
         if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
+            const QString loaderSpec = arguments.at(loaderIndex + 1);
+            if (loaderSpec.startsWith(QLatin1String("neoforge"))) {
+                const QString loaderVersion = loaderSpec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing NeoForge %1 on %2").arg(loaderVersion.isEmpty() ? QStringLiteral("(newest)") : loaderVersion, versionId));
+                const Komorebi::ForgeInstallResult neo = Komorebi::installLoader(
+                    Komorebi::LoaderFamily::NeoForge, Komorebi::dataRoot(), versionId, loaderVersion,
+                    [&note](const Komorebi::InstallProgress& progress) {
+                        note(QStringLiteral("%1 %2").arg(progress.stage, progress.current));
+                    });
+                if (!neo.ok) {
+                    note(QStringLiteral("neoforge failed: %1").arg(neo.error));
+                    return 1;
+                }
+                note(QStringLiteral("neoforge installed as %1").arg(neo.versionId));
+                return 0;
+            }
+        }
+        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
             const QString spec = arguments.at(loaderIndex + 1);
             if (spec.startsWith(QLatin1String("forge"))) {
                 const QString forgeVersion = spec.section(QLatin1Char(':'), 1);
@@ -162,6 +187,24 @@ int main(int argc, char** argv)
                     return 1;
                 }
                 note(QStringLiteral("forge installed as %1").arg(forgeResult.versionId));
+                return 0;
+            }
+        }
+        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
+            const QString loaderSpec = arguments.at(loaderIndex + 1);
+            if (loaderSpec.startsWith(QLatin1String("neoforge"))) {
+                const QString loaderVersion = loaderSpec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing NeoForge %1 on %2").arg(loaderVersion.isEmpty() ? QStringLiteral("(newest)") : loaderVersion, versionId));
+                const Komorebi::ForgeInstallResult neo = Komorebi::installLoader(
+                    Komorebi::LoaderFamily::NeoForge, Komorebi::dataRoot(), versionId, loaderVersion,
+                    [&note](const Komorebi::InstallProgress& progress) {
+                        note(QStringLiteral("%1 %2").arg(progress.stage, progress.current));
+                    });
+                if (!neo.ok) {
+                    note(QStringLiteral("neoforge failed: %1").arg(neo.error));
+                    return 1;
+                }
+                note(QStringLiteral("neoforge installed as %1").arg(neo.versionId));
                 return 0;
             }
         }
