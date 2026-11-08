@@ -102,8 +102,8 @@ int main(int argc, char** argv)
         note(QStringLiteral("version %1, main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
 
         // the game jar
-        const QString clientJar = QDir(Komorebi::librariesRoot())
-                                      .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+        const QString clientJar = Komorebi::safeJoin(Komorebi::librariesRoot(),
+                                                     QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         if (version.clientJar.valid()) {
             const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, clientJar, version.clientJar.sha1);
             note(QStringLiteral("client jar target: %1").arg(clientJar));
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
 
         // the asset index: the game reads it at start, so it has to be there
         if (version.assetIndex.valid()) {
-            const QString indexFile = QDir(Komorebi::assetsRoot()).filePath(version.assetIndex.path);
+            const QString indexFile = Komorebi::safeJoin(Komorebi::assetsRoot(), version.assetIndex.path);
             const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
             note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
                                                           fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
@@ -148,8 +148,8 @@ int main(int argc, char** argv)
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
-            const QString jar = QDir(Komorebi::librariesRoot())
-                                    .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+            const QString jar = Komorebi::safeJoin(Komorebi::librariesRoot(),
+                                                   QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
             if (version.clientJar.url.isEmpty()) {
                 note(QStringLiteral("client jar: the manifest does not say where it is"));
             } else {
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
                     note(QStringLiteral("  %1").arg(fetched.error));
             }
             if (version.assetIndex.valid()) {
-                const QString indexFile = QDir(Komorebi::assetsRoot()).filePath(version.assetIndex.path);
+                const QString indexFile = Komorebi::safeJoin(Komorebi::assetsRoot(), version.assetIndex.path);
                 const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
                 note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
                                                               fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
         // the installer jar, when a loader brought one: ForgeWrapper needs to be told where it is
         for (const auto& file : version.mavenFiles) {
             if (file.name.endsWith(QLatin1String(":installer"))) {
-                request.installerJar = QDir(Komorebi::librariesRoot()).filePath(file.artifact.path);
+                request.installerJar = Komorebi::safeJoin(Komorebi::librariesRoot(), file.artifact.path);
                 break;
             }
         }
@@ -221,6 +221,12 @@ int main(int argc, char** argv)
     const int instanceLaunchIndex = arguments.indexOf(QStringLiteral("--launch-instance"));
     if (instanceLaunchIndex >= 0 && instanceLaunchIndex + 1 < arguments.size()) {
         const QString instanceId = arguments.at(instanceLaunchIndex + 1);
+        if (!Komorebi::isSafeComponent(instanceId)) {
+            QFile bad(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
+            if (bad.open(QIODevice::WriteOnly | QIODevice::Truncate))
+                bad.write(QStringLiteral("refused: %1 is not a single instance id\n").arg(instanceId).toUtf8());
+            return 1;
+        }
         const QString instanceDir = QDir(instancesRoot).filePath(instanceId);
         const QString metaRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("meta"));
 
@@ -259,8 +265,8 @@ int main(int argc, char** argv)
         request.assetsRoot = Komorebi::assetsRoot();
         request.nativesRoot = QDir(gameDirectory).filePath(QStringLiteral("natives"));
         request.gameDirectory = gameDirectory;
-        request.clientJar = QDir(Komorebi::librariesRoot())
-                                .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+        request.clientJar = Komorebi::safeJoin(Komorebi::librariesRoot(),
+                                               QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         request.playerName = QStringLiteral("Player");
         // A temp directory next to the game, because that directory is ours: the data directory
         // may belong to another install, and handing the JVM a path that does not exist makes
@@ -272,8 +278,8 @@ int main(int argc, char** argv)
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
-            const QString jar = QDir(Komorebi::librariesRoot())
-                                    .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+            const QString jar = Komorebi::safeJoin(Komorebi::librariesRoot(),
+                                                   QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
             if (version.clientJar.url.isEmpty()) {
                 note(QStringLiteral("client jar: the manifest does not say where it is"));
             } else {
@@ -284,7 +290,7 @@ int main(int argc, char** argv)
                     note(QStringLiteral("  %1").arg(fetched.error));
             }
             if (version.assetIndex.valid()) {
-                const QString indexFile = QDir(Komorebi::assetsRoot()).filePath(version.assetIndex.path);
+                const QString indexFile = Komorebi::safeJoin(Komorebi::assetsRoot(), version.assetIndex.path);
                 const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
                 note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
                                                               fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
@@ -294,7 +300,7 @@ int main(int argc, char** argv)
         // the installer jar, when a loader brought one: ForgeWrapper needs to be told where it is
         for (const auto& file : version.mavenFiles) {
             if (file.name.endsWith(QLatin1String(":installer"))) {
-                request.installerJar = QDir(Komorebi::librariesRoot()).filePath(file.artifact.path);
+                request.installerJar = Komorebi::safeJoin(Komorebi::librariesRoot(), file.artifact.path);
                 break;
             }
         }
@@ -306,6 +312,14 @@ int main(int argc, char** argv)
             note(QStringLiteral("  %1").arg(entry));
         if (!plan.valid()) {
             note(QStringLiteral("cannot launch: %1").arg(plan.error));
+            return 1;
+        }
+        // Missing libraries, natives or the game jar are not a warning: starting like this wastes
+        // the player's time with a Java error that says nothing about the real cause.
+        if (!plan.missingFiles.isEmpty()) {
+            note(QStringLiteral("cannot launch: %1 file(s) missing, first: %2")
+                     .arg(plan.missingFiles.size())
+                     .arg(plan.missingFiles.first()));
             return 1;
         }
 

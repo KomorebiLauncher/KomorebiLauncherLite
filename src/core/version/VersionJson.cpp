@@ -22,8 +22,6 @@ Environment Environment::current()
     environment.osName = QStringLiteral("linux");
 #endif
     environment.osArch = QSysInfo::currentCpuArchitecture();
-    if (environment.osArch == QLatin1String("x86_64"))
-        environment.osArch = QStringLiteral("x86_64");
     environment.osVersion = QSysInfo::productVersion();
     return environment;
 }
@@ -209,10 +207,7 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
     // it under mainJar.
     // "where is the game" is a question with three answers in the wild; the one thing that makes a
     // download usable is its url, because the file name is ours to choose.
-    const auto readClient = [&root](const QString& path) {
-        return readDownload(root);
-    };
-    Q_UNUSED(readClient);
+
     version.clientJar = readDownload(root.value(QStringLiteral("downloads")).toObject().value(QStringLiteral("client")).toObject());
     if (version.clientJar.url.isEmpty())
         version.clientJar = readDownload(root.value(QStringLiteral("mainJar")).toObject().value(QStringLiteral("downloads")).toObject().value(QStringLiteral("artifact")).toObject());

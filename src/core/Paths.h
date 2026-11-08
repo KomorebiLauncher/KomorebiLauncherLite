@@ -26,4 +26,19 @@ QString librariesRoot();
 /// `<dataRoot>/assets`
 QString assetsRoot();
 
+/**
+ * Joins `relative` onto `root`, or returns an empty string when the result would leave it.
+ *
+ * Everything the launcher writes or reads by a path built from remote metadata goes through here:
+ * a version id, an asset index id or a component name comes from a server, and "..", an absolute
+ * path or a drive letter in one of them must not decide where a file lands.
+ */
+QString safeJoin(const QString& root, const QString& relative);
+
+/// Whether `target`, once normalised, is still inside `root`.
+bool staysInside(const QString& root, const QString& target);
+
+/// A single path component that is safe to use: no separators, no "..", not empty.
+bool isSafeComponent(const QString& value);
+
 }  // namespace Komorebi

@@ -4,6 +4,8 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
+#include <QSaveFile>
+#include <QTimer>
 #include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -11,6 +13,11 @@
 #include <QCryptographicHash>
 
 namespace Komorebi {
+
+namespace {
+/// How long a single file may take before the download is given up on.
+constexpr int kTimeoutMs = 20000;
+}  // namespace
 
 QString fileSha1(const QString& path)
 {
@@ -46,8 +53,17 @@ FetchResult fetchFile(const QString& url, const QString& target, const QString& 
     request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
     QNetworkReply* reply = manager.get(request);
 
+    // A server that accepts the connection and then says nothing would otherwise hang the launcher
+    // forever: the loop needs its own way out.
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
+        reply->abort();
+        loop.quit();
+    });
+    timer.start(kTimeoutMs);
     loop.exec();
 
     if (reply->error() != QNetworkReply::NoError) {
@@ -68,13 +84,22 @@ FetchResult fetchFile(const QString& url, const QString& target, const QString& 
         }
     }
 
-    QFile file(target);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    // QSaveFile writes beside the target and renames: a crash leaves the old file, never half of a
+    // new one. The byte count is checked because a full disk reports success otherwise.
+    QSaveFile file(target);
+    if (!file.open(QIODevice::WriteOnly)) {
         result.error = QStringLiteral("write %1: %2").arg(target, file.errorString());
         return result;
     }
-    file.write(data);
-    file.close();
+    if (file.write(data) != data.size()) {
+        result.error = QStringLiteral("short write to %1: %2").arg(target, file.errorString());
+        file.cancelWriting();
+        return result;
+    }
+    if (!file.commit()) {
+        result.error = QStringLiteral("could not replace %1: %2").arg(target, file.errorString());
+        return result;
+    }
 
     result.ok = true;
     return result;

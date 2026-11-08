@@ -40,7 +40,10 @@ int javaMajorOf(const QString& javaPath)
             if (!line.startsWith(QLatin1String("JAVA_VERSION=")))
                 continue;
             const QString value = line.mid(13).remove(QLatin1Char('"')).trimmed();
-            const QString major = value.section(QLatin1Char('.'), 0, 0);
+            // Before Java 9 the release file did not exist and the numbers looked like 1.8.0_202;
+            // the second component is the one people mean by "Java 8".
+            const QString major = value.startsWith(QLatin1String("1.")) ? value.section(QLatin1Char('.'), 1, 1)
+                                                                        : value.section(QLatin1Char('.'), 0, 0);
             bool ok = false;
             const int number = major.toInt(&ok);
             if (ok)
@@ -54,9 +57,14 @@ int javaMajorOf(const QString& javaPath)
     if (!process.waitForFinished(5000))
         return 0;
     const QString output = QString::fromLocal8Bit(process.readAllStandardError());
-    const QRegularExpression pattern(QStringLiteral("version \"([0-9]+)"));
+    const QRegularExpression pattern(QStringLiteral("version \"([0-9]+)(?:\\.([0-9]+))?"));
     const auto match = pattern.match(output);
-    return match.hasMatch() ? match.captured(1).toInt() : 0;
+    if (!match.hasMatch())
+        return 0;
+    // "1.8.0_202" means 8; "17.0.9" means 17.
+    if (match.captured(1) == QLatin1String("1") && !match.captured(2).isEmpty())
+        return match.captured(2).toInt();
+    return match.captured(1).toInt();
 }
 
 }  // namespace
@@ -109,12 +117,27 @@ QString findJava(int requiredMajor)
 
 namespace {
 
-/// Replaces ${name} everywhere it appears; unknown names are left alone so they show up in a dump.
+/**
+ * Replaces ${name} in one pass.
+ *
+ * Chained replaces depended on the hash order and re-scanned text that had just been substituted:
+ * a value that itself contained ${...} would be expanded again. One pass fixes both.
+ */
 QString substitute(const QString& value, const QHash<QString, QString>& values)
 {
-    QString result = value;
-    for (auto it = values.begin(); it != values.end(); ++it)
-        result.replace(QLatin1String("${") + it.key() + QLatin1Char('}'), it.value());
+    static const QRegularExpression placeholder(QStringLiteral("\\$\\{([A-Za-z0-9_]+)\\}"));
+    QString result;
+    result.reserve(value.size());
+    int last = 0;
+    auto matches = placeholder.globalMatch(value);
+    while (matches.hasNext()) {
+        const auto match = matches.next();
+        result += value.mid(last, match.capturedStart() - last);
+        const auto it = values.constFind(match.captured(1));
+        result += it == values.constEnd() ? match.captured(0) : it.value();
+        last = match.capturedEnd();
+    }
+    result += value.mid(last);
     return result;
 }
 
@@ -198,7 +221,10 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
 
     // The classpath and the natives are not in the manifest's jvm arguments: they are ours to add.
     if (!arguments.contains(QStringLiteral("-cp")) && !arguments.contains(QStringLiteral("-classpath")))
-        arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath")) << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
+        arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath"));
+    // The natives path is not part of the classpath decision: a manifest that brings its own -cp
+    // still needs to be told where the natives are.
+    arguments << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
 
     // The JVM unpacks natives and, for a loader, its installer work into java.io.tmpdir. The system
     // one is not always writable (a locked Temp, a policy, another user's leftovers), so the

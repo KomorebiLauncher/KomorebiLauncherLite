@@ -8,8 +8,21 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#include "core/Paths.h"
+
 namespace Komorebi {
 
+namespace {
+
+/// `<metaRoot>/<uid>/<version>.json`, or nothing when the names would leave the directory.
+QString componentPath(const QString& metaRoot, const ComponentRef& component)
+{
+    if (!isSafeComponent(component.uid) || !isSafeComponent(component.version))
+        return {};
+    return safeJoin(metaRoot, QStringLiteral("%1/%2.json").arg(component.uid, component.version));
+}
+
+}  // namespace
 QList<ComponentRef> readComponentList(const QString& instanceDirectory)
 {
     QList<ComponentRef> components;
@@ -31,16 +44,15 @@ QList<ComponentRef> readComponentList(const QString& instanceDirectory)
 
 VersionJson readComponent(const QString& metaRoot, const ComponentRef& component)
 {
-    const QString path = QDir(metaRoot).filePath(QStringLiteral("%1/%2.json").arg(component.uid, component.version));
-    return VersionJson::fromFile(path);
+    return VersionJson::fromFile(componentPath(metaRoot, component));
 }
 
 QStringList missingComponents(const QString& metaRoot, const QList<ComponentRef>& components)
 {
     QStringList missing;
     for (const auto& component : components) {
-        const QString path = QDir(metaRoot).filePath(QStringLiteral("%1/%2.json").arg(component.uid, component.version));
-        if (!QFileInfo::exists(path))
+        const QString path = componentPath(metaRoot, component);
+        if (path.isEmpty() || !QFileInfo::exists(path))
             missing << QStringLiteral("%1 %2").arg(component.uid, component.version);
     }
     return missing;
@@ -114,7 +126,7 @@ VersionJson mergeComponents(const QString& metaRoot, const QList<ComponentRef>& 
     QList<Loaded> loaded;
     int index = 0;
     for (const auto& component : components) {
-        const QString path = QDir(metaRoot).filePath(QStringLiteral("%1/%2.json").arg(component.uid, component.version));
+        const QString path = componentPath(metaRoot, component);
         QFile file(path);
         if (!file.open(QIODevice::ReadOnly)) {
             ++index;

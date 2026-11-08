@@ -117,7 +117,7 @@ int runSelfTest()
         layout->addWidget(new QLabel(QStringLiteral("…"), &dialog));
         const QImage image = render(&dialog, QSize(240, 140));
         report(luminance(image.pixelColor(120, 100)) > 180, "dialog surface is paper",
-               image.pixelColor(120, 70).name());
+               image.pixelColor(120, 100).name());
     }
 
     // 7. a popup menu: a top-level window of its own, so it does not inherit the above

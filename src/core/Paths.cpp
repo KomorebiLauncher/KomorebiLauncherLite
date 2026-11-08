@@ -40,4 +40,49 @@ QString assetsRoot()
     return QDir(dataRoot()).filePath(QStringLiteral("assets"));
 }
 
+namespace {
+
+/// The form comparison happens in: forward slashes, no trailing separator, no "..".
+QString normalised(const QString& path)
+{
+    QString clean = QDir::cleanPath(QDir::fromNativeSeparators(path));
+    while (clean.endsWith(QLatin1Char('/')) && clean.size() > 1)
+        clean.chop(1);
+    return clean;
+}
+
+}  // namespace
+
+bool isSafeComponent(const QString& value)
+{
+    if (value.isEmpty() || value == QLatin1String(".") || value == QLatin1String(".."))
+        return false;
+    if (value.contains(QLatin1Char('/')) || value.contains(QLatin1Char('\\')))
+        return false;
+    if (value.contains(QLatin1Char(':')))
+        return false;
+    return true;
+}
+
+bool staysInside(const QString& root, const QString& target)
+{
+    const QString base = normalised(root);
+    const QString full = normalised(target);
+    if (base.isEmpty() || full.isEmpty())
+        return false;
+    // The separator matters: "C:/libraries2" must not pass as being inside "C:/libraries".
+    return full == base || full.startsWith(base + QLatin1Char('/'));
+}
+
+QString safeJoin(const QString& root, const QString& relative)
+{
+    if (relative.isEmpty())
+        return {};
+    // An absolute path in a relative field is already a lie; refuse before joining.
+    if (QDir::isAbsolutePath(relative) || relative.contains(QLatin1Char(':')))
+        return {};
+    const QString joined = QDir(root).filePath(relative);
+    return staysInside(root, joined) ? QDir::cleanPath(joined) : QString();
+}
+
 }  // namespace Komorebi
