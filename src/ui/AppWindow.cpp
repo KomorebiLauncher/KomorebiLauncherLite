@@ -64,7 +64,7 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     m_rail->setFrameShape(QFrame::NoFrame);
     m_rail->setFixedWidth(150);
     m_rail->setStyleSheet(QStringLiteral(
-        "QListWidget { background: transparent; border: none; }"
+        "QListWidget { background: transparent; border: none; outline: none; }"
         "QListWidget::item { padding: 10px 12px; margin: 2px 0px; border-radius: 4px; color: #242e4c; }"
         "QListWidget::item:hover { background: rgba(250, 247, 240, 0.55); }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));

@@ -53,8 +53,8 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
     m_list->setStyleSheet(QStringLiteral(
-        "QListWidget { background: transparent; border: none; }"
-        "QListWidget::item { padding: 9px 12px; margin: 2px 0px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget { background: transparent; border: none; outline: none; }"
+        "QListWidget::item { padding: 9px 12px; margin: 2px 0px; border-radius: 4px; color: #242e4c; outline: none; }"
         "QListWidget::item:hover { background: rgba(250, 247, 240, 0.55); }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));
     m_list->setMinimumWidth(260);

@@ -62,9 +62,9 @@ JavaPage::JavaPage(QWidget* parent)
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
     m_list->setStyleSheet(QStringLiteral(
-        "QListWidget { background: rgba(250, 247, 240, 0.66); border: 1px solid rgba(201, 194, 180, 0.9);"
+        "QListWidget { background: rgba(250, 247, 240, 0.66); outline: none; border: 1px solid rgba(201, 194, 180, 0.9);"
         " border-radius: 6px; padding: 6px; }"
-        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; outline: none; }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); }"));
     layout->addWidget(m_list, 1);
 
@@ -142,9 +142,9 @@ LogsPage::LogsPage(QWidget* parent)
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
     m_list->setStyleSheet(QStringLiteral(
-        "QListWidget { background: rgba(250, 247, 240, 0.66); border: 1px solid rgba(201, 194, 180, 0.9);"
+        "QListWidget { background: rgba(250, 247, 240, 0.66); outline: none; border: 1px solid rgba(201, 194, 180, 0.9);"
         " border-radius: 6px; padding: 6px; }"
-        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; outline: none; }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); }"));
     layout->addWidget(m_list, 1);
 
@@ -215,9 +215,9 @@ AccountsPage::AccountsPage(QWidget* parent)
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
     m_list->setStyleSheet(QStringLiteral(
-        "QListWidget { background: rgba(250, 247, 240, 0.66); border: 1px solid rgba(201, 194, 180, 0.9);"
+        "QListWidget { background: rgba(250, 247, 240, 0.66); outline: none; border: 1px solid rgba(201, 194, 180, 0.9);"
         " border-radius: 6px; padding: 6px; }"
-        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; outline: none; }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); }"));
     layout->addWidget(m_list, 1);
 
