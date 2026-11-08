@@ -30,6 +30,9 @@ class AppWindow : public QMainWindow {
    public:
     explicit AppWindow(Komorebi::Theme theme, QWidget* parent = nullptr);
 
+    /// Selects a page by position in the rail; used by the screenshot hook.
+    void showPage(int index);
+
    protected:
     void paintEvent(QPaintEvent* event) override;
 

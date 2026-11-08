@@ -14,9 +14,13 @@ GPL-3.0 授权。标志与界面均为原创。
 非 MINECRAFT 官方产品，未经 MOJANG 或 MICROSOFT 批准，也与 MOJANG 或 MICROSOFT 无关。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
         <source>Microsoft sign-in and CurseForge modpacks follow the protocol work of &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;, which is a fork of &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; (both GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
-        <translation>微软登录与 CurseForge 整合包的协议流程参考自 &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;，它是 &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; 的 fork（两者均为 GPL-3.0）。完整声明见随启动器附带的 NOTICE.md。</translation>
+        <translation type="vanished">微软登录与 CurseForge 整合包的协议流程参考自 &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;，它是 &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; 的 fork（两者均为 GPL-3.0）。完整声明见随启动器附带的 NOTICE.md。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
+        <source>Komorebi Lite is the light edition of KomorebiLauncher, whose lineage is &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; and, before it, MultiMC. The account and modpack handling descends from those projects (GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
+        <translation>Komorebi Lite 是 KomorebiLauncher 的轻量版，代码谱系为 &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; 及其前身 MultiMC。账户与整合包处理来自这些项目（GPL-3.0）。完整声明见随启动器附带的 NOTICE.md。</translation>
     </message>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="329" />

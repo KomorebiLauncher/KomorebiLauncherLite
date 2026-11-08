@@ -590,6 +590,11 @@ int main(int argc, char** argv)
     }
 
     AppWindow window(theme);
+
+    // A development hook: open a particular page before grabbing the window.
+    const int pageIndex = arguments.indexOf(QStringLiteral("--page"));
+    if (pageIndex >= 0 && pageIndex + 1 < arguments.size())
+        window.showPage(arguments.at(pageIndex + 1).toInt());
     window.show();
 
     // A development hook: render the window once and quit, so a change can be looked at without a

@@ -319,10 +319,10 @@ AboutPage::AboutPage(QWidget* parent)
     credits->setWordWrap(true);
     credits->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     credits->setOpenExternalLinks(true);
-    credits->setText(tr("Microsoft sign-in and CurseForge modpacks follow the protocol work of "
-                        "<a href=\"https://github.com/KomorebiLauncher/KomorebiLauncher\">KomorebiLauncher</a>, "
-                        "which is a fork of <a href=\"https://github.com/PrismLauncher/PrismLauncher\">Prism Launcher</a> "
-                        "(both GPL-3.0). The full notices are in NOTICE.md next to this launcher."));
+    credits->setText(tr("Komorebi Lite is the light edition of KomorebiLauncher, whose lineage is "
+                        "<a href=\"https://github.com/PrismLauncher/PrismLauncher\">Prism Launcher</a> and, before it, "
+                        "MultiMC. The account and modpack handling descends from those projects (GPL-3.0). "
+                        "The full notices are in NOTICE.md next to this launcher."));
     layout->addWidget(credits);
 
     auto* links = new QHBoxLayout();

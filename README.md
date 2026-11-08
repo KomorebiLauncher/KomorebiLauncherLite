@@ -2,7 +2,9 @@
 
 轻量级 Minecraft 启动器，对标 PCL：只做普通玩家真正用到的功能，安装 → 选版本 → 启动，路径短。
 
-这是独立项目，不是 [KomorebiLauncher](https://github.com/KomorebiLauncher/KomorebiLauncher) 的分支：两者代码库、数据目录、发行包都各自独立。
+本仓库是 KomorebiLauncher 的**轻量版**：[完整版](https://github.com/KomorebiLauncher/KomorebiLauncher)（Prism Launcher 的 fork）与本版是同一个项目的两个版本，两个仓库、两套数据目录、两个发行包，功能面各自取舍——完整版面向需要更多功能与整合包生态的玩家，本版只保留普通玩家真正用到的部分。
+
+完整版是 [Prism Launcher](https://github.com/PrismLauncher/PrismLauncher) 的 fork，因此本版沿用的账号登录、整合包处理等逻辑，其源头是 Prism Launcher 及其前身 MultiMC 的贡献者（GPL-3.0）。归属写明在 [NOTICE.md](NOTICE.md) 与启动器的「关于」页。
 
 ## 现在的状态
 
@@ -62,18 +64,19 @@ run.bat --resolve <版本 id>                     打印继承链与合并结果
 
 ## 来源与致谢
 
-本项目 GPL-3.0-only，见 [LICENSE](LICENSE)。标志与界面为原创；下列部分的实现参考了同一组织的另一个项目，二者同为 GPL-3.0：
+本项目 GPL-3.0-only，见 [LICENSE](LICENSE)。标志与界面为原创。
 
-| 部分 | 来源 | 说明 |
-| --- | --- | --- |
-| 微软账户登录（设备码 → Xbox Live → XSTS → Minecraft Services） | [KomorebiLauncher](https://github.com/KomorebiLauncher/KomorebiLauncher) | 其本身 fork 自 [Prism Launcher](https://github.com/PrismLauncher/PrismLauncher)（GPL-3.0），协议实现源自 Prism Launcher 贡献者 |
-| CurseForge 整合包解析与下载流程 | 同上 | 同上 |
-| 版本清单、库规则、natives 约定 | Mojang 公开的清单格式 | 事实性数据格式，非代码 |
+代码的谱系是：MultiMC → Prism Launcher → KomorebiLauncher（完整版）→ 本版。因此下列部分虽然在本仓库中按本版结构实现，其设计源头是上游项目，归属属于其贡献者：
 
-这些部分在本项目中按本项目的结构重写，未逐行复制；若后续直接搬用文件，将保留文件头部的原版权声明并注明修改。完整声明见 [NOTICE.md](NOTICE.md)。
+| 部分 | 上游源头 |
+| --- | --- |
+| 微软账户登录（设备码 → Xbox Live → XSTS → Minecraft Services） | Prism Launcher 及其前身 MultiMC 的贡献者 |
+| CurseForge 整合包解析与下载流程 | 同上 |
+| 版本清单、库规则、natives 约定 | Mojang 公开的清单格式（事实性数据，非代码） |
+
+Copyright (C) 2022–2025 Prism Launcher contributors，以及更早的 MultiMC contributors；Copyright (C) 2025–2026 KomorebiLauncher contributors。均以 GPL-3.0-only 授权。
 
 Minecraft 是 Mojang Studios 的商标。本项目非 Minecraft 官方产品，未经 Mojang 或 Microsoft 批准，也与其无隶属关系；本仓库不分发任何游戏文件。
-
 ## 许可
 
 GPL-3.0-only，见 [LICENSE](LICENSE)。

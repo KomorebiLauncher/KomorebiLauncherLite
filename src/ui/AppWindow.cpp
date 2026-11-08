@@ -120,6 +120,12 @@ AppWindow::AppWindow(Theme theme, QWidget* parent)
     setStatus(tr("Ready"));
 }
 
+void AppWindow::showPage(int index)
+{
+    if (index >= 0 && index < m_rail->count())
+        m_rail->setCurrentRow(index);
+}
+
 void AppWindow::reloadEverything()
 {
     m_launchPage->reload();

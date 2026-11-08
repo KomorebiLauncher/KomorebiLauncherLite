@@ -14,9 +14,13 @@ GPL-3.0。マークと画面は独自制作です。
 Minecraft の公式製品ではなく、Mojang や Microsoft とは関係ありません。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
         <source>Microsoft sign-in and CurseForge modpacks follow the protocol work of &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;, which is a fork of &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; (both GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
-        <translation>Microsoft サインインと CurseForge 整合パックの手順は &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;（&lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; の fork、いずれも GPL-3.0）の実装を参考にしています。全文はランチャー同梱の NOTICE.md にあります。</translation>
+        <translation type="vanished">Microsoft サインインと CurseForge 整合パックの手順は &lt;a href="https://github.com/KomorebiLauncher/KomorebiLauncher"&gt;KomorebiLauncher&lt;/a&gt;（&lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; の fork、いずれも GPL-3.0）の実装を参考にしています。全文はランチャー同梱の NOTICE.md にあります。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="322" />
+        <source>Komorebi Lite is the light edition of KomorebiLauncher, whose lineage is &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; and, before it, MultiMC. The account and modpack handling descends from those projects (GPL-3.0). The full notices are in NOTICE.md next to this launcher.</source>
+        <translation>Komorebi Lite は KomorebiLauncher の軽量版で、系譜は &lt;a href="https://github.com/PrismLauncher/PrismLauncher"&gt;Prism Launcher&lt;/a&gt; とその前身の MultiMC です。アカウントと整合パックの処理はこれらのプロジェクト由来です（GPL-3.0）。全文はランチャー同梱の NOTICE.md にあります。</translation>
     </message>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="329" />
