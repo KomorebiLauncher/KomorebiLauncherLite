@@ -177,7 +177,12 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     // that layer must be the one the wrapper patches. Leaving the vanilla jar on the classpath puts
     // two modules on the same package and the layer fails to resolve.
     const bool wrappedLoader = request.version.mainClass.contains(QLatin1String("forgewrapper"));
-    if (!request.clientJar.isEmpty() && !wrappedLoader) {
+    // Forge and NeoForge start through their bootstrap launcher, which builds the module layer from
+    // a patched client of their own. The vanilla jar on the classpath would be a second module
+    // exporting the same package, and the layer refuses to resolve.
+    const bool bootstrapLoader = request.version.mainClass.contains(QLatin1String("bootstraplauncher"))
+                                 || request.version.mainClass.contains(QLatin1String("modlauncher"));
+    if (!request.clientJar.isEmpty() && !wrappedLoader && !bootstrapLoader) {
         classpath << request.clientJar;
         if (!QFileInfo::exists(request.clientJar))
             plan.missingFiles << request.clientJar;

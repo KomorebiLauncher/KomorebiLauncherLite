@@ -28,6 +28,7 @@
 #include "core/version/VersionJson.h"
 #include "core/install/VersionInstaller.h"
 #include "core/install/LoaderInstaller.h"
+#include "core/install/ForgeInstaller.h"
 #include "core/version/VersionResolver.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
@@ -137,6 +138,24 @@ int main(int argc, char** argv)
 
         // A loader is a second step: it builds on the version that was just installed.
         const int loaderIndex = arguments.indexOf(QStringLiteral("--loader"));
+        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
+            const QString spec = arguments.at(loaderIndex + 1);
+            if (spec.startsWith(QLatin1String("forge"))) {
+                const QString forgeVersion = spec.section(QLatin1Char(':'), 1);
+                note(QStringLiteral("installing Forge %1 on %2").arg(forgeVersion.isEmpty() ? QStringLiteral("(newest)") : forgeVersion, versionId));
+                const Komorebi::ForgeInstallResult forgeResult = Komorebi::installForge(
+                    Komorebi::dataRoot(), versionId, forgeVersion,
+                    [&note](const Komorebi::InstallProgress& progress) {
+                        note(QStringLiteral("%1 %2").arg(progress.stage, progress.current));
+                    });
+                if (!forgeResult.ok) {
+                    note(QStringLiteral("forge failed: %1").arg(forgeResult.error));
+                    return 1;
+                }
+                note(QStringLiteral("forge installed as %1").arg(forgeResult.versionId));
+                return 0;
+            }
+        }
         if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
             Komorebi::LoaderChoice choice;
             const QString spec = arguments.at(loaderIndex + 1);

@@ -159,114 +159,119 @@ This version can be started.</source>
 <context>
     <name>InstallDialog</name>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="42" />
+        <location filename="../src/ui/InstallDialog.cpp" line="43" />
         <source>Install a version</source>
         <translation>バージョンをインストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="50" />
+        <location filename="../src/ui/InstallDialog.cpp" line="51" />
         <source>Select a version</source>
         <translation>バージョンを選ぶ</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="60" />
+        <location filename="../src/ui/InstallDialog.cpp" line="61" />
         <source>Releases</source>
         <translation>リリース</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="61" />
+        <location filename="../src/ui/InstallDialog.cpp" line="62" />
         <source>Snapshots</source>
         <translation>スナップショット</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="62" />
+        <location filename="../src/ui/InstallDialog.cpp" line="63" />
         <source>All</source>
         <translation>すべて</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="71" />
+        <location filename="../src/ui/InstallDialog.cpp" line="72" />
         <source>Loader</source>
         <translation>ローダー</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="73" />
+        <location filename="../src/ui/InstallDialog.cpp" line="74" />
         <source>Vanilla (no loader)</source>
         <translation>バニラ（ローダーなし）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="74" />
+        <location filename="../src/ui/InstallDialog.cpp" line="75" />
         <source>Fabric</source>
         <translation>Fabric</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="75" />
+        <location filename="../src/ui/InstallDialog.cpp" line="76" />
         <source>Quilt</source>
         <translation>Quilt</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="79" />
-        <location filename="../src/ui/InstallDialog.cpp" line="115" />
+        <location filename="../src/ui/InstallDialog.cpp" line="77" />
+        <source>Forge (newest)</source>
+        <translation>Forge（最新）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstallDialog.cpp" line="81" />
+        <location filename="../src/ui/InstallDialog.cpp" line="117" />
         <source>Fetching the version list…</source>
         <translation>バージョン一覧を取得中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="86" />
+        <location filename="../src/ui/InstallDialog.cpp" line="88" />
         <source>Install progress shows up here</source>
         <translation>インストールの進捗がここに表示されます</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="91" />
+        <location filename="../src/ui/InstallDialog.cpp" line="93" />
         <source>Install</source>
         <translation>インストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="94" />
+        <location filename="../src/ui/InstallDialog.cpp" line="96" />
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="126" />
+        <location filename="../src/ui/InstallDialog.cpp" line="128" />
         <source>Could not fetch the version list: %1</source>
         <translation>バージョン一覧の取得に失敗しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="140" />
+        <location filename="../src/ui/InstallDialog.cpp" line="142" />
         <source>%1 versions available, newest release %2, newest snapshot %3</source>
         <translation>選択可能なバージョンは %1 個、最新リリース %2、最新スナップショット %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="160" />
+        <location filename="../src/ui/InstallDialog.cpp" line="162" />
         <source>Installing %1…</source>
         <translation>%1 をインストール中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="161" />
+        <location filename="../src/ui/InstallDialog.cpp" line="163" />
         <source>Installing %1</source>
         <translation>%1 をインストールしています</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="225" />
+        <location filename="../src/ui/InstallDialog.cpp" line="236" />
         <source>%1 %2%% (%3/%4)</source>
         <translation>%1 %2%%（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="240" />
+        <location filename="../src/ui/InstallDialog.cpp" line="251" />
         <source>Installed: %1 file(s) downloaded, %2 already present</source>
         <translation>インストール完了: %1 個をダウンロード、%2 個は既にありました</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="243" />
-        <location filename="../src/ui/InstallDialog.cpp" line="253" />
+        <location filename="../src/ui/InstallDialog.cpp" line="254" />
+        <location filename="../src/ui/InstallDialog.cpp" line="264" />
         <source>Install failed: %1</source>
         <translation>インストールに失敗しました: %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="249" />
+        <location filename="../src/ui/InstallDialog.cpp" line="260" />
         <source>%1 is installed</source>
         <translation>%1 をインストールしました</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="251" />
+        <location filename="../src/ui/InstallDialog.cpp" line="262" />
         <source>Done</source>
         <translation>完了</translation>
     </message>

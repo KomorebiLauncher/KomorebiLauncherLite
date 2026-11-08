@@ -159,114 +159,119 @@ This version can be started.</source>
 <context>
     <name>InstallDialog</name>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="42" />
+        <location filename="../src/ui/InstallDialog.cpp" line="43" />
         <source>Install a version</source>
         <translation>安装新版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="50" />
+        <location filename="../src/ui/InstallDialog.cpp" line="51" />
         <source>Select a version</source>
         <translation>选择一个版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="60" />
+        <location filename="../src/ui/InstallDialog.cpp" line="61" />
         <source>Releases</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="61" />
+        <location filename="../src/ui/InstallDialog.cpp" line="62" />
         <source>Snapshots</source>
         <translation>快照</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="62" />
+        <location filename="../src/ui/InstallDialog.cpp" line="63" />
         <source>All</source>
         <translation>全部</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="71" />
+        <location filename="../src/ui/InstallDialog.cpp" line="72" />
         <source>Loader</source>
         <translation>加载器</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="73" />
+        <location filename="../src/ui/InstallDialog.cpp" line="74" />
         <source>Vanilla (no loader)</source>
         <translation>原版（不装加载器）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="74" />
+        <location filename="../src/ui/InstallDialog.cpp" line="75" />
         <source>Fabric</source>
         <translation>Fabric</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="75" />
+        <location filename="../src/ui/InstallDialog.cpp" line="76" />
         <source>Quilt</source>
         <translation>Quilt</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="79" />
-        <location filename="../src/ui/InstallDialog.cpp" line="115" />
+        <location filename="../src/ui/InstallDialog.cpp" line="77" />
+        <source>Forge (newest)</source>
+        <translation>Forge（最新）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/InstallDialog.cpp" line="81" />
+        <location filename="../src/ui/InstallDialog.cpp" line="117" />
         <source>Fetching the version list…</source>
         <translation>正在获取版本列表…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="86" />
+        <location filename="../src/ui/InstallDialog.cpp" line="88" />
         <source>Install progress shows up here</source>
         <translation>安装过程会显示在这里</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="91" />
+        <location filename="../src/ui/InstallDialog.cpp" line="93" />
         <source>Install</source>
         <translation>安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="94" />
+        <location filename="../src/ui/InstallDialog.cpp" line="96" />
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="126" />
+        <location filename="../src/ui/InstallDialog.cpp" line="128" />
         <source>Could not fetch the version list: %1</source>
         <translation>获取版本列表失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="140" />
+        <location filename="../src/ui/InstallDialog.cpp" line="142" />
         <source>%1 versions available, newest release %2, newest snapshot %3</source>
         <translation>共 %1 个可选版本，最新正式版 %2，最新快照 %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="160" />
+        <location filename="../src/ui/InstallDialog.cpp" line="162" />
         <source>Installing %1…</source>
         <translation>开始安装 %1 …</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="161" />
+        <location filename="../src/ui/InstallDialog.cpp" line="163" />
         <source>Installing %1</source>
         <translation>正在安装 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="225" />
+        <location filename="../src/ui/InstallDialog.cpp" line="236" />
         <source>%1 %2%% (%3/%4)</source>
         <translation>%1 %2%%（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="240" />
+        <location filename="../src/ui/InstallDialog.cpp" line="251" />
         <source>Installed: %1 file(s) downloaded, %2 already present</source>
         <translation>安装完成：下载 %1 个文件，跳过 %2 个已存在的文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="243" />
-        <location filename="../src/ui/InstallDialog.cpp" line="253" />
+        <location filename="../src/ui/InstallDialog.cpp" line="254" />
+        <location filename="../src/ui/InstallDialog.cpp" line="264" />
         <source>Install failed: %1</source>
         <translation>安装失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="249" />
+        <location filename="../src/ui/InstallDialog.cpp" line="260" />
         <source>%1 is installed</source>
         <translation>%1 已安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="251" />
+        <location filename="../src/ui/InstallDialog.cpp" line="262" />
         <source>Done</source>
         <translation>完成</translation>
     </message>

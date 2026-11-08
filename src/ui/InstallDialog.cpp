@@ -17,6 +17,7 @@
 #include "core/Paths.h"
 #include "core/install/VersionInstaller.h"
 #include "core/install/LoaderInstaller.h"
+#include "core/install/ForgeInstaller.h"
 #include "kit/Kit.h"
 
 using namespace Komorebi;
@@ -73,6 +74,7 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     m_loader->addItem(tr("Vanilla (no loader)"), QString());
     m_loader->addItem(tr("Fabric"), QStringLiteral("fabric"));
     m_loader->addItem(tr("Quilt"), QStringLiteral("quilt"));
+    m_loader->addItem(tr("Forge (newest)"), QStringLiteral("forge"));
     loaderRow->addWidget(m_loader, 1);
     layout->addLayout(loaderRow);
 
@@ -185,7 +187,16 @@ void InstallDialog::startInstall()
         // A loader builds on the version that was just installed, so it is a second step.
         LoaderResult loaderResult;
         loaderResult.ok = true;
-        if (!loader.isEmpty()) {
+        if (loader == QLatin1String("forge")) {
+            const ForgeInstallResult forge = installForge(dataRoot, id, {}, [state](const InstallProgress& progress) {
+                std::lock_guard<std::mutex> lock(state->mutex);
+                state->stage = progress.stage;
+                state->current = progress.current;
+            });
+            loaderResult.ok = forge.ok;
+            loaderResult.error = forge.error;
+            loaderResult.versionId = forge.versionId;
+        } else if (!loader.isEmpty()) {
             LoaderChoice choice;
             choice.kind = loader;
             loaderResult = installLoader(dataRoot, id, choice, [state](const InstallProgress& progress) {
