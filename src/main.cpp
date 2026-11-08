@@ -24,6 +24,7 @@
 #include "core/auth/MicrosoftAuth.h"
 #include "core/launch/LaunchService.h"
 #include "core/util/Archive.h"
+#include "core/util/Cleanup.h"
 #include "core/launch/WindowsTweaks.h"
 #include "services/net/Fetcher.h"
 #include "services/net/DownloadSite.h"
@@ -247,6 +248,15 @@ int main(int argc, char** argv)
         out.flush();
         note(QStringLiteral("exited with code %1").arg(process.exitCode()));
         return process.exitCode() == 0 ? 0 : 1;
+    }
+
+    // A development hook: clean up the junk the game leaves behind, and say how much went.
+    if (arguments.contains(QStringLiteral("--clean"))) {
+        const qint64 freed = Komorebi::cleanJunk(Komorebi::dataRoot());
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("clean.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        out.write(QStringLiteral("freed %1 bytes\n").arg(freed).toUtf8());
+        return 0;
     }
 
     // A development hook: unpack an archive the way the launcher does, for checking the unpacker.
