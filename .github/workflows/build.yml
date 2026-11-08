@@ -17,14 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Qt 6.11.2 for MSVC 2022, the same Qt the launcher is developed against. Svg and the Linguist
-      # tools are the two extras the project asks for besides Qt's base modules.
+      # Qt 6.10.3: the version this project pins. aqt cannot fetch 6.11's new repository layout yet,
+      # and nothing here needs 6.11 -- so the pinned version is the one CI and a developer share.
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.2'
+          version: '6.10.3'
           arch: win64_msvc2022_64
-          modules: 'qtsvg qttools'
           cache: true
 
       - name: Set up MSVC

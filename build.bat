@@ -5,7 +5,9 @@ setlocal
 chcp 65001 >nul
 
 set "HERE=%~dp0"
-set "QT=D:\Qt\6.11.2\msvc2022_64"
+rem Lite builds against its own Qt, installed for it alone. The full edition has its own; neither
+rem reads the other's, and nothing is installed at a drive root to keep them apart.
+set "QT=%LOCALAPPDATA%\KomorebiLauncherLite\Qt\6.10.3\msvc2022_64"
 set "VCVARS=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 if not exist "%VCVARS%" (

@@ -39,6 +39,7 @@
 #include "core/install/ForgeInstaller.h"
 #include "core/install/OptiFineInstaller.h"
 #include "core/version/VersionResolver.h"
+#include "dev/Backtrace.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
@@ -50,6 +51,7 @@
 
 int main(int argc, char** argv)
 {
+    Komorebi::installFatalBacktrace();
     QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("KomorebiLite"));
 
@@ -367,6 +369,17 @@ int main(int argc, char** argv)
         note(QStringLiteral("installed as %1 (%2 downloaded, %3 present, %4 failed)")
                  .arg(result.versionId).arg(result.downloaded).arg(result.skipped).arg(result.failed.size()));
         return 0;
+    }
+
+    // Development hook: fetch one url through the same layer the installers use, and say what it
+    // answered. Answers "why does this file not download" without a debugger.
+    const int fetchIndex = arguments.indexOf(QStringLiteral("--fetch"));
+    if (fetchIndex >= 0 && fetchIndex + 2 < arguments.size()) {
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("fetch.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const Komorebi::FetchResult fetched = Komorebi::fetchFile(arguments.at(fetchIndex + 1), arguments.at(fetchIndex + 2), {});
+        out.write(QStringLiteral("ok: %1\nbytes: %2\nerror: %3\n").arg(fetched.ok).arg(fetched.bytes).arg(fetched.error).toUtf8());
+        return fetched.ok ? 0 : 1;
     }
 
     // Loaders through component metadata instead of an installer (what Prism's service describes).

@@ -12,7 +12,8 @@ setlocal
 chcp 65001 >nul
 
 set "HERE=%~dp0"
-set "QT=D:\Qt\6.11.2\msvc2022_64"
+rem The same private Qt the build uses: Lite never picks up another launcher's Qt at run time.
+set "QT=%LOCALAPPDATA%\KomorebiLauncherLite\Qt\6.10.3\msvc2022_64"
 set "EXE=%HERE%build\komorebi-lite.exe"
 
 if not exist "%EXE%" (

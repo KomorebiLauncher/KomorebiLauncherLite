@@ -105,6 +105,20 @@ QString mirrorUrl(const QString& url, const QString& mirrorBase)
     return {};
 }
 
+/// Where the same public artifact can be found when the repository the version names is out of
+/// reach. A loader's own repository is often the only place its patched jars live, but the ordinary
+/// libraries it depends on are published to Maven Central, and Central answers from anywhere.
+QString centralUrl(const QString& url)
+{
+    const QUrl source(url, QUrl::TolerantMode);
+    if (!source.isValid() || !kMavenHosts.contains(source.host().toLower()))
+        return {};
+    const QString path = mavenTree(source);
+    if (path.isEmpty() || !path.startsWith(QLatin1Char('/')))
+        return {};
+    return QStringLiteral("https://repo1.maven.org/maven2") + path;
+}
+
 QStringList candidateUrls(const QString& url)
 {
     QStringList candidates;
@@ -132,6 +146,14 @@ QStringList candidateUrls(const QString& url)
     // be built (no base, or a host nobody mirrors) the official url is all that is left.
     if (candidates.isEmpty())
         candidates << url;
+
+    // Last resort for a maven artifact the loader's own repository hosts but nobody can reach: the
+    // same coordinates usually exist on Central. "Mirror only" still means no fallback at all.
+    if (officialAllowed) {
+        const QString central = centralUrl(url);
+        if (!central.isEmpty() && !candidates.contains(central))
+            candidates << central;
+    }
     return candidates;
 }
 

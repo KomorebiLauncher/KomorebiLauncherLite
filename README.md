@@ -28,12 +28,14 @@
 
 需要 Qt 6（Widgets / Svg / Network）与 MSVC 2022，不需要 vcpkg。
 
+Lite 用**自己的一份 Qt**，默认装在 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt\6.10.3\msvc2022_64`，与完整版那份互不共用；路径写在 `build.bat` 与 `run.bat` 顶部，换机器时改那两行。每次 push 由 CI 做一次构建校验（`.github/workflows/build.yml`，Windows + Qt 6.10.3 + offscreen 渲染自检），本地构建只在需要验证运行时才做。
+
 ```powershell
 build.bat            # 配置 + 全量编译到 build\
 run.bat              # 打开窗口
 ```
 
-Qt 路径在 `build.bat` 与 `run.bat` 顶部，换机器时改那两行。`build.bat` 故意每次都全量编译：增量编译保留过旧的 .obj 会在启动时崩溃，排查成本远高于多等一分钟。
+`build.bat` 故意每次都全量编译：增量编译保留过旧的 .obj 会在启动时崩溃，排查成本远高于多等一分钟。
 
 ## 目录布局
 
@@ -63,6 +65,7 @@ run.bat --loader-components net.neoforged 26.3  只用组件元数据装加载�
 run.bat --launch-version 1.20.1                 启动，输出写 launch.log
 run.bat --launch-plan <版本 json>               只打印命令行
 run.bat --resolve <版本 id>                     打印继承链与合并结果
+run.bat --fetch <地址> <文件>                   用启动器自己的下载层取一个文件，结果写 fetch.log
 run.bat --unpack <压缩包> <目录>                用启动器自己的解包器展开一个压缩包
 ```
 

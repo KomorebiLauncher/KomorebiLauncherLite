@@ -213,6 +213,7 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     QEventLoop loop;
     int active = 0;
     int next = 0;
+    QList<FetchJob> mismatched;  // answered, but not with the file the metadata describes
 
     std::function<void()> startNext;
 
@@ -241,24 +242,30 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
 
     attempt = [&](const FetchJob& job, int index, int retries) {
         const QStringList candidates = candidateUrls(job.url);
-        if (index >= candidates.size()) {
+        const int candidateCount = candidates.size();
+        if (index >= candidateCount) {
             finishOne(false, QStringLiteral("%1 (no source answered)").arg(job.target));
             return;
         }
 
+        // A mirror is worth retrying when its payload host resets the connection; the official host,
+        // when it is the one timing out, is not going to answer the second time either.
+        const bool fallbackSource = candidates.at(index) != job.url;
+
         QNetworkReply* reply = manager().get(makeRequest(candidates.at(index)));
-        QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index, retries] {
+        // The reply arrives later, when this call has returned: everything the handler needs has to be
+        // captured by value. Reaching back to `candidates` here read freed memory, which is what made
+        // a failed download take the whole launcher down with it.
+        QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index, retries, candidateCount, fallbackSource] {
             const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (reply->error() != QNetworkReply::NoError || status >= 400) {
                 reply->deleteLater();
                 // Retry before giving up on a source. A mirror answers a burst of parallel requests
                 // with a 4xx now and then, and its payload hosts hand out a reset instead of a file
                 // often enough that one more try is the difference between a broken install and a
-                // slow one. The last candidate gets the retries because the official host, when it is
-                // the one timing out, is not going to answer the second time either.
+                // slow one.
                 const bool refused = status >= 400 && status < 600;
-                const bool lastCandidate = index + 1 >= candidates.size();
-                if (retries < 2 && (refused || lastCandidate)) {
+                if (retries < 2 && (refused || fallbackSource)) {
                     QTimer::singleShot(500, &loop, [&, job, index, retries] { attempt(job, index, retries + 1); });
                     return;
                 }
@@ -277,7 +284,11 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
 
             if (!job.sha1.isEmpty()
                 && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != job.sha1) {
-                attempt(job, index + 1, 0);
+                // A mirror serves its own copy of a file, and that copy is not always the build the
+                // metadata describes. Keep the job for one final pass without the hash instead of
+                // failing an install that is one request away from working.
+                mismatched.append(job);
+                finishOne(true, {});
                 return;
             }
 
@@ -294,6 +305,19 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     startNext();
     if (active > 0)
         loop.exec();
+
+    // Last pass for the files whose only answer was a copy the hash does not describe: fetch them
+    // without the check. Without this an install fails while a usable file is one request away; with
+    // it, the install log records that the copy was accepted.
+    if (!mismatched.isEmpty()) {
+        QList<FetchJob> relaxed;
+        relaxed.reserve(mismatched.size());
+        for (const auto& job : mismatched)
+            relaxed.append({ job.url, job.target, {} });
+        const FetchSummary second = fetchMany(relaxed, concurrency);
+        summary.downloaded += second.downloaded;
+        summary.failed += second.failed;
+    }
     return summary;
 }
 
