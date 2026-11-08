@@ -18,6 +18,7 @@
 #include "core/Paths.h"
 #include "core/launch/LaunchPlan.h"
 #include "core/version/VersionJson.h"
+#include "core/version/VersionResolver.h"
 #include "kit/Kit.h"
 #include "ui/InstallDialog.h"
 
@@ -223,7 +224,12 @@ void AppWindow::launchSelected()
     }
 
     const QString directory = versionDirectory(m_selected);
-    const VersionJson version = VersionJson::fromFile(QDir(directory).filePath(m_selected + QStringLiteral(".json")));
+    const ResolvedVersion resolved = resolveVersion(versionsRoot(), m_selected);
+    if (!resolved.ok()) {
+        setStatus(tr("这个版本的描述读不出来：%1").arg(resolved.error));
+        return;
+    }
+    const VersionJson version = resolved.version;
 
     LaunchRequest request;
     request.version = version;
@@ -231,7 +237,7 @@ void AppWindow::launchSelected()
     request.assetsRoot = assetsRoot();
     request.nativesRoot = QDir(directory).filePath(QStringLiteral("natives"));
     request.gameDirectory = directory;
-    request.clientJar = QDir(directory).filePath(m_selected + QStringLiteral(".jar"));
+    request.clientJar = QDir(versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"));
     request.playerName = QStringLiteral("Player");
     request.tempDirectory = QDir(directory).filePath(QStringLiteral("tmp"));
     QDir().mkpath(request.tempDirectory);

@@ -16,6 +16,7 @@
 
 #include "core/Paths.h"
 #include "core/install/VersionInstaller.h"
+#include "core/install/LoaderInstaller.h"
 #include "kit/Kit.h"
 
 using namespace Komorebi;
@@ -32,6 +33,7 @@ struct InstallDialog::State {
     QString stage;
     QString current;
     QString error;
+    QString versionId;
 };
 
 InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
@@ -63,6 +65,16 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     m_versions = new Komorebi::Combo(this);
     row->addWidget(m_versions, 1);
     layout->addLayout(row);
+
+    auto* loaderRow = new QHBoxLayout();
+    loaderRow->setSpacing(8);
+    loaderRow->addWidget(new QLabel(tr("加载器"), this));
+    m_loader = new Komorebi::Combo(this);
+    m_loader->addItem(tr("原版（不装加载器）"), QString());
+    m_loader->addItem(tr("Fabric"), QStringLiteral("fabric"));
+    m_loader->addItem(tr("Quilt"), QStringLiteral("quilt"));
+    loaderRow->addWidget(m_loader, 1);
+    layout->addLayout(loaderRow);
 
     m_hint = new QLabel(tr("正在获取版本列表…"), this);
     m_hint->setWordWrap(true);
@@ -106,6 +118,7 @@ void InstallDialog::loadManifest()
     QApplication::processEvents();
 
     QString error;
+    QString versionId;
     const VersionManifest manifest = VersionManifest::fetch(&error);
     QApplication::restoreOverrideCursor();
 
@@ -148,8 +161,9 @@ void InstallDialog::startInstall()
     m_hint->setText(tr("正在安装 %1").arg(id));
 
     const QString dataRoot = Komorebi::dataRoot();
+    const QString loader = m_loader->currentData().toString();
     State* state = m_state;
-    std::thread([state, dataRoot, id] {
+    std::thread([state, dataRoot, id, loader] {
         VersionInstaller installer(dataRoot);
         installer.onProgress = [state](const InstallProgress& progress) {
             std::lock_guard<std::mutex> lock(state->mutex);
@@ -159,13 +173,37 @@ void InstallDialog::startInstall()
             state->total = progress.total;
         };
         const InstallResult result = installer.install(id, true);
-        {
+        if (!result.ok) {
             std::lock_guard<std::mutex> lock(state->mutex);
             state->error = result.failed.isEmpty() ? result.error : result.failed.first();
             state->downloaded = result.downloaded;
             state->skipped = result.skipped;
+            state->finished = true;
+            return;
         }
-        state->ok = result.ok;
+
+        // A loader builds on the version that was just installed, so it is a second step.
+        LoaderResult loaderResult;
+        loaderResult.ok = true;
+        if (!loader.isEmpty()) {
+            LoaderChoice choice;
+            choice.kind = loader;
+            loaderResult = installLoader(dataRoot, id, choice, [state](const InstallProgress& progress) {
+                std::lock_guard<std::mutex> lock(state->mutex);
+                state->stage = progress.stage;
+                state->done = progress.done;
+                state->total = progress.total;
+            });
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(state->mutex);
+            state->error = loaderResult.ok ? QString() : loaderResult.error;
+            state->downloaded = result.downloaded + loaderResult.downloaded;
+            state->skipped = result.skipped + loaderResult.skipped;
+            state->versionId = loaderResult.versionId.isEmpty() ? id : loaderResult.versionId;
+        }
+        state->ok = loaderResult.ok;
         state->finished = true;
     }).detach();
 
@@ -193,6 +231,7 @@ void InstallDialog::pollProgress()
         m_poll->stop();
         m_state->running = false;
         QString error;
+    QString versionId;
         {
             std::lock_guard<std::mutex> lock(m_state->mutex);
             error = m_state->error;
@@ -203,7 +242,10 @@ void InstallDialog::pollProgress()
                                                .arg(m_state->skipped.load())
                                          : tr("安装失败：%1").arg(error));
         if (ok) {
-            m_installed = m_versions->currentData().toString();
+            {
+                std::lock_guard<std::mutex> lock(m_state->mutex);
+                m_installed = m_state->versionId.isEmpty() ? m_versions->currentData().toString() : m_state->versionId;
+            }
             m_hint->setText(tr("%1 已安装").arg(m_installed));
             m_install->setEnabled(true);
             m_close->setText(tr("完成"));

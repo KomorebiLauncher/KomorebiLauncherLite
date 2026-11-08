@@ -36,6 +36,7 @@ class InstallDialog : public QDialog {
 
     const Komorebi::VersionStore& m_store;
     QComboBox* m_versions = nullptr;
+    QComboBox* m_loader = nullptr;
     QComboBox* m_kind = nullptr;
     QLabel* m_hint = nullptr;
     QPlainTextEdit* m_progressLog = nullptr;

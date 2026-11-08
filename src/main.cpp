@@ -22,6 +22,8 @@
 #include "core/version/ComponentResolver.h"
 #include "core/version/VersionJson.h"
 #include "core/install/VersionInstaller.h"
+#include "core/install/LoaderInstaller.h"
+#include "core/version/VersionResolver.h"
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
@@ -92,7 +94,32 @@ int main(int argc, char** argv)
         note(result.summary());
         for (const auto& failure : result.failed.mid(0, 10))
             note(QStringLiteral("  %1").arg(failure));
-        return result.ok ? 0 : 1;
+        if (!result.ok)
+            return 1;
+
+        // A loader is a second step: it builds on the version that was just installed.
+        const int loaderIndex = arguments.indexOf(QStringLiteral("--loader"));
+        if (loaderIndex >= 0 && loaderIndex + 1 < arguments.size()) {
+            Komorebi::LoaderChoice choice;
+            const QString spec = arguments.at(loaderIndex + 1);
+            choice.kind = spec.section(QLatin1Char(':'), 0, 0).toLower();
+            choice.version = spec.section(QLatin1Char(':'), 1);
+            note(QStringLiteral("installing loader %1 %2").arg(choice.kind, choice.version.isEmpty() ? QStringLiteral("(latest)") : choice.version));
+
+            const Komorebi::LoaderResult loaderResult = Komorebi::installLoader(Komorebi::dataRoot(), versionId, choice,
+                [&note](const Komorebi::InstallProgress& progress) {
+                    note(QStringLiteral("%1 %2/%3 %4").arg(progress.stage).arg(progress.done).arg(progress.total).arg(progress.current));
+                });
+            if (!loaderResult.ok) {
+                note(QStringLiteral("loader failed: %1").arg(loaderResult.error));
+                return 1;
+            }
+            note(QStringLiteral("loader installed as %1 (%2 downloaded, %3 present)")
+                     .arg(loaderResult.versionId)
+                     .arg(loaderResult.downloaded)
+                     .arg(loaderResult.skipped));
+        }
+        return 0;
     }
 
     // Launching a version the Lite launcher installed itself: the layout is the standard one, so
@@ -116,7 +143,13 @@ int main(int argc, char** argv)
 
         const QString directory = Komorebi::versionDirectory(versionId);
         const QString description = QDir(directory).filePath(versionId + QStringLiteral(".json"));
-        const Komorebi::VersionJson version = Komorebi::VersionJson::fromFile(description);
+        const Komorebi::ResolvedVersion resolved = Komorebi::resolveVersion(Komorebi::versionsRoot(), versionId);
+        if (!resolved.ok()) {
+            note(QStringLiteral("cannot resolve %1: %2 (chain=%3)")
+                     .arg(versionId, resolved.error, resolved.chain.join(QLatin1Char('>'))));
+            return 1;
+        }
+        const Komorebi::VersionJson version = resolved.version;
         note(QStringLiteral("version %1: main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
         if (version.id.isEmpty()) {
             note(QStringLiteral("not installed: %1").arg(description));
@@ -135,7 +168,9 @@ int main(int argc, char** argv)
         request.assetsRoot = Komorebi::assetsRoot();
         request.nativesRoot = QDir(directory).filePath(QStringLiteral("natives"));
         request.gameDirectory = gameDirectory;
-        request.clientJar = QDir(directory).filePath(versionId + QStringLiteral(".jar"));
+        // A loader does not ship the game; the jar belongs to the version at the bottom of the chain.
+        request.clientJar = QDir(Komorebi::versionDirectory(resolved.baseId))
+                                .filePath(resolved.baseId + QStringLiteral(".jar"));
         request.playerName = QStringLiteral("Player");
 
         const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
@@ -174,6 +209,21 @@ int main(int argc, char** argv)
         out.flush();
         note(QStringLiteral("exited with code %1").arg(process.exitCode()));
         return process.exitCode() == 0 ? 0 : 1;
+    }
+
+    // A development hook: walk an inheritance chain and say what it resolved to.
+    const int resolveIndex = arguments.indexOf(QStringLiteral("--resolve"));
+    if (resolveIndex >= 0 && resolveIndex + 1 < arguments.size()) {
+        const QString id = arguments.at(resolveIndex + 1);
+        const Komorebi::ResolvedVersion resolved = Komorebi::resolveVersion(Komorebi::versionsRoot(), id);
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("resolve.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        out.write(QStringLiteral("id: %1\nok: %2\nerror: [%3]\nchain: %4\nbase: %5\nmain: %6\nlibraries: %7\n")
+                      .arg(id, resolved.ok() ? QStringLiteral("yes") : QStringLiteral("no"), resolved.error,
+                           resolved.chain.join(QLatin1Char(';')), resolved.baseId, resolved.version.mainClass)
+                      .arg(resolved.version.libraries.size())
+                      .toUtf8());
+        return resolved.ok() ? 0 : 1;
     }
 
     const int planIndex = arguments.indexOf(QStringLiteral("--launch-plan"));

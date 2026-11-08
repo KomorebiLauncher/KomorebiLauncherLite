@@ -196,6 +196,18 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
         if (library.artifact.path.isEmpty())
             library.artifact.path = pathFromCoordinates(library.name);
 
+        // Fabric and Quilt describe their libraries the maven way: a coordinate, a repository base
+        // and the hash, with no "downloads" block at all. Without this they resolve to files with
+        // no url, and an install fails on every one of them.
+        if (library.artifact.url.isEmpty()) {
+            const QString repository = object.value(QStringLiteral("url")).toString();
+            if (!repository.isEmpty() && !library.artifact.path.isEmpty())
+                library.artifact.url = repository.endsWith(QLatin1Char('/')) ? repository + library.artifact.path
+                                                                             : repository + QLatin1Char('/') + library.artifact.path;
+            if (library.artifact.sha1.isEmpty())
+                library.artifact.sha1 = object.value(QStringLiteral("sha1")).toString();
+        }
+
         const auto natives = object.value(QStringLiteral("natives")).toObject();
         if (!natives.isEmpty()) {
             const QString classifier = nativeClassifierFor(natives, environment);
