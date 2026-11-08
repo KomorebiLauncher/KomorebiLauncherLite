@@ -2,120 +2,68 @@
 #include "ui/AppWindow.h"
 
 #include <QApplication>
+#include <QDesktopServices>
+#include <QDir>
+#include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QListView>
+#include <QListWidget>
 #include <QPainter>
-#include <QPainterPath>
-#include <QStyledItemDelegate>
+#include <QProcess>
+#include <QPushButton>
+#include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
-#include "core/Instance.h"
+#include "core/Paths.h"
+#include "core/launch/LaunchPlan.h"
+#include "core/version/VersionJson.h"
 #include "kit/Kit.h"
+#include "ui/InstallDialog.h"
 
-using Komorebi::Instance;
+using namespace Komorebi;
 
-class InstanceModel final : public QAbstractListModel {
+namespace {
+
+/// The rows in the version list: the id, and the one line that says what it is.
+class VersionRow final : public QListWidgetItem {
    public:
-    using QAbstractListModel::QAbstractListModel;
-
-    void setInstances(QList<Instance> instances)
+    explicit VersionRow(const InstalledVersion& version)
+        : QListWidgetItem(version.id)
     {
-        beginResetModel();
-        m_instances = std::move(instances);
-        endResetModel();
-    }
-
-    int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(m_instances.size()); }
-
-    QVariant data(const QModelIndex& index, int role) const override
-    {
-        if (!index.isValid() || index.row() < 0 || index.row() >= m_instances.size())
-            return {};
-        const auto& instance = m_instances.at(index.row());
-        if (role == Qt::DisplayRole)
-            return instance.name;
-        return {};
-    }
-
-    const Instance& at(int row) const { return m_instances.at(row); }
-
-   private:
-    QList<Instance> m_instances;
-};
-
-class CardDelegate final : public QStyledItemDelegate {
-   public:
-    using QStyledItemDelegate::QStyledItemDelegate;
-
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex&) const override
-    {
-        return QSize(option.rect.width(), 76);
-    }
-
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override
-    {
-        const auto* model = dynamic_cast<const InstanceModel*>(index.model());
-        if (!model)
-            return;
-        const Instance& instance = model->at(index.row());
-        const Komorebi::Colours colours = Komorebi::Colours::current();
-
-        const bool selected = option.state & QStyle::State_Selected;
-        const bool hovered = option.state & QStyle::State_MouseOver;
-
-        painter->save();
-        painter->setRenderHint(QPainter::Antialiasing);
-
-        const QRect card = option.rect.adjusted(6, 4, -6, -4);
-        QPainterPath path;
-        path.addRoundedRect(QRectF(card).adjusted(0.5, 0.5, -0.5, -0.5), Komorebi::Radius::Surface, Komorebi::Radius::Surface);
-        painter->fillPath(path, selected ? colours.wash(26)
-                                         : QColor(colours.paper.red(), colours.paper.green(), colours.paper.blue(),
-                                                  hovered ? 215 : 190));
-        painter->setPen(QPen(selected ? colours.wash(130) : colours.line, 1.0));
-        painter->drawPath(path);
-
-        // A crest mark stands in for the icon until the icon set is wired in.
-        const QRect mark(card.left() + 16, card.center().y() - 18, 36, 36);
-        painter->setPen(QPen(colours.plum, 1.2));
-        painter->drawEllipse(mark);
-        painter->drawEllipse(mark.adjusted(10, 10, -10, -10));
-        painter->setFont(option.font);
-        painter->drawText(mark, Qt::AlignCenter, QStringLiteral("木"));
-
-        QFont title = option.font;
-        title.setBold(true);
-        painter->setFont(title);
-        painter->setPen(instance.playable ? colours.ink : colours.inkSoft);
-        painter->drawText(QRect(mark.right() + 16, card.top() + 14, card.width() - 90, 20), Qt::AlignLeft | Qt::AlignVCenter,
-                          instance.name);
-
-        painter->setFont(option.font);
-        painter->setPen(colours.inkSoft);
-        painter->drawText(QRect(mark.right() + 16, card.top() + 38, card.width() - 90, 18), Qt::AlignLeft | Qt::AlignVCenter,
-                          instance.summary());
-
-        painter->restore();
     }
 };
 
-AppWindow::AppWindow(Komorebi::Theme theme, QString instancesRoot, QWidget* parent)
-    : QMainWindow(parent), m_theme(std::move(theme)), m_instancesRoot(std::move(instancesRoot))
+QString formatSize(qint64 bytes)
 {
-    setWindowTitle(QStringLiteral("木漏れ日 Launcher"));
-    resize(1100, 720);
+    if (bytes <= 0)
+        return QStringLiteral("—");
+    return QStringLiteral("%1 MB").arg(QString::number(bytes / (1024.0 * 1024.0), 'f', 0));
+}
+
+}  // namespace
+
+AppWindow::AppWindow(Theme theme, QWidget* parent)
+    : QMainWindow(parent), m_theme(std::move(theme)), m_store(versionsRoot())
+{
+    setWindowTitle(QStringLiteral("木漏れ日 Lite"));
+    setWindowIcon(QIcon(QStringLiteral(":/komorebi-lite-256.png")));
+    resize(1040, 680);
 
     auto* central = new QWidget(this);
     auto* layout = new QVBoxLayout(central);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    // top bar
+    // ---- the bar across the top
     auto* bar = new QWidget(central);
     auto* barLayout = new QHBoxLayout(bar);
-    barLayout->setContentsMargins(16, 10, 16, 10);
+    barLayout->setContentsMargins(18, 12, 18, 12);
     barLayout->setSpacing(8);
+
+    auto* crest = new QLabel(bar);
+    crest->setPixmap(QIcon(QStringLiteral(":/komorebi-lite-256.png")).pixmap(24, 24));
+    barLayout->addWidget(crest);
 
     auto* title = new QLabel(QStringLiteral("木漏れ日"), bar);
     QFont titleFont = title->font();
@@ -125,42 +73,216 @@ AppWindow::AppWindow(Komorebi::Theme theme, QString instancesRoot, QWidget* pare
     barLayout->addWidget(title);
     barLayout->addStretch(1);
 
-    auto* add = new Komorebi::Button(tr("新建实例"), bar);
-    add->setPrimary(true);
-    auto* settings = new Komorebi::Button(tr("设置"), bar);
-    auto* folders = new Komorebi::Button(tr("文件夹"), bar);
-    barLayout->addWidget(add);
-    barLayout->addWidget(folders);
-    barLayout->addWidget(settings);
+    auto* install = new Button(tr("安装新版本"), bar);
+    install->setPrimary(true);
+    auto* folder = new Button(tr("游戏目录"), bar);
+    auto* refresh = new Button(tr("刷新"), bar);
+    barLayout->addWidget(install);
+    barLayout->addWidget(folder);
+    barLayout->addWidget(refresh);
     layout->addWidget(bar);
 
-    // instance list
-    m_view = new QListView(central);
-    m_view->setModel(m_model = new InstanceModel(m_view));
-    m_view->setItemDelegate(new CardDelegate(m_view));
-    m_view->setMouseTracking(true);
-    m_view->setUniformItemSizes(true);
-    m_view->setFrameShape(QFrame::NoFrame);
-    m_view->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    m_view->setStyleSheet(QStringLiteral("QListView { background: transparent; }"));
-    layout->addWidget(m_view, 1);
+    // ---- the page: versions on the left, the selected one on the right
+    auto* page = new QWidget(central);
+    auto* pageLayout = new QHBoxLayout(page);
+    pageLayout->setContentsMargins(18, 6, 18, 18);
+    pageLayout->setSpacing(16);
 
-    m_empty = new QLabel(tr("这里还没有实例。"), central);
-    m_empty->setAlignment(Qt::AlignCenter);
-    layout->addWidget(m_empty);
+    m_list = new QListWidget(page);
+    m_list->setFrameShape(QFrame::NoFrame);
+    // The selection is a plum wash on paper, not the palette's solid highlight: the list sits on
+    // the wallpaper and a filled block would read as a different colour entirely.
+    m_list->setStyleSheet(QStringLiteral(
+        "QListWidget { background: transparent; border: none; }"
+        "QListWidget::item { padding: 9px 12px; margin: 2px 0px; border-radius: 4px; color: #242e4c; }"
+        "QListWidget::item:hover { background: rgba(250, 247, 240, 0.55); }"
+        "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); color: #242e4c; }"));
+    m_list->setMinimumWidth(280);
+    m_list->setMaximumWidth(340);
+    pageLayout->addWidget(m_list, 0);
+
+    auto* detailPlate = new QFrame(page);
+    detailPlate->setObjectName(QStringLiteral("detail"));
+    detailPlate->setStyleSheet(QStringLiteral("QFrame#detail { background: rgba(250, 247, 240, 0.66);"
+                                              " border: 1px solid rgba(201, 194, 180, 0.9); border-radius: 6px; }"));
+    auto* detailLayout = new QVBoxLayout(detailPlate);
+    detailLayout->setContentsMargins(22, 20, 22, 20);
+    detailLayout->setSpacing(10);
+
+    m_detailTitle = new QLabel(tr("选择一个版本"), detailPlate);
+    QFont detailFont = m_detailTitle->font();
+    detailFont.setPointSize(detailFont.pointSize() + 5);
+    detailFont.setBold(true);
+    m_detailTitle->setFont(detailFont);
+    detailLayout->addWidget(m_detailTitle);
+
+    m_detailBody = new QLabel(detailPlate);
+    m_detailBody->setWordWrap(true);
+    m_detailBody->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    detailLayout->addWidget(m_detailBody);
+    detailLayout->addStretch(1);
+
+    // ---- the bar along the bottom: what the page is for
+    auto* bottom = new QHBoxLayout();
+    bottom->setSpacing(12);
+    m_status = new QLabel(tr("准备就绪"), detailPlate);
+    m_status->setObjectName(QStringLiteral("status"));
+    bottom->addWidget(m_status, 1);
+
+    m_playButton = new Button(tr("启动游戏"), detailPlate);
+    m_playButton->setPrimary(true);
+    m_playButton->setEnabled(false);
+    bottom->addWidget(m_playButton);
+    detailLayout->addLayout(bottom);
+
+    pageLayout->addWidget(detailPlate, 1);
+    layout->addWidget(page, 1);
 
     setCentralWidget(central);
+
+    connect(install, &QPushButton::clicked, this, &AppWindow::installVersion);
+    connect(refresh, &QPushButton::clicked, this, &AppWindow::reload);
+    connect(folder, &QPushButton::clicked, this, &AppWindow::openGameFolder);
+    connect(m_playButton, &QPushButton::clicked, this, &AppWindow::launchSelected);
+    connect(m_list, &QListWidget::currentRowChanged, this, &AppWindow::selectVersion);
+    connect(m_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem*) { launchSelected(); });
+
+    m_statusTimer = new QTimer(this);
+    m_statusTimer->setInterval(1000);
+
     reload();
+}
+
+AppWindow::~AppWindow()
+{
+    if (m_game && m_game->state() != QProcess::NotRunning) {
+        // The game is not ours to kill when the window closes, but it should not be left without
+        // its output file either.
+        m_game->closeWriteChannel();
+    }
 }
 
 void AppWindow::reload()
 {
-    const Komorebi::InstanceStore store(m_instancesRoot);
-    const auto instances = store.scan();
-    m_model->setInstances(instances);
-    m_view->setVisible(!instances.isEmpty());
-    m_empty->setVisible(instances.isEmpty());
+    m_versions = m_store.scan();
+
+    const QSignalBlocker blocker(m_list);
+    m_list->clear();
+    for (const auto& version : m_versions) {
+        auto* item = new VersionRow(version);
+        item->setData(Qt::UserRole, version.id);
+        m_list->addItem(item);
+    }
+
+    if (m_versions.isEmpty()) {
+        m_selected.clear();
+        m_detailTitle->setText(tr("还没有安装任何版本"));
+        m_detailBody->setText(tr("点右上角的「安装新版本」，选一个版本下载。装好之后这里会出现它，点「启动游戏」就能玩。"));
+        m_playButton->setEnabled(false);
+        setStatus(tr("尚未安装版本"));
+        return;
+    }
+
+    int row = 0;
+    for (int i = 0; i < m_versions.size(); ++i) {
+        if (m_versions.at(i).id == m_selected)
+            row = i;
+    }
+    m_list->setCurrentRow(row);
+    selectVersion(row);
+}
+
+void AppWindow::selectVersion(int row)
+{
+    if (row < 0 || row >= m_versions.size()) {
+        m_selected.clear();
+        m_playButton->setEnabled(false);
+        return;
+    }
+
+    const auto& version = m_versions.at(row);
+    m_selected = version.id;
+    m_playButton->setEnabled(version.hasGameJar);
+
+    m_detailTitle->setText(version.id);
+    m_detailBody->setText(tr("Java %1 · %2\n安装位置：%3\n游戏文件：%4\n\n这个版本已经可以直接启动。")
+                               .arg(version.javaMajor > 0 ? QString::number(version.javaMajor) : tr("未知"))
+                               .arg(formatSize(version.size))
+                               .arg(QDir::toNativeSeparators(version.path))
+                               .arg(version.hasGameJar ? tr("完整") : tr("缺少 %1.jar").arg(version.id)));
+    setStatus(version.hasGameJar ? tr("准备就绪") : tr("这个版本缺少游戏文件，重新安装一次"));
+}
+
+void AppWindow::launchSelected()
+{
+    if (m_selected.isEmpty())
+        return;
+    if (m_game && m_game->state() != QProcess::NotRunning) {
+        setStatus(tr("游戏已经在运行了"));
+        return;
+    }
+
+    const QString directory = versionDirectory(m_selected);
+    const VersionJson version = VersionJson::fromFile(QDir(directory).filePath(m_selected + QStringLiteral(".json")));
+
+    LaunchRequest request;
+    request.version = version;
+    request.librariesRoot = librariesRoot();
+    request.assetsRoot = assetsRoot();
+    request.nativesRoot = QDir(directory).filePath(QStringLiteral("natives"));
+    request.gameDirectory = directory;
+    request.clientJar = QDir(directory).filePath(m_selected + QStringLiteral(".jar"));
+    request.playerName = QStringLiteral("Player");
+    request.tempDirectory = QDir(directory).filePath(QStringLiteral("tmp"));
+    QDir().mkpath(request.tempDirectory);
+
+    const LaunchPlan plan = buildLaunchPlan(request);
+    if (!plan.valid() || !plan.missingFiles.isEmpty()) {
+        setStatus(tr("无法启动：%1").arg(plan.valid() ? tr("缺少 %1 个文件").arg(plan.missingFiles.size()) : plan.error));
+        return;
+    }
+
+    if (!m_game) {
+        m_game = new QProcess(this);
+        m_game->setProcessChannelMode(QProcess::MergedChannels);
+        connect(m_game, &QProcess::started, this, [this] {
+            setStatus(tr("游戏已启动"));
+            m_playButton->setEnabled(false);
+        });
+        connect(m_game, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [this](int code, QProcess::ExitStatus) {
+            setStatus(code == 0 ? tr("游戏已退出") : tr("游戏异常退出（%1）").arg(code));
+            m_playButton->setEnabled(true);
+        });
+        connect(m_game, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+            if (error == QProcess::FailedToStart) {
+                setStatus(tr("启动失败：Java 没有运行起来"));
+                m_playButton->setEnabled(true);
+            }
+        });
+    }
+
+    m_game->setWorkingDirectory(plan.workingDirectory);
+    m_game->start(plan.program, plan.arguments);
+    setStatus(tr("正在启动…"));
+}
+
+void AppWindow::installVersion()
+{
+    InstallDialog dialog(m_store, this);
+    if (dialog.exec() == QDialog::Accepted && !dialog.installedId().isEmpty()) {
+        m_selected = dialog.installedId();
+        reload();
+    }
+}
+
+void AppWindow::openGameFolder()
+{
+    QDesktopServices::openUrl(QUrl::fromLocalFile(dataRoot()));
+}
+
+void AppWindow::setStatus(const QString& text)
+{
+    m_status->setText(text);
 }
 
 void AppWindow::paintEvent(QPaintEvent* event)

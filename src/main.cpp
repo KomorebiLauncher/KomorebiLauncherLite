@@ -16,6 +16,7 @@
 
 #include "core/Instance.h"
 #include "core/Paths.h"
+#include "core/VersionStore.h"
 #include "core/launch/LaunchPlan.h"
 #include "services/net/Fetcher.h"
 #include "core/version/ComponentResolver.h"
@@ -24,6 +25,7 @@
 #include "dev/SelfTest.h"
 #include "theme/Theme.h"
 #include "ui/AppWindow.h"
+#include "ui/InstallDialog.h"
 
 int main(int argc, char** argv)
 {
@@ -457,11 +459,24 @@ int main(int argc, char** argv)
         return process.exitCode() == 0 ? 0 : 1;
     }
 
-    AppWindow window(theme, instancesRoot);
+    AppWindow window(theme);
     window.show();
 
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.
+    // A development hook for the install dialog: open it, let it fetch the list, then grab it.
+    const int shotInstallIndex = app.arguments().indexOf(QStringLiteral("--shot-install"));
+    if (shotInstallIndex >= 0) {
+        const QString path = shotInstallIndex + 1 < app.arguments().size() ? app.arguments().at(shotInstallIndex + 1)
+                                                                           : QStringLiteral("install.png");
+        auto* dialog = new InstallDialog(Komorebi::VersionStore(Komorebi::versionsRoot()), &window);
+        dialog->show();
+        QTimer::singleShot(3000, dialog, [dialog, path] {
+            dialog->grab().save(path);
+            QApplication::quit();
+        });
+    }
+
     if (app.arguments().contains(QStringLiteral("--screenshot"))) {
         const int index = app.arguments().indexOf(QStringLiteral("--screenshot"));
         const QString path = index + 1 < app.arguments().size() ? app.arguments().at(index + 1) : QStringLiteral("window.png");
