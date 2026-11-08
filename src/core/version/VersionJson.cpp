@@ -225,6 +225,19 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
     version.assetIndex = readDownload(index);
     version.assetIndex.path = QStringLiteral("indexes/%1.json").arg(index.value(QStringLiteral("id")).toString());
 
+    // mavenFiles: the same shape as libraries, but they belong to an installer rather than to the
+    // game. They still have to be on the classpath for the loader to run its processors.
+    for (const auto& entry : root.value(QStringLiteral("mavenFiles")).toArray()) {
+        const auto object = entry.toObject();
+        Library file;
+        file.name = object.value(QStringLiteral("name")).toString();
+        file.artifact = readDownload(object.value(QStringLiteral("downloads")).toObject().value(QStringLiteral("artifact")).toObject());
+        if (file.artifact.path.isEmpty())
+            file.artifact.path = pathFromCoordinates(file.name);
+        if (file.artifact.valid() || !file.artifact.url.isEmpty())
+            version.mavenFiles.append(file);
+    }
+
     const auto arguments = root.value(QStringLiteral("arguments")).toObject();
     version.gameArguments = readArguments(arguments.value(QStringLiteral("game")).toArray());
     version.jvmArguments = readArguments(arguments.value(QStringLiteral("jvm")).toArray());

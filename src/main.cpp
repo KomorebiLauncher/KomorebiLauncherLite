@@ -138,6 +138,35 @@ int main(int argc, char** argv)
         request.clientJar = clientJar;
         request.playerName = QStringLiteral("Player");
 
+        // the game jar and the asset index are the two files a launch cannot do without
+        {
+            const QString jar = QDir(Komorebi::librariesRoot())
+                                    .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+            if (version.clientJar.url.isEmpty()) {
+                note(QStringLiteral("client jar: the manifest does not say where it is"));
+            } else {
+                const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, jar, version.clientJar.sha1);
+                note(QStringLiteral("client jar: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
+                                                             fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
+                if (!fetched.ok)
+                    note(QStringLiteral("  %1").arg(fetched.error));
+            }
+            if (version.assetIndex.valid()) {
+                const QString indexFile = QDir(Komorebi::assetsRoot()).filePath(version.assetIndex.path);
+                const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
+                note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
+                                                              fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
+            }
+        }
+
+        // the installer jar, when a loader brought one: ForgeWrapper needs to be told where it is
+        for (const auto& file : version.mavenFiles) {
+            if (file.name.endsWith(QLatin1String(":installer"))) {
+                request.installerJar = QDir(Komorebi::librariesRoot()).filePath(file.artifact.path);
+                break;
+            }
+        }
+
         const Komorebi::LaunchPlan plan = Komorebi::buildLaunchPlan(request);
         note(QStringLiteral("java: %1").arg(plan.program));
         note(QStringLiteral("missing: %1").arg(plan.missingFiles.size()));
@@ -224,6 +253,35 @@ int main(int argc, char** argv)
         request.clientJar = QDir(Komorebi::librariesRoot())
                                 .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         request.playerName = QStringLiteral("Player");
+
+        // the game jar and the asset index are the two files a launch cannot do without
+        {
+            const QString jar = QDir(Komorebi::librariesRoot())
+                                    .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+            if (version.clientJar.url.isEmpty()) {
+                note(QStringLiteral("client jar: the manifest does not say where it is"));
+            } else {
+                const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, jar, version.clientJar.sha1);
+                note(QStringLiteral("client jar: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
+                                                             fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
+                if (!fetched.ok)
+                    note(QStringLiteral("  %1").arg(fetched.error));
+            }
+            if (version.assetIndex.valid()) {
+                const QString indexFile = QDir(Komorebi::assetsRoot()).filePath(version.assetIndex.path);
+                const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
+                note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
+                                                              fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
+            }
+        }
+
+        // the installer jar, when a loader brought one: ForgeWrapper needs to be told where it is
+        for (const auto& file : version.mavenFiles) {
+            if (file.name.endsWith(QLatin1String(":installer"))) {
+                request.installerJar = QDir(Komorebi::librariesRoot()).filePath(file.artifact.path);
+                break;
+            }
+        }
 
         const Komorebi::LaunchPlan plan = Komorebi::buildLaunchPlan(request);
         note(QStringLiteral("java: %1").arg(plan.program));

@@ -72,6 +72,8 @@ void merge(VersionJson& target, const VersionJson& source)
             target.libraries.append(library);
     }
 
+    target.mavenFiles += source.mavenFiles;
+
     if (!source.mainClass.isEmpty())
         target.mainClass = source.mainClass;
     if (!source.assets.isEmpty())

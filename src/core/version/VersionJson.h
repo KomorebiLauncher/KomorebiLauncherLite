@@ -69,6 +69,7 @@ struct VersionJson {
     QString assets;                  ///< asset index id
     int javaMajor = 8;               ///< the Java the version asks for
     QList<Library> libraries;
+    QList<Library> mavenFiles;  ///< files a loader needs beside the game, e.g. the Forge installer
     Download clientJar;              ///< the game itself
     Download assetIndex;            ///< the index of the assets, not the assets
     QList<Argument> gameArguments;   ///< new style

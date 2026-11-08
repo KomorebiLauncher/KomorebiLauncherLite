@@ -99,10 +99,23 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
         }
     }
 
-    if (!request.clientJar.isEmpty()) {
+    // A loader's wrapper -- Forge's, at least -- builds its own module layer, and the game jar in
+    // that layer must be the one the wrapper patches. Leaving the vanilla jar on the classpath puts
+    // two modules on the same package and the layer fails to resolve.
+    const bool wrappedLoader = request.version.mainClass.contains(QLatin1String("forgewrapper"));
+    if (!request.clientJar.isEmpty() && !wrappedLoader) {
         classpath << request.clientJar;
         if (!QFileInfo::exists(request.clientJar))
             plan.missingFiles << request.clientJar;
+    }
+
+    // The files a loader's installer needs are on the classpath, not part of the game's libraries.
+    for (const auto& file : request.version.mavenFiles) {
+        if (!file.artifact.valid())
+            continue;
+        const QString path = QDir(request.librariesRoot).filePath(file.artifact.path);
+        if (QFileInfo::exists(path))
+            classpath << path;
     }
 
     QDir().mkpath(request.nativesRoot);
@@ -135,6 +148,13 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     // The classpath and the natives are not in the manifest's jvm arguments: they are ours to add.
     if (!arguments.contains(QStringLiteral("-cp")) && !arguments.contains(QStringLiteral("-classpath")))
         arguments << QStringLiteral("-cp") << values.value(QStringLiteral("classpath")) << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
+
+    if (wrappedLoader) {
+        arguments << QStringLiteral("-Dforgewrapper.librariesDir=") + request.librariesRoot;
+        arguments << QStringLiteral("-Dforgewrapper.minecraft=") + request.clientJar;
+        if (!request.installerJar.isEmpty())
+            arguments << QStringLiteral("-Dforgewrapper.installer=") + request.installerJar;
+    }
 
     arguments << request.version.mainClass;
     for (const auto& argument : request.version.resolvedGameArguments(environment))
