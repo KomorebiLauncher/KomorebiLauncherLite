@@ -6,6 +6,10 @@
 #include <QFileInfo>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
+#include <cmath>
+#include <limits>
+#include <QRegularExpression>
+#include <QProcess>
 
 namespace Komorebi {
 
@@ -21,6 +25,41 @@ QString LaunchPlan::commandLine() const
     }
     return parts.join(QLatin1Char(' '));
 }
+
+namespace {
+
+/// The major version a java wants to be: read from the release file next to it when there is one,
+/// otherwise asked of the binary itself.
+int javaMajorOf(const QString& javaPath)
+{
+    const QDir bin = QFileInfo(javaPath).absoluteDir();
+    QFile release(QDir(bin.absolutePath()).filePath(QStringLiteral("release")));
+    if (release.open(QIODevice::ReadOnly)) {
+        const QStringList lines = QString::fromUtf8(release.readAll()).split(QLatin1Char('\n'));
+        for (const auto& line : lines) {
+            if (!line.startsWith(QLatin1String("JAVA_VERSION=")))
+                continue;
+            const QString value = line.mid(13).remove(QLatin1Char('"')).trimmed();
+            const QString major = value.section(QLatin1Char('.'), 0, 0);
+            bool ok = false;
+            const int number = major.toInt(&ok);
+            if (ok)
+                return number;
+        }
+    }
+
+    // No release file: ask the binary. This costs a process, so it is the fallback.
+    QProcess process;
+    process.start(javaPath, { QStringLiteral("-version") });
+    if (!process.waitForFinished(5000))
+        return 0;
+    const QString output = QString::fromLocal8Bit(process.readAllStandardError());
+    const QRegularExpression pattern(QStringLiteral("version \"([0-9]+)"));
+    const auto match = pattern.match(output);
+    return match.hasMatch() ? match.captured(1).toInt() : 0;
+}
+
+}  // namespace
 
 QString findJava(int requiredMajor)
 {
@@ -49,11 +88,23 @@ QString findJava(int requiredMajor)
         candidates << QDir(home).filePath(QStringLiteral("bin/") + executable);
     candidates << QStandardPaths::findExecutable(QStringLiteral("java"));
 
+    // A version of Java that cannot load the game's classes is worse than none: pick the one that
+    // matches what the version asks for, and only then the newest available.
+    QString best;
+    int bestDistance = std::numeric_limits<int>::max();
     for (const auto& candidate : candidates) {
-        if (!candidate.isEmpty() && QFileInfo::exists(candidate))
-            return candidate;
+        if (candidate.isEmpty() || !QFileInfo::exists(candidate))
+            continue;
+        const int major = javaMajorOf(candidate);
+        const int distance = requiredMajor <= 0 ? 0 : std::abs(major - requiredMajor);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            best = candidate;
+            if (distance == 0)
+                break;
+        }
     }
-    return {};
+    return best;
 }
 
 namespace {

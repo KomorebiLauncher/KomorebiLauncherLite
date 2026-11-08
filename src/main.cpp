@@ -138,11 +138,13 @@ int main(int argc, char** argv)
         request.gameDirectory = gameDirectory;
         request.clientJar = clientJar;
         request.playerName = QStringLiteral("Player");
-        // A temp directory the launcher owns, but only when it really can be created: handing the
-        // JVM a path that does not exist makes every unpack fail.
-        const QString tempRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("tmp"));
+        // A temp directory next to the game, because that directory is ours: the data directory
+        // may belong to another install, and handing the JVM a path that does not exist makes
+        // every unpack fail -- which is how loading JNA ends with "access denied".
+        const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
         if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
             request.tempDirectory = tempRoot;
+        note(QStringLiteral("temp directory: %1%2").arg(tempRoot, QFileInfo::exists(tempRoot) ? QString() : QStringLiteral(" (could not be created, using the system one)")));
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
@@ -191,6 +193,7 @@ int main(int argc, char** argv)
             return 1;
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
+        note(QStringLiteral("command: %1").arg(plan.commandLine()));
 
         // Watch it for a while: a launcher that dies in the first seconds is the failure this check
         // is looking for, so the output is kept either way.
@@ -259,11 +262,13 @@ int main(int argc, char** argv)
         request.clientJar = QDir(Komorebi::librariesRoot())
                                 .filePath(QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
         request.playerName = QStringLiteral("Player");
-        // A temp directory the launcher owns, but only when it really can be created: handing the
-        // JVM a path that does not exist makes every unpack fail.
-        const QString tempRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("tmp"));
+        // A temp directory next to the game, because that directory is ours: the data directory
+        // may belong to another install, and handing the JVM a path that does not exist makes
+        // every unpack fail -- which is how loading JNA ends with "access denied".
+        const QString tempRoot = QDir(gameDirectory).filePath(QStringLiteral("tmp"));
         if (QDir().mkpath(tempRoot) || QFileInfo::exists(tempRoot))
             request.tempDirectory = tempRoot;
+        note(QStringLiteral("temp directory: %1%2").arg(tempRoot, QFileInfo::exists(tempRoot) ? QString() : QStringLiteral(" (could not be created, using the system one)")));
 
         // the game jar and the asset index are the two files a launch cannot do without
         {
@@ -313,6 +318,7 @@ int main(int argc, char** argv)
             return 1;
         }
         note(QStringLiteral("started, pid %1").arg(process.processId()));
+        note(QStringLiteral("command: %1").arg(plan.commandLine()));
 
         // A launch by instance is someone playing: the game stays up until it closes, and its
         // output goes to the log as it arrives.
