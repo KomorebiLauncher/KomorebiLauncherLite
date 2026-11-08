@@ -123,6 +123,28 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
 
     layout->addLayout(launchForm);
 
+    // ---- downloads
+    auto* downloadForm = new QFormLayout();
+    downloadForm->setSpacing(8);
+    m_downloadSite = new Komorebi::Combo(page);
+    m_downloadSite->addItem(tr("Official servers"), QStringLiteral("official"));
+    m_downloadSite->addItem(tr("Mirror (BG)"), QStringLiteral("mirror"));
+    for (int i = 0; i < m_downloadSite->count(); ++i) {
+        if (m_downloadSite->itemData(i).toString() == settings.downloadSite) {
+            m_downloadSite->setCurrentIndex(i);
+            break;
+        }
+    }
+    downloadForm->addRow(tr("Download from"), m_downloadSite);
+
+    m_concurrency = numberField(page, 1, 64, settings.maxConcurrency);
+    downloadForm->addRow(tr("Files at once"), m_concurrency);
+
+    m_speedLimit = numberField(page, 0, 1048576, settings.speedLimitKb);
+    m_speedLimit->setPlaceholderText(tr("0: no limit"));
+    downloadForm->addRow(tr("Speed limit (KB/s)"), m_speedLimit);
+    layout->addLayout(downloadForm);
+
     // ---- appearance
     auto* appearForm = new QFormLayout();
     appearForm->setSpacing(8);
@@ -161,6 +183,9 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.legacyFix = m_legacyFix->isChecked();
         m_result.unsafeAgent = m_unsafeAgent->isChecked();
         m_result.wallpaperOpacity = m_wallpaperOpacity->value();
+        m_result.downloadSite = m_downloadSite->currentData().toString();
+        m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
+        m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());
         accept();
     });
     connect(cancel, &QPushButton::clicked, this, &QDialog::reject);

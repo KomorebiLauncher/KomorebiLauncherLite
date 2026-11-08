@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "services/net/Fetcher.h"
 
+#include "services/net/DownloadSite.h"
+
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
 #include <QSaveFile>
+#include <QThread>
 #include <QTimer>
 #include <QFileInfo>
 #include <QNetworkAccessManager>
@@ -30,7 +33,8 @@ QNetworkRequest makeRequest(const QString& url)
 {
     QNetworkRequest request{ QUrl(url) };
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Komorebi/0.1"));
+    request.setHeader(QNetworkRequest::UserAgentHeader,
+                      QStringLiteral("Mozilla/5.0 (Windows NT 10.0; Win64; x64) KomorebiLite/0.1 (+https://github.com/KomorebiLauncher/KomorebiLauncherLite)"));
     return request;
 }
 
@@ -99,10 +103,15 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         pending.append(job);
     }
 
+    // The policy decides how many files run at once and how fast.
+    const DownloadPolicy& policy = downloadPolicy();
+    if (concurrency <= 0)
+        concurrency = policy.concurrency;
+
     const int total = jobs.size();
-    int done = summary.skipped;
+    int doneCount = summary.skipped;
     if (onProgress)
-        onProgress(done, total);
+        onProgress(doneCount, total);
     if (pending.isEmpty())
         return summary;
 
@@ -115,11 +124,50 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     startNext = [&] {
         while (active < qMax(1, concurrency) && next < pending.size()) {
             const FetchJob job = pending.at(next++);
-            QNetworkReply* reply = manager().get(makeRequest(job.url));
+            // The mirror answers the same paths under its own host. When it does not have a file,
+            // the original server is tried before the file is called failed.
+            const QString preferred = preferredUrl(job.url);
+            QNetworkReply* reply = manager().get(makeRequest(preferred));
+            reply->setProperty("retryUrl", preferred != job.url ? job.url : QString());
             ++active;
 
             QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job] {
                 --active;
+                const QString retryUrl = reply->property("retryUrl").toString();
+                if (reply->error() != QNetworkReply::NoError && !retryUrl.isEmpty()) {
+                    reply->deleteLater();
+                    QNetworkReply* second = manager().get(makeRequest(retryUrl));
+                    second->setProperty("retryUrl", QString());
+                    QObject::connect(second, &QNetworkReply::finished, &loop, [&, second, job] {
+                        const auto finish = [&](QNetworkReply* answer) {
+                            --active;
+                            if (answer->error() != QNetworkReply::NoError) {
+                                summary.failed << QStringLiteral("%1 (%2)").arg(job.target, answer->errorString());
+                            } else {
+                                const QByteArray data = answer->readAll();
+                                QString error;
+                                if (!writeAtomically(job.target, data, &error))
+                                    summary.failed << QStringLiteral("%1 (%2)").arg(job.target, error);
+                                else if (!job.sha1.isEmpty()
+                                         && QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex()) != job.sha1)
+                                    summary.failed << QStringLiteral("%1 (hash mismatch)").arg(job.target);
+                                else
+                                    ++summary.downloaded;
+                            }
+                            answer->deleteLater();
+                            ++doneCount;
+                            if (onProgress)
+                                onProgress(doneCount, total);
+                            if (next >= pending.size() && active == 0)
+                                loop.quit();
+                            else
+                                startNext();
+                        };
+                        finish(second);
+                    });
+                    ++active;
+                    return;
+                }
                 if (reply->error() != QNetworkReply::NoError) {
                     summary.failed << QStringLiteral("%1 (%2)").arg(job.target, reply->errorString());
                 } else {
@@ -138,9 +186,15 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
                     }
                 }
                 reply->deleteLater();
-                ++done;
+                if (policy.speedLimitKb > 0) {
+                    const qint64 bytes = reply->bytesAvailable();
+                    const qint64 budgetMs = (bytes / 1024) * 1000 / policy.speedLimitKb;
+                    if (budgetMs > 0)
+                        QThread::msleep(static_cast<unsigned long>(qMin<qint64>(budgetMs, 5000)));
+                }
+                ++doneCount;
                 if (onProgress)
-                    onProgress(done, total);
+                    onProgress(doneCount, total);
                 if (next >= pending.size() && active == 0)
                     loop.quit();
                 else

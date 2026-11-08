@@ -22,7 +22,9 @@ call "%VCVARS%" >nul
 cmake -S "%HERE%." -B "%HERE%build" -G Ninja -DCMAKE_PREFIX_PATH=%QT% -DCMAKE_BUILD_TYPE=Debug
 if errorlevel 1 exit /b 1
 
-cmake --build "%HERE%build"
+rem A clean build on purpose: an object compiled against an older copy of a struct keeps working
+rem just well enough to crash at startup, which looks like a logic bug and costs an hour every time.
+cmake --build "%HERE%build" --clean-first
 if errorlevel 1 exit /b 1
 
 echo.

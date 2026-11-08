@@ -641,22 +641,52 @@ Started %1 time(s), last %2</source>
         <translation>允许 Unsafe 内存访问代理</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="132" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="130" />
+        <source>Official servers</source>
+        <translation>官方源</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="131" />
+        <source>Mirror (BG)</source>
+        <translation>镜像源（BG）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="138" />
+        <source>Download from</source>
+        <translation>下载源</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="141" />
+        <source>Files at once</source>
+        <translation>同时下载数</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="144" />
+        <source>0: no limit</source>
+        <translation>0：不限速</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="145" />
+        <source>Speed limit (KB/s)</source>
+        <translation>速度限制（KB/s）</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="154" />
         <source>Wallpaper</source>
         <translation>壁纸</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="135" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="157" />
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>语言切换会在下次启动启动器时生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="143" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="165" />
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="145" />
+        <location filename="../src/ui/SettingsDialog.cpp" line="167" />
         <source>Cancel</source>
         <translation>取消</translation>
     </message>

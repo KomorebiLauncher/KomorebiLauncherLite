@@ -23,6 +23,7 @@
 #include "core/launch/LaunchPlan.h"
 #include "core/launch/LaunchService.h"
 #include "services/net/Fetcher.h"
+#include "services/net/DownloadSite.h"
 #include "core/version/ComponentResolver.h"
 #include "core/version/VersionJson.h"
 #include "core/install/VersionInstaller.h"
@@ -36,6 +37,7 @@
 
 int main(int argc, char** argv)
 {
+    QApplication app(argc, argv);
     QApplication::setApplicationName(QStringLiteral("KomorebiLite"));
 
     // The language is decided before the first window exists: a translator installed later leaves
@@ -64,6 +66,18 @@ int main(int argc, char** argv)
     // Themes travel next to the binary while the launcher is young; a packaged build would read
     // them from the data directory instead.
     const QString themeDir = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("theme/light"));
+    // What the downloader does for the rest of the run: where files come from, how many at once.
+    {
+        const Komorebi::Settings settings = Komorebi::Settings::load();
+        Komorebi::DownloadPolicy policy;
+        policy.site = settings.downloadSite == QLatin1String("mirror") ? Komorebi::DownloadSite::Mirror
+                                                                       : Komorebi::DownloadSite::Official;
+        policy.concurrency = settings.maxConcurrency;
+        policy.speedLimitKb = settings.speedLimitKb;
+        Komorebi::setDownloadPolicy(policy);
+    }
+
+    const Komorebi::Theme theme = Komorebi::Theme::load(themeDir);
     theme.apply(app);
 
     // While the rewrite is young it reads the instances the installed launcher already has, so the

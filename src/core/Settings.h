@@ -19,6 +19,11 @@ struct Settings {
     bool darkTheme = false;
     int wallpaperOpacity = 100;  ///< 0-100, how much of the wallpaper shows through
 
+    // downloads
+    QString downloadSite = QStringLiteral("official");  ///< "official" or "mirror"
+    int maxConcurrency = 8;
+    int speedLimitKb = 0;  ///< 0: no limit
+
     // launching
     int memoryMb = 2048;
     bool lockMemory = false;  ///< also pass -Xms, so the heap is reserved up front

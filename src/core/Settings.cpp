@@ -44,6 +44,10 @@ Settings Settings::load()
     if (memory >= 512)
         settings.memoryMb = memory;
 
+    settings.downloadSite = root.value(QStringLiteral("downloadSite")).toString(QStringLiteral("official"));
+    settings.maxConcurrency = qMax(1, root.value(QStringLiteral("maxConcurrency")).toInt(8));
+    settings.speedLimitKb = qMax(0, root.value(QStringLiteral("speedLimitKb")).toInt(0));
+
     settings.lockMemory = root.value(QStringLiteral("lockMemory")).toBool(false);
     settings.width = root.value(QStringLiteral("width")).toInt(0);
     settings.height = root.value(QStringLiteral("height")).toInt(0);
@@ -70,6 +74,9 @@ void Settings::save() const
     root.insert(QStringLiteral("darkTheme"), darkTheme);
     root.insert(QStringLiteral("wallpaperOpacity"), wallpaperOpacity);
     root.insert(QStringLiteral("memoryMb"), memoryMb);
+    root.insert(QStringLiteral("downloadSite"), downloadSite);
+    root.insert(QStringLiteral("maxConcurrency"), maxConcurrency);
+    root.insert(QStringLiteral("speedLimitKb"), speedLimitKb);
     root.insert(QStringLiteral("lockMemory"), lockMemory);
     root.insert(QStringLiteral("width"), width);
     root.insert(QStringLiteral("height"), height);
