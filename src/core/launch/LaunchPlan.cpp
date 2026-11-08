@@ -71,7 +71,7 @@ int javaMajorOf(const QString& javaPath)
 
 QString findJava(int requiredMajor)
 {
-    const QString executable = QStringLiteral("java.exe");
+    const QString executable = javaExecutableName(Environment::current());
     QStringList candidates;
 
     // 1. an explicit setting wins
@@ -198,8 +198,9 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     values.insert(QStringLiteral("natives_directory"), request.nativesRoot);
     values.insert(QStringLiteral("launcher_name"), QStringLiteral("Komorebi"));
     values.insert(QStringLiteral("launcher_version"), QStringLiteral("0.1"));
-    values.insert(QStringLiteral("classpath"), classpath.join(QLatin1Char(';')));
-    values.insert(QStringLiteral("classpath_separator"), QStringLiteral(";"));
+    const QString separator = classpathSeparator(environment);
+    values.insert(QStringLiteral("classpath"), classpath.join(separator));
+    values.insert(QStringLiteral("classpath_separator"), separator);
     values.insert(QStringLiteral("library_directory"), request.librariesRoot);
     values.insert(QStringLiteral("version_name"), request.version.id);
     values.insert(QStringLiteral("version_type"), request.versionType);
@@ -207,9 +208,15 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     values.insert(QStringLiteral("assets_root"), request.assetsRoot);
     values.insert(QStringLiteral("assets_index_name"), request.version.assets);
     values.insert(QStringLiteral("auth_player_name"), request.playerName);
-    values.insert(QStringLiteral("auth_uuid"), request.uuid);
+    // Offline defaults: a version that asks for a field we do not have yet gets a value the game
+    // accepts rather than a literal ${...} on its command line.
+    values.insert(QStringLiteral("auth_uuid"), request.uuid.isEmpty() ? QStringLiteral("00000000000000000000000000000000") : request.uuid);
     values.insert(QStringLiteral("auth_access_token"), request.accessToken);
-    values.insert(QStringLiteral("user_type"), QStringLiteral("msa"));
+    values.insert(QStringLiteral("auth_session"), QStringLiteral("token:0:0"));
+    values.insert(QStringLiteral("clientid"), request.clientId);
+    values.insert(QStringLiteral("auth_xuid"), request.xuid);
+    values.insert(QStringLiteral("user_properties"), QStringLiteral("{}"));
+    values.insert(QStringLiteral("user_type"), request.userType.isEmpty() ? QStringLiteral("msa") : request.userType);
     if (request.width > 0 && request.height > 0) {
         values.insert(QStringLiteral("resolution_width"), QString::number(request.width));
         values.insert(QStringLiteral("resolution_height"), QString::number(request.height));
@@ -244,6 +251,21 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     arguments << request.version.mainClass;
     for (const auto& argument : request.version.resolvedGameArguments(environment))
         arguments << substitute(argument, values);
+
+    // Whatever is still ${...} here is a field this launcher does not know how to fill: passing it
+    // through would hand the game a literal string and fail somewhere far from the cause.
+    static const QRegularExpression unresolved(QStringLiteral("\\$\\{[A-Za-z0-9_]+\\}"));
+    QStringList missing;
+    for (const auto& argument : arguments) {
+        auto it = unresolved.globalMatch(argument);
+        while (it.hasNext())
+            missing << it.next().captured(0);
+    }
+    if (!missing.isEmpty()) {
+        missing.removeDuplicates();
+        plan.error = QStringLiteral("unfilled placeholders: %1").arg(missing.join(QStringLiteral(", ")));
+        return plan;
+    }
 
     plan.arguments = arguments;
     return plan;

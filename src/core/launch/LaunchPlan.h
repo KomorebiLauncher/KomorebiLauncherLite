@@ -40,6 +40,9 @@ struct LaunchRequest {
     QString playerName = QStringLiteral("Player");
     QString uuid;
     QString accessToken = QStringLiteral("0");
+    QString clientId;                          ///< the launcher client id, for the versions that ask
+    QString xuid;                              ///< Xbox user id, from the account
+    QString userType = QStringLiteral("msa");
     QString versionType = QStringLiteral("release");
     int width = 0;
     int height = 0;

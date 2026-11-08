@@ -101,28 +101,8 @@ int main(int argc, char** argv)
 
         note(QStringLiteral("version %1, main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
 
-        // the game jar
         const QString clientJar = Komorebi::safeJoin(Komorebi::librariesRoot(),
                                                      QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
-        if (version.clientJar.valid()) {
-            const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, clientJar, version.clientJar.sha1);
-            note(QStringLiteral("client jar target: %1").arg(clientJar));
-            note(QStringLiteral("client jar url: %1").arg(version.clientJar.url));
-            note(QStringLiteral("client jar: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
-                                                         fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
-            if (!fetched.ok)
-                note(QStringLiteral("  %1").arg(fetched.error));
-        } else {
-            note(QStringLiteral("client jar: the manifest does not say where it is"));
-        }
-
-        // the asset index: the game reads it at start, so it has to be there
-        if (version.assetIndex.valid()) {
-            const QString indexFile = Komorebi::safeJoin(Komorebi::assetsRoot(), version.assetIndex.path);
-            const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.assetIndex.url, indexFile, version.assetIndex.sha1);
-            note(QStringLiteral("asset index: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
-                                                          fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
-        }
 
         const int gameDirIndex = arguments.indexOf(QStringLiteral("--game-dir"));
         const QString gameDirectory = gameDirIndex >= 0 && gameDirIndex + 1 < arguments.size()
@@ -154,6 +134,7 @@ int main(int argc, char** argv)
                 note(QStringLiteral("client jar: the manifest does not say where it is"));
             } else {
                 const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, jar, version.clientJar.sha1);
+                note(QStringLiteral("client jar target: %1").arg(jar));
                 note(QStringLiteral("client jar: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
                                                              fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
                 if (!fetched.ok)
@@ -284,6 +265,7 @@ int main(int argc, char** argv)
                 note(QStringLiteral("client jar: the manifest does not say where it is"));
             } else {
                 const Komorebi::FetchResult fetched = Komorebi::fetchFile(version.clientJar.url, jar, version.clientJar.sha1);
+                note(QStringLiteral("client jar target: %1").arg(jar));
                 note(QStringLiteral("client jar: %1%2").arg(fetched.ok ? QStringLiteral("ok") : QStringLiteral("failed"),
                                                              fetched.alreadyPresent ? QStringLiteral(" (cached)") : QString()));
                 if (!fetched.ok)

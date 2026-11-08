@@ -26,6 +26,16 @@ Environment Environment::current()
     return environment;
 }
 
+QString classpathSeparator(const Environment& environment)
+{
+    return environment.osName == QLatin1String("windows") ? QStringLiteral(";") : QStringLiteral(":");
+}
+
+QString javaExecutableName(const Environment& environment)
+{
+    return environment.osName == QLatin1String("windows") ? QStringLiteral("java.exe") : QStringLiteral("java");
+}
+
 bool Rule::matches(const Environment& environment) const
 {
     // A rule about optional features never matches: this launcher asks for none of them.

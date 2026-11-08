@@ -34,6 +34,12 @@ struct Rule {
     bool matches(const Environment& environment) const;
 };
 
+/// The classpath separator for a platform: ";" on Windows, ":" everywhere else.
+QString classpathSeparator(const Environment& environment);
+
+/// The file name of the Java launcher on a platform.
+QString javaExecutableName(const Environment& environment);
+
 /// A rule list decides by its last matching entry; with no matching entry the answer is allowed.
 bool rulesAllow(const QList<Rule>& rules, const Environment& environment);
 

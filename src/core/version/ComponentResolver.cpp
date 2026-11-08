@@ -93,12 +93,16 @@ void merge(VersionJson& target, const VersionJson& source)
     if (source.javaMajor > target.javaMajor)
         target.javaMajor = source.javaMajor;
 
-    // Arguments accumulate, except the old single-string form: a component that brings its own
-    // replaces the inherited one, because there can only be one.
-    if (!source.legacyArguments.isEmpty()) {
+    // Arguments accumulate. The old single-string form is the base component's own description of
+    // how to start the game, so it is taken once, from the bottom of the stack; a later component
+    // that brought gameArguments on top of it keeps them, appended, instead of being dropped.
+    if (target.legacyArguments.isEmpty() && !source.legacyArguments.isEmpty()) {
         target.legacyArguments = source.legacyArguments;
         target.gameArguments.clear();
-    } else if (target.legacyArguments.isEmpty()) {
+    } else if (!target.legacyArguments.isEmpty()) {
+        for (const auto& argument : source.gameArguments)
+            target.legacyArguments.append(argument.value);
+    } else {
         target.gameArguments += source.gameArguments;
     }
     target.jvmArguments += source.jvmArguments;

@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPalette>
@@ -33,7 +34,9 @@ Theme Theme::load(const QString& themeDir)
     for (auto it = tokens.begin(); it != tokens.end(); ++it)
         theme.tokens.insert(it.key(), it.value().toString());
 
-    const QString sheetName = root.value(QStringLiteral("qssFilePath")).toString(QStringLiteral("theme.css"));
+    // Only the file name: a theme is a directory of things, and a manifest does not get to point
+    // the launcher at an arbitrary file to load as its stylesheet.
+    const QString sheetName = QFileInfo(root.value(QStringLiteral("qssFilePath")).toString(QStringLiteral("theme.css"))).fileName();
     QFile sheet(QDir(themeDir).filePath(sheetName));
     if (sheet.open(QIODevice::ReadOnly)) {
         static const QRegularExpression reference(QStringLiteral("@([A-Za-z][A-Za-z0-9_]*)"));
