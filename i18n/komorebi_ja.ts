@@ -5,6 +5,11 @@
     <name>AboutPage</name>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="375"/>
+        <source>Version %1</source>
+        <translation>バージョン %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="375"/>
         <source>A small Minecraft launcher: install a version, press Play.
 
 GPL-3.0. The mark and the interface are original work.

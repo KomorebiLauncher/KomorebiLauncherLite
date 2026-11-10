@@ -370,6 +370,12 @@ AboutPage::AboutPage(QWidget* parent)
 
     layout->addWidget(heading(QStringLiteral("木漏れ日 Lite"), this));
 
+    // The build a bug report came from: a version number is worth one line in the one place a
+    // player looks when asked "which version are you on".
+    auto* version = new QLabel(tr("Version %1").arg(QStringLiteral(KOMOREBI_VERSION)), this);
+    version->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    layout->addWidget(version);
+
     auto* body = new QLabel(this);
     body->setWordWrap(true);
     body->setText(tr("A small Minecraft launcher: install a version, press Play.\n\n"

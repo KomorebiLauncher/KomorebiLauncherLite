@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
-project(KomorebiNext LANGUAGES CXX)
+# One place names the version: the tag a release is cut from, the number in the executable's
+# properties and the line on the About page all come from here.
+project(KomorebiNext VERSION 0.1.0 LANGUAGES CXX)
 
 # The build needs the compiler to speak English. Ninja tracks header dependencies by watching the
 # include lines MSVC prints, and it recognises them by their English prefix; with a localized
@@ -12,6 +14,16 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# A shared Qt loads its plugins from folders next to the executable, so the release ships a folder.
+# Asked for a single file instead, the caller configures against a Qt built with -static
+# -static-runtime (tools/build-static-qt.ps1, run by the release workflow), and then two things
+# change: the plugins have to be linked in, and the C++ runtime has to be the static one, because
+# the Qt in that build is linked against it.
+option(KOMOREBI_STATIC_QT "Link Qt and the C++ runtime in, for a launcher that is one file" OFF)
+if(KOMOREBI_STATIC_QT)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Network LinguistTools)
 
@@ -40,9 +52,13 @@ qt_add_resources(komorebi-lite "icons"
         resources/komorebi-lite.svg
 )
 if(WIN32)
+    # A version in the shell's Properties dialog costs one resource and saves a round of questions
+    # when someone reports a bug from a build we cannot identify.
+    set(KOMOREBI_VERSION_COMMA "${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0")
     configure_file(resources/windows.rc.in ${CMAKE_CURRENT_BINARY_DIR}/windows.rc @ONLY)
     target_sources(komorebi-lite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/windows.rc)
 endif()
+target_compile_definitions(komorebi-lite PRIVATE KOMOREBI_VERSION="${PROJECT_VERSION}")
 # Three languages, compiled in: the source is English, and the two translation files next to it
 # carry 简体中文 and 日本語.
 qt_add_translations(TARGETS komorebi-lite
@@ -53,6 +69,23 @@ qt_add_translations(TARGETS komorebi-lite
 )
 
 target_link_libraries(komorebi-lite PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
+
+# Without folders to search, a static Qt only has the plugins this list links in: the window plugin
+# that draws anything at all, the TLS backend behind every https request, and the SVG plugins that
+# turn the mark into an icon. The style plugin is optional -- QtWidgets carries a style of its own --
+# so it is included only when the Qt that is installed has it.
+if(KOMOREBI_STATIC_QT)
+    set(_komorebi_plugins
+        INCLUDE_BY_TYPE platforms Qt6::QWindowsIntegrationPlugin
+        INCLUDE_BY_TYPE tls Qt6::QSchannelBackendPlugin
+        INCLUDE_BY_TYPE imageformats Qt6::QSvgPlugin
+        INCLUDE_BY_TYPE iconengines Qt6::QSvgIconPlugin
+    )
+    if(TARGET Qt6::QModernWindowsStylePlugin)
+        list(APPEND _komorebi_plugins INCLUDE_BY_TYPE styles Qt6::QModernWindowsStylePlugin)
+    endif()
+    qt_import_plugins(komorebi-lite NO_DEFAULT ${_komorebi_plugins})
+endif()
 if(WIN32)
     # A map next to the binary turns a crash address from a dump into a function name; a debug build
     # without symbols is only half a debug build.

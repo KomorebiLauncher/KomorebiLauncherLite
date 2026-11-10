@@ -1,2 +1,28 @@
-// Generated from resources/windows.rc.in: the shell icon for the executable.
+// Generated from resources/windows.rc.in: the shell icon and the version, both for the executable.
 IDI_ICON1 ICON "@CMAKE_CURRENT_SOURCE_DIR@/resources/komorebi-lite.ico"
+
+1 VERSIONINFO
+FILEVERSION @KOMOREBI_VERSION_COMMA@
+PRODUCTVERSION @KOMOREBI_VERSION_COMMA@
+FILEOS 0x40004L
+FILETYPE 0x1L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "KomorebiLauncher contributors"
+            VALUE "FileDescription", "Komorebi Lite"
+            VALUE "FileVersion", "@PROJECT_VERSION@"
+            VALUE "InternalName", "komorebi-lite"
+            VALUE "LegalCopyright", "Copyright (C) 2025-2026 KomorebiLauncher contributors. GPL-3.0-only."
+            VALUE "OriginalFilename", "komorebi-lite.exe"
+            VALUE "ProductName", "Komorebi Lite"
+            VALUE "ProductVersion", "@PROJECT_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

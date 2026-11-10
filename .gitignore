@@ -1,6 +1,9 @@
 build/
 build-check/
 
+# Packed releases and the staging directory the packaging script leaves behind
+dist/
+
 *.log
 
 dsh-session-session-9deef246-2f67-400f-a541-378fa05c5f95.zip

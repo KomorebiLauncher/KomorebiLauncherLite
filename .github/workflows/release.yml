@@ -1,0 +1,225 @@
+name: release
+
+# Cuts a release from a tag, and packs the three downloads a release offers:
+#
+#   KomorebiLite-<version>-windows-x64.zip   the folder, unpack and run
+#   KomorebiLite-Setup-<version>.exe         Inno Setup installer, per user, no admin prompt
+#   KomorebiLite-<version>.exe               a single file with Qt linked in, nothing to unpack
+#
+#   git tag -a v0.1.0 -m "Komorebi Lite 0.1.0" && git push origin v0.1.0
+#
+# The version in CMakeLists.txt and the tag have to agree; the version job says so and stops
+# otherwise. Run by hand (workflow_dispatch), it packs everything, uploads the artifacts for a person
+# to try, and publishes nothing. build.yml stays what it is: a build check on every push.
+on:
+  push:
+    tags: ['v*', '[0-9]*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Ignored: the tree names the version (this run publishes nothing)'
+        required: false
+
+permissions:
+  contents: write
+
+# The static Qt is the same for every run of a given Qt version, so it is kept between runs; only the
+# first release after a Qt bump pays for building it.
+env:
+  QT_VERSION: '6.10.3'
+  QT_STATIC_PREFIX: C:\qt-static\6.10.3\msvc2022_64
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out the version
+        id: version
+        shell: bash
+        run: |
+          declared=$(grep -oP 'project\(KomorebiNext VERSION \K[0-9.]+' CMakeLists.txt)
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            tag="${GITHUB_REF_NAME#[vV]}"
+            if ! echo "$tag" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "'$GITHUB_REF_NAME' does not name a version like 0.1.0" >&2
+              exit 1
+            fi
+            if [ "$declared" != "$tag" ]; then
+              echo "the tag says $tag and CMakeLists.txt says $declared; raise one of them" >&2
+              exit 1
+            fi
+            echo "version=$tag" >> "$GITHUB_OUTPUT"
+          else
+            echo "no tag, so this build publishes nothing; packing $declared"
+            echo "version=$declared" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The zip and the installer: a normal shared Qt, windeployqt for the runtime, Inno Setup for the
+  # installer.
+  portable:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
+
+      - name: Build
+        run: cmake --build build --clean-first
+
+      # The same rendering self-test the build check runs: a release should not be the first place a
+      # broken page is noticed.
+      - name: Rendering self-test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $process = Start-Process -FilePath .\build\komorebi-lite.exe -ArgumentList '--selftest' -Wait -PassThru
+          Get-Content .\build\selftest.log -ErrorAction SilentlyContinue
+          if ($process.ExitCode -ne 0) { throw "self-test failed with exit code $($process.ExitCode)" }
+
+      - name: Pack
+        shell: pwsh
+        run: ./tools/package.ps1 -Version ${{ needs.version.outputs.version }} -Verify -OutDir dist
+
+      - name: Keep the zip and the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable
+          path: |
+            dist/*.zip
+            dist/*-Setup-*.exe
+          if-no-files-found: error
+
+  # The single file: Qt has to be linked in, so this job builds a static Qt once and keeps it in the
+  # cache. Half an hour the first time, a minute and a half afterwards.
+  single:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Restore the static Qt
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.QT_STATIC_PREFIX }}
+          key: qt-static-${{ runner.os }}-${{ env.QT_VERSION }}-${{ hashFiles('tools/build-static-qt.ps1') }}
+
+      - name: Build the static Qt
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: ./tools/build-static-qt.ps1 -QtVersion $env:QT_VERSION -Prefix $env:QT_STATIC_PREFIX
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B build-static -G Ninja -DCMAKE_BUILD_TYPE=Release -DKOMOREBI_STATIC_QT=ON -DCMAKE_PREFIX_PATH="$env:QT_STATIC_PREFIX"
+
+      - name: Build
+        run: cmake --build build-static --clean-first
+
+      - name: Pack
+        shell: pwsh
+        run: ./tools/package.ps1 -Version ${{ needs.version.outputs.version }} -BuildDir build-static -OutDir dist-single -Static -Verify
+
+      - name: Keep the single file
+        uses: actions/upload-artifact@v4
+        with:
+          name: single
+          path: dist-single/*.exe
+          if-no-files-found: error
+
+  # Publishes all three, on a tag only. The hashes are computed here, from the files that were
+  # actually uploaded, so the notes cannot disagree with the download.
+  publish:
+    needs: [version, portable, single]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Arrange the files
+        shell: bash
+        run: |
+          mkdir -p release
+          cp artifacts/portable/*.zip release/
+          cp artifacts/portable/*-Setup-*.exe release/
+          cp artifacts/single/*.exe release/
+          ls -l release
+
+      - name: Write the notes
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          cd release
+          {
+            echo "Komorebi Lite $VERSION —— 轻量级 Minecraft 启动器，三种装法，挑一个用。"
+            echo
+            echo "## 下载"
+            echo
+            echo "| 文件 | 说明 |"
+            echo "| --- | --- |"
+            echo "| \`KomorebiLite-Setup-$VERSION.exe\` | 安装版：装到当前用户目录，带开始菜单和卸载项，不需要管理员权限 |"
+            echo "| \`KomorebiLite-$VERSION.exe\` | 单文件版：一个 exe 就是全部，不用解压，双击就用 |"
+            echo "| \`KomorebiLite-$VERSION-windows-x64.zip\` | 绿色版：解压到任意目录即用 |"
+            echo
+            echo "Windows 10/11，64 位。三种包内容一致，数据目录都是 \`%APPDATA%\\KomorebiLauncherLite\`，与完整版互不影响。"
+            echo
+            echo "## 校验"
+            echo
+            echo '```'
+            for file in *.exe *.zip; do
+              echo "$(sha256sum "$file" | cut -d' ' -f1)  $file"
+            done
+            echo '```'
+            echo
+            echo "## 使用"
+            echo
+            echo "1. 选一种方式装好，运行 \`komorebi-lite.exe\`。"
+            echo "2. 设置页选一个 Java，安装页装一个版本，然后启动。"
+            echo "3. Qt 运行时、主题、OptiFine 安装助手都在包里，机器上不需要装 Qt。"
+            echo
+            echo "## 说明"
+            echo
+            echo "* 本版是轻量版，面向普通玩家：安装 → 选版本 → 启动。完整版见 [KomorebiLauncher](https://github.com/KomorebiLauncher/KomorebiLauncher)。"
+            echo "* GPL-3.0-only，源码见 [KomorebiLauncherLite](https://github.com/KomorebiLauncher/KomorebiLauncherLite)。"
+            echo "* 非 Minecraft 官方产品，未经 Mojang 或 Microsoft 批准，也与其无隶属关系。"
+            echo "* 启动器里「关于」页写着这个包的版本号。"
+          } > ../notes.md
+          cd ..
+          cat notes.md
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" release/* --title "Komorebi Lite $VERSION" --notes-file notes.md --latest
+          echo "published $TAG"
