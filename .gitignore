@@ -10,3 +10,9 @@ dist/
 
 dsh-session-session-9deef246-2f67-400f-a541-378fa05c5f95.zip
 build-b/
+
+# Working documents -- bug hunts, handovers, scratch notes -- describe one
+# machine's session rather than the project. Release notes still ship with the
+# tag they belong to, so they stay visible.
+docs/*
+!docs/release-notes/
