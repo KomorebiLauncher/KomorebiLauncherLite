@@ -6,6 +6,7 @@
 
 #include "core/Paths.h"
 #include "core/version/VersionJson.h"
+#include "core/version/VersionResolver.h"
 
 namespace Komorebi {
 
@@ -62,9 +63,23 @@ InstalledVersion VersionStore::find(const QString& id) const
 
     version.id = id;
     version.path = directory;
-    version.mainClass = json.mainClass;
-    version.javaMajor = json.javaMajor;
-    version.hasGameJar = QFileInfo::exists(QDir(directory).filePath(id + QStringLiteral(".jar")));
+
+    // A loader or a modpack only describes what it adds and points at the version it builds on; the
+    // game jar belongs to the version at the bottom of the chain. Looking for <id>/<id>.jar alone
+    // reported every modpack and every loader as "game files missing" and left Play disabled, even
+    // though the launcher resolves exactly that chain before it launches.
+    const ResolvedVersion resolved = resolveVersion(m_versionsRoot, id);
+    if (resolved.ok()) {
+        version.mainClass = resolved.version.mainClass;
+        version.javaMajor = resolved.version.javaMajor > 0 ? resolved.version.javaMajor : json.javaMajor;
+        const QString baseId = resolved.baseId.isEmpty() ? id : resolved.baseId;
+        version.hasGameJar = QFileInfo::exists(
+            QDir(QDir(m_versionsRoot).filePath(baseId)).filePath(baseId + QStringLiteral(".jar")));
+    } else {
+        version.mainClass = json.mainClass;
+        version.javaMajor = json.javaMajor;
+        version.hasGameJar = QFileInfo::exists(QDir(directory).filePath(id + QStringLiteral(".jar")));
+    }
 
     // The size of the version's own directory, which is what a player thinks of as "this version".
     const auto files = QDir(directory).entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
