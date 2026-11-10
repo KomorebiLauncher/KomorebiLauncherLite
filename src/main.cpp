@@ -152,9 +152,8 @@ int main(int argc, char** argv)
         };
 
         const Komorebi::InstallResult result = installer.install(versionId, withAssets);
+        // summary() already carries the warning, so it is not repeated here.
         note(result.summary());
-        if (!result.warning.isEmpty())
-            note(QStringLiteral("warning: %1").arg(result.warning));
         for (const auto& failure : result.failed.mid(0, 10))
             note(QStringLiteral("  %1").arg(failure));
         if (!result.ok)
@@ -501,6 +500,37 @@ int main(int argc, char** argv)
         out.open(QIODevice::WriteOnly | QIODevice::Truncate);
         out.write(QStringLiteral("%1: %2\n").arg(ok ? QStringLiteral("ok") : QStringLiteral("failed"), error).toUtf8());
         return ok ? 0 : 1;
+    }
+
+    // Completing an installation: the same call the Play page's "Complete files" button makes, so a
+    // version whose files went missing can be filled in and checked without opening the window.
+    const int repairIndex = arguments.indexOf(QStringLiteral("--repair"));
+    if (repairIndex >= 0 && repairIndex + 1 < arguments.size()) {
+        const QString versionId = arguments.at(repairIndex + 1);
+        QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("repair.log")));
+        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        const auto note = [&out](const QString& line) {
+            out.write(line.toUtf8());
+            out.write("\n");
+            out.flush();
+        };
+        note(QStringLiteral("repairing %1 in %2").arg(versionId, Komorebi::dataRoot()));
+
+        Komorebi::VersionInstaller installer(Komorebi::dataRoot());
+        QString lastStage;
+        installer.onProgress = [&](const Komorebi::InstallProgress& progress) {
+            if (progress.stage != lastStage) {
+                note(QStringLiteral("%1 (%2/%3)").arg(progress.stage).arg(progress.done).arg(progress.total));
+                lastStage = progress.stage;
+            }
+        };
+
+        const Komorebi::InstallResult result = installer.repair(versionId);
+        // summary() already carries the warning, so it is not repeated here.
+        note(result.summary());
+        for (const auto& failure : result.failed.mid(0, 10))
+            note(QStringLiteral("  %1").arg(failure));
+        return result.ok ? 0 : 1;
     }
 
     // A development hook: walk an inheritance chain and say what it resolved to.
@@ -856,10 +886,17 @@ int main(int argc, char** argv)
 
     AppWindow window(theme);
 
-    // A development hook: open a particular page before grabbing the window.
+    // A development hook: open a particular page before grabbing the window. It takes a number or the
+    // name the rail shows, so a screenshot command can say which page it wants.
     const int pageIndex = arguments.indexOf(QStringLiteral("--page"));
-    if (pageIndex >= 0 && pageIndex + 1 < arguments.size())
-        window.showPage(arguments.at(pageIndex + 1).toInt());
+    if (pageIndex >= 0 && pageIndex + 1 < arguments.size()) {
+        const QString wanted = arguments.at(pageIndex + 1);
+        const QStringList names{ QStringLiteral("play"),   QStringLiteral("modpacks"), QStringLiteral("content"),
+                                 QStringLiteral("java"),   QStringLiteral("accounts"), QStringLiteral("logs"),
+                                 QStringLiteral("tools"),  QStringLiteral("about") };
+        const int byName = names.indexOf(wanted.toLower());
+        window.showPage(byName >= 0 ? byName : wanted.toInt());
+    }
     window.show();
 
     // A development hook: render the window once and quit, so a change can be looked at without a
@@ -922,7 +959,9 @@ int main(int argc, char** argv)
     if (app.arguments().contains(QStringLiteral("--screenshot"))) {
         const int index = app.arguments().indexOf(QStringLiteral("--screenshot"));
         const QString path = index + 1 < app.arguments().size() ? app.arguments().at(index + 1) : QStringLiteral("window.png");
-        QTimer::singleShot(700, &app, [&window, path] {
+        // A page that fetches something needs a moment before it is worth looking at.
+        const int delay = qEnvironmentVariableIntValue("KOMOREBI_SHOT_DELAY");
+        QTimer::singleShot(delay > 0 ? delay : 700, &app, [&window, path] {
             window.grab().save(path);
             QApplication::quit();
         });

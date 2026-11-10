@@ -14,6 +14,9 @@
 class QLabel;
 class QListWidget;
 class QProcess;
+class QProgressDialog;
+class QShowEvent;
+class QTimer;
 
 namespace Komorebi {
 class Button;
@@ -36,11 +39,16 @@ class LaunchPage : public QWidget {
    signals:
     void status(const QString& text);
 
+   protected:
+    void showEvent(QShowEvent* event) override;
+
    private:
     void selectRow(int row);
     void play();
+    void refreshAccount();
     void openFolder();
     void completeFiles();
+    void pollRepair();
     void exportScript();
     void editInstance();
     void renameVersion();
@@ -52,6 +60,7 @@ class LaunchPage : public QWidget {
 
     QListWidget* m_list = nullptr;
     QLabel* m_title = nullptr;
+    QLabel* m_account = nullptr;
     QLabel* m_body = nullptr;
     QLabel* m_status = nullptr;
     Komorebi::Button* m_play = nullptr;
@@ -59,4 +68,9 @@ class LaunchPage : public QWidget {
     QList<Komorebi::InstalledVersion> m_versions;
     QString m_selected;
     QProcess* m_game = nullptr;
+
+    struct RepairState;
+    RepairState* m_repair = nullptr;
+    QProgressDialog* m_repairDialog = nullptr;
+    QTimer* m_repairPoll = nullptr;
 };

@@ -14,6 +14,7 @@
 #include "core/JavaScan.h"
 #include "core/Paths.h"
 #include "core/install/JavaRuntime.h"
+#include "core/version/VersionResolver.h"
 #include "services/net/Fetcher.h"
 
 namespace Komorebi {
@@ -186,6 +187,10 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
     result.downloaded += libraryResult.downloaded;
     result.skipped += libraryResult.skipped;
     result.failed += libraryResult.failed;
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        return result;
+    }
 
     // 4. the runtime the version was built against, when this machine has no matching one. Without it
     // the game cannot start at all, and downloading it here is cheaper than failing at launch. A
@@ -213,6 +218,10 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
             // the player may have their own Java, and the launch path picks whichever fits.
             result.warning = QStringLiteral("Java %1 could not be downloaded: %2").arg(parsed.javaMajor).arg(runtime.error);
         }
+    }
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        return result;
     }
 
     // 5. the asset index, and then the assets it lists
@@ -246,6 +255,100 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
             result.skipped += assetResult.skipped;
             result.failed += assetResult.failed;
         }
+    }
+
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        return result;
+    }
+    result.ok = result.failed.isEmpty();
+    if (!result.ok && result.error.isEmpty())
+        result.error = QStringLiteral("%1 file(s) could not be fetched").arg(result.failed.size());
+    return result;
+}
+
+InstallResult VersionInstaller::repair(const QString& versionId)
+{
+    InstallResult result;
+    const auto report = [this](const QString& stage, int done, int total, const QString& current) {
+        if (onProgress)
+            onProgress({ stage, done, total, current });
+    };
+
+    const QString versionsRoot = QDir(m_dataRoot).filePath(QStringLiteral("versions"));
+    report(QStringLiteral("checking"), 0, 0, versionId);
+    const ResolvedVersion resolved = resolveVersion(versionsRoot, versionId);
+    if (!resolved.ok()) {
+        result.error = resolved.error;
+        return result;
+    }
+    // The chain merged into one description: the jar and the asset index come from the vanilla
+    // version at its bottom, the libraries from every step.
+    const VersionJson& version = resolved.version;
+
+    QList<FetchJob> jobs;
+
+    // 1. the game itself, which lives beside the version that owns it, not beside the loader
+    const QString jarPath = QDir(versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"));
+    if (version.clientJar.valid() && !QFileInfo::exists(jarPath))
+        jobs.append({ version.clientJar.url, jarPath, version.clientJar.sha1 });
+
+    // 2. libraries, including the ones a loader brought with it
+    const auto addFile = [&](const Download& download) {
+        if (!download.valid())
+            return;
+        const QString target = QDir(m_dataRoot).filePath(QStringLiteral("libraries/") + download.path);
+        if (QFileInfo::exists(target))
+            return;
+        jobs.append({ download.url, target, download.sha1 });
+    };
+    for (const auto& library : version.libraries)
+        addFile(library.isNative() ? library.natives : library.artifact);
+    for (const auto& library : version.mavenFiles)
+        addFile(library.isNative() ? library.natives : library.artifact);
+
+    // 3. the asset index, then the objects it points at
+    if (version.assetIndex.valid()) {
+        const QString indexPath = QDir(m_dataRoot).filePath(QStringLiteral("assets/") + version.assetIndex.path);
+        if (!QFileInfo::exists(indexPath)) {
+            QDir().mkpath(QFileInfo(indexPath).absolutePath());
+            const FetchResult fetched = fetchFile(version.assetIndex.url, indexPath, version.assetIndex.sha1);
+            if (!fetched.ok) {
+                result.failed << QStringLiteral("%1 (%2)").arg(indexPath, fetched.error);
+            } else {
+                fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
+            }
+        }
+        const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
+        const auto objects = index.value(QStringLiteral("objects")).toObject();
+        for (auto it = objects.begin(); it != objects.end(); ++it) {
+            const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
+            if (hash.size() < 2)
+                continue;
+            const QString target = QDir(m_dataRoot).filePath(QStringLiteral("assets/objects/%1/%2").arg(hash.left(2), hash));
+            if (QFileInfo::exists(target))
+                continue;
+            jobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash), target, hash });
+        }
+    }
+
+    // 4. one queue for everything that is missing; a repair with nothing to do returns at once
+    if (jobs.isEmpty() && result.failed.isEmpty()) {
+        result.ok = true;
+        result.warning = QStringLiteral("nothing was missing");
+        return result;
+    }
+
+    const FetchSummary fetched = fetchMany(jobs, 8, [&](int done, int total) {
+        report(QStringLiteral("files"), done, total, {});
+    });
+    result.downloaded += fetched.downloaded;
+    result.skipped += fetched.skipped;
+    result.failed += fetched.failed;
+
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        return result;
     }
 
     result.ok = result.failed.isEmpty();

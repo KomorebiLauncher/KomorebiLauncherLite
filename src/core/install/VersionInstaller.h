@@ -76,6 +76,11 @@ public:
     /// `withAssets` off is for a quick install of a version whose assets are already on disk.
     InstallResult install(const QString& versionId, bool withAssets = true);
 
+    /// Fetches only what an already installed version is missing, following `inheritsFrom`: the game
+    /// jar, the libraries (including the ones a loader added) and the assets. Nothing is downloaded
+    /// for a file that is on disk, so the answer says which gaps were filled.
+    InstallResult repair(const QString& versionId);
+
     /// Where a version's files live.
     QString versionDirectory(const QString& versionId) const;
 

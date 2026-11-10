@@ -6,24 +6,48 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QProcess>
+#include <QProgressDialog>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include <mutex>
+#include <thread>
+
 #include "core/InstanceConfig.h"
 #include "core/Paths.h"
+#include "core/auth/AccountStore.h"
+#include "core/install/VersionInstaller.h"
 #include "core/launch/LaunchService.h"
 #include "core/launch/WindowsTweaks.h"
+#include "core/version/VersionResolver.h"
 #include "kit/Kit.h"
+#include "services/net/Fetcher.h"
 #include "ui/InstallDialog.h"
 #include "ui/InstanceSettingsDialog.h"
 
 using namespace Komorebi;
+
+/// What a repair is doing, shared with the thread that does it.
+struct LaunchPage::RepairState {
+    std::atomic<bool> done{ false };
+    std::atomic<bool> ok{ false };
+    std::atomic<bool> cancelled{ false };
+    std::atomic<int> stepsDone{ 0 };
+    std::atomic<int> stepsTotal{ 0 };
+    std::mutex mutex;
+    QString stage;
+    QString error;
+    int downloaded = 0;
+    int skipped = 0;
+};
 
 namespace {
 
@@ -88,9 +112,18 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     m_body->setTextInteractionFlags(Qt::TextSelectableByMouse);
     plateLayout->addWidget(m_body);
 
+    // Who the game will play as: switching accounts happens on another page, so the answer has to be
+    // visible here without opening the details of the version.
+    m_account = new QLabel(plate);
+    m_account->setStyleSheet(QStringLiteral("color: rgba(36, 46, 76, 0.72);"));
+    plateLayout->addWidget(m_account);
+
     // the things a player does to a version
-    auto* actions = new QHBoxLayout();
-    actions->setSpacing(8);
+    // Two rows rather than one: the labels grow with the language (Japanese is the longest) and a
+    // single row of seven buttons ran past the plate and cut the last button in half.
+    auto* actions = new QGridLayout();
+    actions->setHorizontalSpacing(8);
+    actions->setVerticalSpacing(8);
     auto* configure = new Button(tr("Settings"), plate);
     auto* rename = new Button(tr("Rename"), plate);
     auto* describe = new Button(tr("Notes"), plate);
@@ -98,14 +131,14 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     auto* complete = new Button(tr("Complete files"), plate);
     auto* script = new Button(tr("Start script"), plate);
     auto* remove = new Button(tr("Delete"), plate);
-    actions->addWidget(configure);
-    actions->addWidget(rename);
-    actions->addWidget(describe);
-    actions->addWidget(folder);
-    actions->addWidget(complete);
-    actions->addWidget(script);
-    actions->addWidget(remove);
-    actions->addStretch(1);
+    actions->addWidget(configure, 0, 0);
+    actions->addWidget(rename, 0, 1);
+    actions->addWidget(describe, 0, 2);
+    actions->addWidget(folder, 0, 3);
+    actions->addWidget(complete, 1, 0);
+    actions->addWidget(script, 1, 1);
+    actions->addWidget(remove, 1, 2);
+    actions->setColumnStretch(4, 1);
     plateLayout->addLayout(actions);
     plateLayout->addStretch(1);
 
@@ -135,6 +168,30 @@ LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     reload();
 }
 
+void LaunchPage::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    refreshAccount();
+}
+
+/// The line above the version: the account the game will play as, or the warning that there is none.
+void LaunchPage::refreshAccount()
+{
+    const QList<MinecraftAccount> accounts = AccountStore::load();
+    if (accounts.isEmpty()) {
+        m_account->setText(tr("No account signed in: the game starts offline."));
+        return;
+    }
+
+    const QString active = AccountStore::activeUuid();
+    QString name = accounts.first().name;
+    for (const auto& account : accounts) {
+        if (account.uuid == active)
+            name = account.name;
+    }
+    m_account->setText(tr("Playing as %1").arg(name));
+}
+
 void LaunchPage::applySettings(const Settings& settings)
 {
     m_settings = settings;
@@ -143,6 +200,7 @@ void LaunchPage::applySettings(const Settings& settings)
 void LaunchPage::reload()
 {
     m_versions = m_store.scan();
+    refreshAccount();
 
     const QSignalBlocker blocker(m_list);
     m_list->clear();
@@ -310,7 +368,7 @@ void LaunchPage::openFolder()
 
 void LaunchPage::completeFiles()
 {
-    if (m_selected.isEmpty())
+    if (m_selected.isEmpty() || m_repair)
         return;
     const PreparedLaunch prepared = prepareLaunch(m_settings, m_selected);
     const QStringList missing = prepared.plan.missingFiles;
@@ -319,12 +377,113 @@ void LaunchPage::completeFiles()
         return;
     }
 
-    // The installer knows how to put a version together, so it is the way to fill gaps too.
-    InstallDialog dialog(m_store, this);
-    dialog.setWindowTitle(tr("Complete files"));
-    emit status(tr("%1 file(s) missing, opening the installer").arg(missing.size()));
-    dialog.exec();
-    reload();
+    // "Complete files" used to open the installer, which asked the player to pick a version again --
+    // and installing that version never touched the one that was actually missing files. The repair
+    // below follows inheritsFrom and fetches exactly what the launch plan could not find.
+    m_repair = new RepairState;
+    RepairState* state = m_repair;
+
+    auto* dialog = new QProgressDialog(tr("Completing %1…").arg(m_selected), tr("Cancel"), 0, 0, this);
+    dialog->setWindowTitle(tr("Complete files"));
+    dialog->setWindowModality(Qt::WindowModal);
+    dialog->setMinimumDuration(0);
+    dialog->setAutoClose(false);
+    dialog->setAutoReset(false);
+    dialog->setValue(0);
+    m_repairDialog = dialog;
+    connect(dialog, &QProgressDialog::canceled, this, [state] {
+        // The download queue watches this flag and drops what is in flight.
+        state->cancelled = true;
+    });
+
+    emit status(tr("%1 file(s) missing, filling them in").arg(missing.size()));
+
+    const QString dataRootPath = dataRoot();
+    const QString versionId = m_selected;
+    setCancellationFlag(&state->cancelled);
+    std::thread([state, dataRootPath, versionId] {
+        VersionInstaller installer(dataRootPath);
+        installer.onProgress = [state](const InstallProgress& progress) {
+            std::lock_guard<std::mutex> lock(state->mutex);
+            state->stage = progress.stage;
+            state->stepsDone = progress.done;
+            state->stepsTotal = progress.total;
+        };
+        const InstallResult result = installer.repair(versionId);
+        std::lock_guard<std::mutex> lock(state->mutex);
+        state->ok = result.ok;
+        state->error = result.failed.isEmpty() ? result.error : result.failed.first();
+        state->downloaded = result.downloaded;
+        state->skipped = result.skipped;
+        state->done = true;
+    }).detach();
+
+    if (!m_repairPoll) {
+        m_repairPoll = new QTimer(this);
+        connect(m_repairPoll, &QTimer::timeout, this, &LaunchPage::pollRepair);
+    }
+    m_repairPoll->start(150);
+}
+
+void LaunchPage::pollRepair()
+{
+    if (!m_repair)
+        return;
+
+    {
+        std::lock_guard<std::mutex> lock(m_repair->mutex);
+        if (m_repairDialog) {
+            const int total = m_repair->stepsTotal.load();
+            const int done = m_repair->stepsDone.load();
+            if (total > 0) {
+                m_repairDialog->setRange(0, total);
+                m_repairDialog->setValue(done);
+            } else {
+                m_repairDialog->setRange(0, 0);
+            }
+            m_repairDialog->setLabelText(m_repair->stage.isEmpty()
+                                             ? tr("Completing %1…").arg(m_selected)
+                                             : tr("%1 · %2").arg(m_repair->stage, m_selected));
+        }
+    }
+
+    if (!m_repair->done)
+        return;
+
+    // The flag points at this state; it has to be dropped before the state goes away.
+    setCancellationFlag(nullptr);
+    if (m_repairPoll)
+        m_repairPoll->stop();
+
+    const bool ok = m_repair->ok.load();
+    const bool cancelled = m_repair->cancelled.load();
+    const QString error = m_repair->error;
+    const int downloaded = m_repair->downloaded;
+    const int skipped = m_repair->skipped;
+
+    if (m_repairDialog) {
+        m_repairDialog->close();
+        m_repairDialog->deleteLater();
+        m_repairDialog = nullptr;
+    }
+    delete m_repair;
+    m_repair = nullptr;
+
+    if (ok) {
+        const QString message = downloaded > 0 ? tr("%1 file(s) fetched").arg(downloaded)
+                                              : tr("Everything was already there (%1 checked)").arg(skipped);
+        emit status(message);
+        reload();
+        return;
+    }
+
+    if (cancelled) {
+        emit status(tr("Completing the files was cancelled"));
+        return;
+    }
+
+    emit status(tr("Could not complete the files: %1").arg(error));
+    QMessageBox::warning(this, tr("Complete files"), tr("Could not complete the files: %1").arg(error));
 }
 
 void LaunchPage::exportScript()
@@ -400,9 +559,27 @@ void LaunchPage::removeVersion()
 {
     if (m_selected.isEmpty())
         return;
-    if (QMessageBox::question(this, tr("Delete"),
-                              tr("Delete %1 and everything in its folder?").arg(m_selected))
-        != QMessageBox::Yes)
+
+    // A loader or a pack is a description on top of a version: deleting the base silently leaves
+    // every one of them with "the game files are missing" and no hint about why.
+    QStringList dependents;
+    const QString versionsRoot = QDir(dataRoot()).filePath(QStringLiteral("versions"));
+    for (const auto& version : m_versions) {
+        if (version.id == m_selected)
+            continue;
+        const ResolvedVersion resolved = resolveVersion(versionsRoot, version.id);
+        if (resolved.ok() && resolved.chain.contains(m_selected))
+            dependents << version.id;
+    }
+
+    QString question = tr("Delete %1 and everything in its folder?").arg(m_selected);
+    if (!dependents.isEmpty()) {
+        question += QStringLiteral("\n\n")
+                    + tr("%1 other version(s) are built on it and will stop working: %2")
+                          .arg(dependents.size())
+                          .arg(dependents.mid(0, 5).join(QStringLiteral(", ")));
+    }
+    if (QMessageBox::question(this, tr("Delete"), question) != QMessageBox::Yes)
         return;
 
     QDir(versionDirectory(m_selected)).removeRecursively();
