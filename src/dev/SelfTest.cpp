@@ -7,11 +7,14 @@
 #include <QMenu>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QStringList>
 #include <QPushButton>
+#include <QTemporaryDir>
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "core/util/DataMove.h"
 #include "kit/Kit.h"
 
 namespace Komorebi::Dev {
@@ -91,10 +94,13 @@ int runSelfTest()
         Komorebi::Field field;
         field.setText(QStringLiteral("1.20.1"));
         const QImage image = render(&field, QSize(200, 34));
-        report(luminance(image.pixelColor(100, 6)) > 180, "field surface is paper",
-               image.pixelColor(100, 6).name());
+        const QColor inside = image.pixelColor(100, 6);
+        report(luminance(inside) > 180, "field surface is paper", inside.name());
+        // The edge is what makes an input look like an input: the style used to fill over the plate
+        // with the same paper the window is painted with, so a check that only ruled out black passed
+        // while every field in the launcher had no frame at all.
         const QColor edge = image.pixelColor(0, 17);
-        report(edge != QColor(Qt::black), "field edge is drawn", edge.name());
+        report(edge != inside, "field edge is drawn", edge.name());
     }
 
     // 5. the combo: its own label is painted, so the middle of the row is not empty paper
@@ -127,6 +133,48 @@ int runSelfTest()
         const QImage image = render(&menu, QSize(160, 80));
         report(luminance(image.pixelColor(80, 40)) > 180, "menu surface is paper",
                image.pixelColor(80, 40).name());
+    }
+
+    // 8. copying a data directory: what the settings dialog offers before it moves to another drive
+    {
+        g_report << QStringLiteral("data directory self-test");
+        const auto write = [](const QString& path, const QByteArray& content) {
+            QDir().mkpath(QFileInfo(path).absolutePath());
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly))
+                return false;
+            return file.write(content) == content.size();
+        };
+
+        QTemporaryDir source;
+        QTemporaryDir target;
+        if (!source.isValid() || !target.isValid()) {
+            report(false, "temporary directories for the copy test", QString());
+        } else {
+            const QByteArray settings = "{\"language\":\"zh_CN\"}";
+            const QByteArray jar = "not really a jar, but the copy does not care";
+            write(source.filePath(QStringLiteral("settings.json")), settings);
+            write(source.filePath(QStringLiteral("versions/26.1/26.1.jar")), jar);
+            write(source.filePath(QStringLiteral("tmp/scratch.txt")), "throwaway");
+
+            const DataCopyResult copied = copyDataDirectory(source.path(), target.path());
+            report(copied.error.isEmpty(), "a data directory copies", copied.error);
+            report(copied.files == 2, "the copy counts what it copied", QString::number(copied.files));
+            report(copied.bytes == settings.size() + jar.size(), "the copy counts the bytes",
+                   QString::number(copied.bytes));
+            report(QFile::exists(target.filePath(QStringLiteral("versions/26.1/26.1.jar"))),
+                   "the copy keeps the tree", target.filePath(QStringLiteral("versions/26.1/26.1.jar")));
+            report(!QFile::exists(target.filePath(QStringLiteral("tmp/scratch.txt"))),
+                   "the copy leaves tmp behind", QString());
+
+            const DataCopyResult overlap = copyDataDirectory(source.path(), source.filePath(QStringLiteral("inside")));
+            report(!overlap.error.isEmpty(), "a copy into its own tree is refused", overlap.error);
+
+            QTemporaryDir stopped;
+            const DataCopyResult cancelled = copyDataDirectory(
+                source.path(), stopped.path(), [](const QString&, int, qint64) { return false; });
+            report(cancelled.cancelled && cancelled.error.isEmpty(), "a copy can be stopped", QString());
+        }
     }
 
     g_report << (g_failures == 0 ? QStringLiteral("self-test passed") : QStringLiteral("self-test failed: %1").arg(g_failures));
