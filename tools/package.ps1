@@ -38,11 +38,12 @@ function Format-Size([string]$path) { [math]::Round((Get-Item $path).Length / 1M
 
 # The Visual C++ files that travel next to the executable have to be the ones that came with the
 # toolset that compiled it, and the machine's system directory is not a substitute: a GitHub runner
-# carries a runtime older than its own compiler. The two do not agree on how a condition variable is
-# waited on, and the mismatch faults inside the runtime the moment a second thread is started -- that
-# is what took the launcher down when the modpack page began downloading on 0.1.1, with no message
-# and no window. The toolset is read from the build's own cache, so an old system runtime can never
-# be picked up silently again.
+# carries a runtime older than its own compiler. A standard library object built from the newer
+# headers but serviced by the older runtime is not a supported mix, and it faulted at
+# MSVCP140.dll+0x13080 in the runtime's thread start-up code the moment the downloader's own thread
+# began -- that is what took the launcher down when the modpack page opened on 0.1.1, with no
+# message and no window. The toolset is read from the build's own cache, so an old system runtime
+# can never be picked up silently again.
 function Get-VcRuntimeDir([string]$buildDir) {
     $toolsetDir = $null
     $cache = Join-Path $buildDir 'CMakeCache.txt'

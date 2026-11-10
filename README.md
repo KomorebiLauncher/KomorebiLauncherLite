@@ -44,8 +44,8 @@ run-local.bat        # 打开窗口（数据目录 build\data，用于这台机�
 发一个版本只需要打一个标签，其余由 CI（`.github/workflows/release.yml`）做完：
 
 ```powershell
-git tag -a v0.1.1 -m "Komorebi Lite 0.1.1"
-git push origin v0.1.1
+git tag -a v0.1.2 -m "Komorebi Lite 0.1.2"
+git push origin v0.1.2
 ```
 
 标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建三个包，只上传成 artifact 供试用，不发 Release。
@@ -58,7 +58,9 @@ git push origin v0.1.1
 | `KomorebiLite-Setup-<版本>.exe` | Inno Setup 打的安装包，装到当前用户目录，带开始菜单与卸载项，不弹 UAC |
 | `KomorebiLite-<版本>.exe` | 静态版 Qt 链接进 exe，单文件，不用解压 |
 
-单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.1 -BuildDir build-static -Static -Verify`。`-Verify` 会先截图，再跑一遍 `--selftest`：主题没打进 exe 的那次打包会在这里直接失败，而不是发到一个打不开的界面上。
+单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.2 -BuildDir build-static -Static -Verify`。`-Verify` 会在一个空目录里跑一遍 `--selftest`、再截一张窗口图、最后打开整合包页面：主题没打进 exe、或者下载线程一启动就崩的那次，都会在这里直接失败，而不是发到一个打不开的界面上。
+
+随 exe 一起发的 Visual C++ 运行时不能用这台机器系统目录里的那份：GitHub runner 上装的是 14.29，而它的编译器是 14.44，用新头文件编出来的对象由旧运行时代劳会在启动线程时直接崩掉——0.1.1 的整合包页面打不开就是这个原因。`tools\package.ps1` 现在从构建目录的 `CMakeCache.txt` 读出工具集版本，按版本去 `VC\Redist\MSVC\<版本>\x64\Microsoft.VC143.CRT` 取整套文件（含 `windeployqt` 从来不带的 `msvcp140_atomic_wait.dll` 和 `vcruntime140_threads.dll`），版本对不上就不打包。
 
 安装包需要 Inno Setup（`winget install JRSoftware.InnoSetup`），没有它时 `tools\package.ps1` 只出 zip 并提示一句。中文安装界面用的是仓库里 `tools/inno/ChineseSimplified.isl`，因为 Inno Setup 自己不带中文。
 
