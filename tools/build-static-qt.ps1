@@ -62,8 +62,12 @@ $configureArgs = @(
     '-prefix', $Prefix
 )
 
+# qtsvg draws the icon; qttools is where lrelease lives, and without lrelease CMake cannot compile the
+# translation files at all -- qttools has to be here even though the launcher never uses it directly.
+$addOns = 'qtsvg', 'qttools'
+
 New-Item -ItemType Directory -Path $SourceRoot -Force | Out-Null
-foreach ($module in 'qtbase', 'qtsvg') { Get-QtSource $module }
+foreach ($module in @('qtbase') + $addOns) { Get-QtSource $module }
 
 $qtbase = Expand-QtSource 'qtbase'
 $buildBase = Join-Path $SourceRoot 'build-qtbase'
@@ -82,25 +86,28 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "qtbase install failed with exit code $LASTEXITCODE" }
 } finally { Pop-Location }
 
-$qtsvg = Expand-QtSource 'qtsvg'
-$buildSvg = Join-Path $SourceRoot 'build-qtsvg'
-if (Test-Path $buildSvg) { Remove-Item $buildSvg -Recurse -Force }
-New-Item -ItemType Directory -Path $buildSvg -Force | Out-Null
+$parallel = if ($Jobs -gt 0) { $Jobs } else { [Environment]::ProcessorCount }
+foreach ($module in $addOns) {
+    $source = Expand-QtSource $module
+    $build = Join-Path $SourceRoot "build-$module"
+    if (Test-Path $build) { Remove-Item $build -Recurse -Force }
+    New-Item -ItemType Directory -Path $build -Force | Out-Null
 
-Write-Host "configuring qtsvg against the Qt that was just installed"
-Push-Location $buildSvg
-try {
-    & (Join-Path $Prefix 'bin/qt-configure-module.bat') $qtsvg -- "-DCMAKE_INSTALL_PREFIX=$Prefix"
-    if ($LASTEXITCODE -ne 0) { throw "qtsvg configure failed with exit code $LASTEXITCODE" }
-    $parallel = if ($Jobs -gt 0) { $Jobs } else { [Environment]::ProcessorCount }
-    & cmake --build . --parallel $parallel
-    if ($LASTEXITCODE -ne 0) { throw "qtsvg build failed with exit code $LASTEXITCODE" }
-    & cmake --install .
-    if ($LASTEXITCODE -ne 0) { throw "qtsvg install failed with exit code $LASTEXITCODE" }
-} finally { Pop-Location }
+    Write-Host "configuring $module against the Qt that was just installed"
+    Push-Location $build
+    try {
+        & (Join-Path $Prefix 'bin/qt-configure-module.bat') $source -- "-DCMAKE_INSTALL_PREFIX=$Prefix"
+        if ($LASTEXITCODE -ne 0) { throw "$module configure failed with exit code $LASTEXITCODE" }
+        & cmake --build . --parallel $parallel
+        if ($LASTEXITCODE -ne 0) { throw "$module build failed with exit code $LASTEXITCODE" }
+        & cmake --install .
+        if ($LASTEXITCODE -ne 0) { throw "$module install failed with exit code $LASTEXITCODE" }
+    } finally { Pop-Location }
+}
 
 foreach ($needed in @('lib/cmake/Qt6/Qt6Config.cmake', 'lib/Qt6Core.lib', 'lib/Qt6Widgets.lib',
-                      'lib/Qt6Network.lib', 'lib/Qt6Svg.lib', 'plugins/platforms/qwindows.lib')) {
+                      'lib/Qt6Network.lib', 'lib/Qt6Svg.lib', 'plugins/platforms/qwindows.lib',
+                      'lib/cmake/Qt6LinguistTools/Qt6LinguistToolsConfig.cmake', 'bin/lrelease.exe')) {
     if (-not (Test-Path (Join-Path $Prefix $needed))) { throw "the static Qt is missing $needed" }
 }
 $coreSize = [math]::Round((Get-Item (Join-Path $Prefix 'lib/Qt6Core.lib')).Length / 1MB, 1)
