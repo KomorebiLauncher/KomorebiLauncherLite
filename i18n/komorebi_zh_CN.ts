@@ -9,7 +9,7 @@
         <translation>版本 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="375"/>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="381"/>
         <source>A small Minecraft launcher: install a version, press Play.
 
 GPL-3.0. The mark and the interface are original work.
@@ -20,17 +20,17 @@ GPL-3.0 授权。标志与界面均为原创。
 非 MINECRAFT 官方产品，未经 MOJANG 或 MICROSOFT 批准，也与 MOJANG 或 MICROSOFT 无关。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="387"/>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="393"/>
         <source>Komorebi Lite is the light edition of KomorebiLauncher. The project&apos;s lineage is &lt;a href=&quot;https://github.com/PrismLauncher/PrismLauncher&quot;&gt;Prism Launcher&lt;/a&gt; and, before it, MultiMC. This edition&apos;s code is written independently; two parts have an outside source, which is named here rather than claimed as this project&apos;s own: the small Java helper that runs OptiFine&apos;s installer follows Prism Launcher&apos;s approach, and NeoForge is described by the component metadata Prism Launcher publishes. That is a source, not an affiliation. Details in NOTICE.md next to this launcher.</source>
         <translation>Komorebi Lite 是 KomorebiLauncher 的轻量版。项目的谱系是 &lt;a href=&quot;https://github.com/PrismLauncher/PrismLauncher&quot;&gt;Prism Launcher&lt;/a&gt; 及其前身 MultiMC。本版代码为独立实现；有两处明确的外部来源，这里照实写明而不是据为己有：运行 OptiFine 安装器的那个小 Java 助手沿用 Prism Launcher 的做法，NeoForge 则由 Prism Launcher 发布的组件元数据描述。这是来源，不是从属关系。细节见启动器旁的 NOTICE.md。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="396"/>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="402"/>
         <source>Source code</source>
         <translation>源代码</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/SimplePages.cpp" line="397"/>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="403"/>
         <source>Licence</source>
         <translation>许可证</translation>
     </message>
@@ -99,63 +99,84 @@ GPL-3.0 授权。标志与界面均为原创。
 <context>
     <name>AppWindow</name>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="53"/>
+        <location filename="../src/ui/AppWindow.cpp" line="57"/>
         <source>Install a version</source>
         <translation>安装新版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="75"/>
+        <location filename="../src/ui/AppWindow.cpp" line="79"/>
         <source>Modpacks</source>
         <translation>整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="76"/>
+        <location filename="../src/ui/AppWindow.cpp" line="80"/>
         <source>Content</source>
         <translation>内容</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="77"/>
+        <location filename="../src/ui/AppWindow.cpp" line="81"/>
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="78"/>
+        <location filename="../src/ui/AppWindow.cpp" line="82"/>
         <source>Accounts</source>
         <translation>账户</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="79"/>
+        <location filename="../src/ui/AppWindow.cpp" line="83"/>
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="80"/>
+        <location filename="../src/ui/AppWindow.cpp" line="84"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="81"/>
+        <location filename="../src/ui/AppWindow.cpp" line="85"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="55"/>
+        <location filename="../src/ui/AppWindow.cpp" line="177"/>
+        <source>Data directory</source>
+        <translation>数据目录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="178"/>
+        <source>The data directory is now
+%1
+
+The launcher has to start again to use it. Restart now?</source>
+        <translation>数据目录现在是
+%1
+
+启动器需要重新启动才能使用它。现在就重启吗？</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="189"/>
+        <source>Restart the launcher to use the new data directory</source>
+        <translation>重启启动器以使用新的数据目录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="59"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="109"/>
-        <location filename="../src/ui/AppWindow.cpp" line="140"/>
+        <location filename="../src/ui/AppWindow.cpp" line="113"/>
+        <location filename="../src/ui/AppWindow.cpp" line="144"/>
         <source>Ready</source>
         <translation>准备就绪</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="74"/>
+        <location filename="../src/ui/AppWindow.cpp" line="78"/>
         <source>Play</source>
         <translation>启动游戏</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="167"/>
+        <location filename="../src/ui/AppWindow.cpp" line="171"/>
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>设置已保存（语言在下次启动生效）</translation>
     </message>
@@ -288,129 +309,129 @@ GPL-3.0 授权。标志与界面均为原创。
 <context>
     <name>InstallDialog</name>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="49"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="63"/>
         <source>Install a version</source>
         <translation>安装新版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="57"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="71"/>
         <source>Select a version</source>
         <translation>选择一个版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="67"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="81"/>
         <source>Releases</source>
         <translation>正式版</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="68"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="82"/>
         <source>Snapshots</source>
         <translation>快照</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="69"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="83"/>
         <source>All</source>
         <translation>全部</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="78"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="92"/>
         <source>Loader</source>
         <translation>加载器</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="80"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="94"/>
         <source>Vanilla (no loader)</source>
         <translation>原版（不装加载器）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="81"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="95"/>
         <source>Fabric</source>
         <translation>Fabric</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="82"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="96"/>
         <source>Quilt</source>
         <translation>Quilt</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="83"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="97"/>
         <source>Forge (newest)</source>
         <translation>Forge（最新）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="84"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="98"/>
         <source>NeoForge (newest)</source>
         <translation>NeoForge（最新）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="85"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="99"/>
         <source>OptiFine (newest)</source>
         <translation>OptiFine（最新）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="89"/>
-        <location filename="../src/ui/InstallDialog.cpp" line="140"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="103"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="154"/>
         <source>Fetching the version list…</source>
         <translation>正在获取版本列表…</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="96"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="110"/>
         <source>Install progress shows up here</source>
         <translation>安装过程会显示在这里</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="101"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="115"/>
         <source>Install</source>
         <translation>安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="104"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="118"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="173"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="187"/>
         <source>Could not fetch the version list: %1</source>
         <translation>获取版本列表失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="189"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="203"/>
         <source>%1 versions available, newest release %2, newest snapshot %3</source>
         <translation>共 %1 个可选版本，最新正式版 %2，最新快照 %3</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="211"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="225"/>
         <source>Installing %1…</source>
         <translation>开始安装 %1 …</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="212"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="226"/>
         <source>Installing %1</source>
         <translation>正在安装 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="315"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="331"/>
         <source>%1 %2%% (%3/%4)</source>
         <translation>%1 %2%%（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="329"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="348"/>
         <source>Installed: %1 file(s) downloaded, %2 already present</source>
         <translation>安装完成：下载 %1 个文件，跳过 %2 个已存在的文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="332"/>
-        <location filename="../src/ui/InstallDialog.cpp" line="342"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="351"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="361"/>
         <source>Install failed: %1</source>
         <translation>安装失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="338"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="357"/>
         <source>%1 is installed</source>
         <translation>%1 已安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/InstallDialog.cpp" line="340"/>
+        <location filename="../src/ui/InstallDialog.cpp" line="359"/>
         <source>Done</source>
         <translation>完成</translation>
     </message>
@@ -542,88 +563,88 @@ GPL-3.0 授权。标志与界面均为原创。
 <context>
     <name>LaunchPage</name>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="103"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="115"/>
         <source>Select a version</source>
         <translation>选择一个版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="127"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="139"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="128"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="533"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="140"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="554"/>
         <source>Rename</source>
         <translation>改名</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="129"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="549"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="141"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="570"/>
         <source>Notes</source>
         <translation>备注</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="130"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="142"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="131"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="387"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="486"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="143"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="399"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="507"/>
         <source>Complete files</source>
         <translation>补全文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="132"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="144"/>
         <source>Start script</source>
         <translation>启动脚本</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="133"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="582"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="145"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="603"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="146"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="272"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="158"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="284"/>
         <source>Ready</source>
         <translation>准备就绪</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="148"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="160"/>
         <source>Play</source>
         <translation>启动游戏</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="182"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="194"/>
         <source>No account signed in: the game starts offline.</source>
         <translation>尚未登录账户：游戏将以离线模式启动。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="192"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="204"/>
         <source>Playing as %1</source>
         <translation>当前账户：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="219"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="231"/>
         <source>No versions installed yet</source>
         <translation>还没有安装任何版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="220"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="232"/>
         <source>Use Install a version in the top right corner to download one.</source>
         <translation>点右上角的「安装新版本」下载一个。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="222"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="234"/>
         <source>Nothing installed</source>
         <translation>尚未安装版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="257"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="269"/>
         <source>Java %1 · %2
 Installed at: %3
 Game files: %4</source>
@@ -632,178 +653,174 @@ Game files: %4</source>
 游戏文件：%4</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="258"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="270"/>
         <source>unknown</source>
         <translation>未知</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="259"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="271"/>
         <source>complete</source>
         <translation>完整</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="259"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="271"/>
         <source>missing</source>
         <translation>缺失</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="261"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="273"/>
         <source>
 Memory: %1 MB (this version)</source>
         <translation>
 内存：%1 MB（本版本）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="263"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="275"/>
         <source>
 JVM arguments: %1</source>
         <translation>
 JVM 参数：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="265"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="277"/>
         <source>
 Game arguments: %1</source>
         <translation>
 游戏参数：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="267"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="279"/>
         <source>
 Started %1 time(s), last %2</source>
         <translation>
 已启动 %1 次，最近 %2</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="272"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="284"/>
         <source>The game files of this version are missing; complete them</source>
         <translation>这个版本缺少游戏文件，请补全</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="280"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="292"/>
         <source>The game is already running</source>
         <translation>游戏已经在运行了</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="301"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="313"/>
         <source>%1 file(s) are missing</source>
         <translation>缺少 %1 个文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="306"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="336"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="318"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="348"/>
         <source>Cannot launch %1</source>
         <translation>无法启动 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="316"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="328"/>
         <source>Game exited</source>
         <translation>游戏已退出</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="316"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="328"/>
         <source>The game exited with code %1</source>
         <translation>游戏异常退出（%1）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="321"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="335"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="333"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="347"/>
         <source>Could not start: Java did not run</source>
         <translation>启动失败：Java 没有运行起来</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="337"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="349"/>
         <source>Java did not start: %1</source>
         <translation>Java 未能启动：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="350"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="362"/>
         <source>Game started</source>
         <translation>游戏已启动</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="376"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="388"/>
         <source>Nothing is missing</source>
         <translation>没有缺失的文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="386"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="445"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="398"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="457"/>
         <source>Completing %1…</source>
         <translation>正在补全 %1…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="386"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="398"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="399"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="411"/>
         <source>%1 file(s) missing, filling them in</source>
         <translation>缺少 %1 个文件，正在补全</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="446"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="458"/>
         <source>%1 · %2</source>
         <translation>%1 · %2</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="473"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="494"/>
         <source>%1 file(s) fetched</source>
         <translation>已获取 %1 个文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="474"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="495"/>
         <source>Everything was already there (%1 checked)</source>
         <translation>所有文件都已存在（检查了 %1 个）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="481"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="502"/>
         <source>Completing the files was cancelled</source>
         <translation>已取消补全文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="485"/>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="486"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="506"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="507"/>
         <source>Could not complete the files: %1</source>
         <translation>无法补全文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="578"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="599"/>
         <source>%1 other version(s) are built on it and will stop working: %2</source>
         <translation>有 %1 个版本以它为基础，删除后将无法使用：%2</translation>
     </message>
     <message>
-        <source>%1 file(s) missing, opening the installer</source>
-        <translation type="vanished">缺少 %1 个文件，正在打开安装器</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="502"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="523"/>
         <source>Could not write %1</source>
         <translation>无法写入 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="508"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="529"/>
         <source>Wrote %1</source>
         <translation>已写入 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="523"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="544"/>
         <source>Saved the settings of %1</source>
         <translation>已保存 %1 的设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="533"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="554"/>
         <source>Name (empty: the version id)</source>
         <translation>名称（留空则用版本号）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="549"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="570"/>
         <source>Notes for this version</source>
         <translation>这个版本的备注</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/LaunchPage.cpp" line="575"/>
+        <location filename="../src/ui/pages/LaunchPage.cpp" line="596"/>
         <source>Delete %1 and everything in its folder?</source>
         <translation>删除 %1 及其文件夹里的全部内容？</translation>
     </message>
@@ -971,7 +988,7 @@ Started %1 time(s), last %2</source>
     </message>
     <message>
         <location filename="../src/ui/pages/ModpacksPage.cpp" line="72"/>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="184"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="198"/>
         <source>Search CurseForge modpacks, or leave empty for the popular ones</source>
         <translation>搜索 CurseForge 整合包，留空则按热度列出</translation>
     </message>
@@ -981,37 +998,37 @@ Started %1 time(s), last %2</source>
         <translation>Modrinth</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="183"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="197"/>
         <source>Search Modrinth modpacks, or leave empty for the popular ones</source>
         <translation>搜索 Modrinth 整合包，留空则按热度列出</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="580"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="596"/>
         <source>%1 · %2 (%3/%4)</source>
         <translation>%1 · %2（%3/%4）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="310"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="324"/>
         <source>Looking up the newest version…</source>
         <translation>正在查询最新版本…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="347"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="361"/>
         <source>Minecraft %1</source>
         <translation>Minecraft %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="347"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="361"/>
         <source>any</source>
         <translation>不限</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="362"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="376"/>
         <source>The newest version could not be looked up: %1</source>
         <translation>无法查询最新版本：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="363"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="377"/>
         <source>no answer</source>
         <translation>没有响应</translation>
     </message>
@@ -1021,22 +1038,22 @@ Started %1 time(s), last %2</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="560"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="576"/>
         <source>Cancelling…</source>
         <translation>正在取消…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="561"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="577"/>
         <source>Cancelling the install</source>
         <translation>正在取消安装</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="622"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="649"/>
         <source>Install cancelled. What was already downloaded is kept.</source>
         <translation>安装已取消，已下载的文件会保留。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="623"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="650"/>
         <source>Install cancelled</source>
         <translation>安装已取消</translation>
     </message>
@@ -1071,106 +1088,106 @@ Started %1 time(s), last %2</source>
         <translation>搜索整合包，或导入你已有的 zip</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="201"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="215"/>
         <source>Searching…</source>
         <translation>搜索中…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="204"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="218"/>
         <source>Searching</source>
         <translation>正在搜索</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="249"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="263"/>
         <source>Nothing found. Try another word.</source>
         <translation>没有找到。换个关键词试试。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="250"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="264"/>
         <source>Nothing found: %1</source>
         <translation>没有结果：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="251"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="265"/>
         <source>Nothing found</source>
         <translation>没有结果</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="254"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="268"/>
         <source>%1 pack(s). Pick one and press install.</source>
         <translation>共 %1 个整合包，选一个按安装。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="255"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="269"/>
         <source>%1 pack(s) found</source>
         <translation>找到 %1 个整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="397"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="411"/>
         <source>the pack has no downloadable version: %1</source>
         <translation>整合包没有可下载的版本：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="412"/>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="468"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="426"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="482"/>
         <source>no place to unpack the pack</source>
         <translation>没有可用于解压整合包的位置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="452"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="466"/>
         <source>the pack has no downloadable file: %1</source>
         <translation>这个整合包没有可下载的文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="418"/>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="474"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="432"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="488"/>
         <source>downloading the pack</source>
         <translation>正在下载整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="423"/>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="479"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="437"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="493"/>
         <source>could not download the pack: %1</source>
         <translation>无法下载整合包：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="503"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="517"/>
         <source>Import a modpack</source>
         <translation>导入整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="505"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="519"/>
         <source>Modpack (*.zip)</source>
         <translation>整合包 (*.zip)</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="533"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="549"/>
         <source>Installing %1…</source>
         <translation>正在安装 %1…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="541"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="557"/>
         <source>Installing %1</source>
         <translation>正在安装 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="579"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="595"/>
         <source>%1 (%2/%3)</source>
         <translation>%1（%2/%3）</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="627"/>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="628"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="654"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="655"/>
         <source>Install failed: %1</source>
         <translation>安装失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="615"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="642"/>
         <source>Installed as %1 (%2 files downloaded, %3 failed). It is on the Play page.</source>
         <translation>已安装为 %1（下载 %2 个文件，%3 个失败），可在启动页看到。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ModpacksPage.cpp" line="616"/>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="643"/>
         <source>Installed %1</source>
         <translation>已安装 %1</translation>
     </message>
@@ -1178,202 +1195,301 @@ Started %1 time(s), last %2</source>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="44"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="61"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="51"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="68"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="83"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="73"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="116"/>
         <source>Follow the system</source>
         <translation>跟随系统</translation>
     </message>
     <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="85"/>
+        <source>Browse…</source>
+        <translation>浏览…</translation>
+    </message>
+    <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="86"/>
+        <source>Default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="90"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="304"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="331"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="348"/>
+        <source>Data directory</source>
+        <translation>数据目录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="93"/>
+        <source>Versions, libraries, assets, Java, accounts and your saves all live here. Moving it to another drive is fine; the launcher asks before copying anything, and the change takes effect the next time it starts.</source>
+        <translation>版本、库文件、资源、Java、账户和你的存档都在这里。换到别的盘也没问题；复制之前启动器会先问你，改动在下次启动时生效。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="100"/>
+        <source>Choose a data directory</source>
+        <translation>选择数据目录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="129"/>
         <source>Memory (MB)</source>
         <translation>内存（MB）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="107"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="150"/>
         <source>Game window size</source>
         <translation>游戏窗口大小</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="108"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="151"/>
         <source>0 means whatever the version asks for; an empty field means the same.</source>
         <translation>0 表示由版本自行决定；留空含义相同。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="113"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="156"/>
         <source>Java path</source>
         <translation>Java 路径</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="111"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="154"/>
         <source>Empty: choose the runtime the version asks for</source>
         <translation>留空：按版本要求自动选择</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="88"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="131"/>
         <source>Lock the heap (-Xms = -Xmx)</source>
         <translation>锁定内存分配（-Xms = -Xmx）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="101"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="144"/>
         <source>width</source>
         <translation>宽</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="102"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="145"/>
         <source>height</source>
         <translation>高</translation>
     </message>
     <message>
-        <source>Window size</source>
-        <translation type="vanished">窗口大小</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="118"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="161"/>
         <source>JVM arguments</source>
         <translation>JVM 参数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="123"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="166"/>
         <source>Game arguments</source>
         <translation>游戏参数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="169"/>
         <source>Optional command to run before the game</source>
         <translation>可选：启动游戏前执行的命令</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="128"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="171"/>
         <source>Before launch</source>
         <translation>启动前命令</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="131"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="174"/>
         <source>Normal</source>
         <translation>正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="132"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="175"/>
         <source>Above normal</source>
         <translation>高于正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="133"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="176"/>
         <source>High</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="134"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="177"/>
         <source>Below normal</source>
         <translation>低于正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="141"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="184"/>
         <source>Process priority</source>
         <translation>进程优先级</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="143"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="186"/>
         <source>Ask for the high performance GPU</source>
         <translation>要求使用高性能显卡</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="147"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="190"/>
         <source>Legacy fix (old versions)</source>
         <translation>旧版本兼容修复</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="151"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="194"/>
         <source>Allow the unsafe memory access agent</source>
         <translation>允许 Unsafe 内存访问代理</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="161"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="204"/>
         <source>Official first</source>
         <translation>官方源优先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="162"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="205"/>
         <source>Mirror first</source>
         <translation>镜像源优先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="163"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="206"/>
         <source>Official only</source>
         <translation>仅官方源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="164"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="207"/>
         <source>Mirror only</source>
         <translation>仅镜像源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="171"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="214"/>
         <source>Download from</source>
         <translation>下载源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="176"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="219"/>
         <source>Mirror address</source>
         <translation>镜像地址</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="179"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="222"/>
         <source>Files at once</source>
         <translation>同时下载数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="182"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="225"/>
         <source>0: no limit</source>
         <translation>0：不限速</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="183"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="226"/>
         <source>Speed limit (KB/s)</source>
         <translation>速度限制（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="192"/>
-        <source>Microsoft app id</source>
-        <translation>Microsoft 应用 ID</translation>
+        <location filename="../src/ui/SettingsDialog.cpp" line="235"/>
+        <source>Microsoft app id (sign-in)</source>
+        <translation>Microsoft 应用 ID（登录用）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="195"/>
-        <source>Needed for Microsoft sign-in: create a public-client app in Azure and paste its application (client) id here. The KOMOREBI_MSA_CLIENT_ID environment variable also works. Without an app id the sign-in can only fail.</source>
-        <translation>登录 Microsoft 需要它：在 Azure 创建一个公共客户端应用，把它的应用（客户端）ID 填在这里。也可以通过环境变量 KOMOREBI_MSA_CLIENT_ID 提供。没有应用 ID 时登录只会失败。</translation>
+        <location filename="../src/ui/SettingsDialog.cpp" line="238"/>
+        <source>Only needed to sign in with a Microsoft account: create a public-client app in Azure and paste its application (client) id here. Playing offline needs nothing in this field, and the launcher ships no app id of its own, so leaving it empty means Microsoft sign-in can only fail. The KOMOREBI_MSA_CLIENT_ID environment variable also works.</source>
+        <translation>只有用 Microsoft 账户登录时才需要：在 Azure 里创建一个公共客户端应用，把它的应用（客户端）ID 填在这里。离线游玩这个字段不用填；启动器自身不带应用 ID，所以留空就意味着 Microsoft 登录必然失败。也可以改用 KOMOREBI_MSA_CLIENT_ID 环境变量。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="215"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="320"/>
+        <source>%1 is not a full path.</source>
+        <translation>%1 不是完整路径。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="325"/>
+        <source>The new directory has to be outside the current one, and not contain it either.</source>
+        <translation>新目录必须在当前目录之外，也不能包含当前目录。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="332"/>
+        <source>Move everything from
+%1
+to
+%2?</source>
+        <translation>把
+%1
+里的所有内容移到
+%2？</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="333"/>
+        <source>Copy and switch</source>
+        <translation>复制并切换</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="334"/>
+        <source>Switch without copying</source>
+        <translation>只切换，不复制</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="335"/>
+        <source>Leave it alone</source>
+        <translation>保持原样</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="343"/>
+        <source>Could not create %1.</source>
+        <translation>无法创建 %1。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="347"/>
+        <source>Copying the data directory…</source>
+        <translation>正在复制数据目录…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="347"/>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="357"/>
+        <source>Copying %1
+%2 files, %3 MB</source>
+        <translation>正在复制 %1
+%2 个文件，%3 MB</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="368"/>
+        <source>Copying stopped, so the data directory is unchanged. Anything already copied is left in %1 and can be deleted.</source>
+        <translation>复制已停止，数据目录保持不变。已经复制过去的文件留在 %1，可以删掉。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="374"/>
+        <source>Copying failed: %1
+The data directory is unchanged.</source>
+        <translation>复制失败：%1
+数据目录保持不变。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="383"/>
+        <source>Could not remember the new data directory: %1</source>
+        <translation>无法记录新的数据目录：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/SettingsDialog.cpp" line="260"/>
         <source>Wallpaper</source>
         <translation>壁纸</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="216"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="261"/>
         <source>Has no effect when the theme carries no wallpaper.</source>
         <translation>主题不带壁纸时不生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="219"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="264"/>
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>语言切换会在下次启动启动器时生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="227"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="272"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="229"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="274"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -1381,176 +1497,164 @@ Started %1 time(s), last %2</source>
 <context>
     <name>ToolsPage</name>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="67"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="68"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="74"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="75"/>
         <source>Small jobs that do not belong anywhere else.</source>
         <translation>一些不属于其他页面的杂活。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="105"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="108"/>
         <source>Game logs, crash reports and temporary files left behind.</source>
         <translation>游戏日志、崩溃报告和残留的临时文件。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="105"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="118"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="108"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="123"/>
         <source>Clean up</source>
         <translation>清理</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="106"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="109"/>
         <source>A shortcut on the desktop that opens this launcher.</source>
         <translation>在桌面创建打开启动器的快捷方式。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="106"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="109"/>
         <source>Create shortcut</source>
         <translation>创建快捷方式</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="107"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="110"/>
         <source>The launcher&apos;s settings, to carry to another machine.</source>
         <translation>把启动器设置导出，带到另一台机器。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="107"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="156"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="110"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="161"/>
         <source>Export settings</source>
         <translation>导出设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="108"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="111"/>
         <source>Read settings from a file.</source>
         <translation>从文件读入设置。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="108"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="187"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="111"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="192"/>
         <source>Import settings</source>
         <translation>导入设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="109"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="112"/>
         <source>Download one file by its address.</source>
         <translation>按地址下载单个文件。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="109"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="227"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="112"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="232"/>
         <source>Download a file</source>
         <translation>下载文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="119"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="124"/>
         <source>Remove the game logs, crash reports and temporary files? This cannot be undone.</source>
         <translation>删除游戏日志、崩溃报告和临时文件？此操作无法撤销。</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="124"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="129"/>
         <source>Cleaned up %1 of logs, crash reports and temporary files</source>
         <translation>已清理 %1 项日志、崩溃报告和临时文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="125"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="130"/>
         <source>Nothing to clean up</source>
         <translation>没有可清理的内容</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="194"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="199"/>
         <source>Could not read the settings file: %1</source>
         <translation>无法读取设置文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="204"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="209"/>
         <source>That file is not a settings file</source>
         <translation>该文件不是设置文件</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="214"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="218"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="219"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="223"/>
         <source>Could not import the settings: %1</source>
         <translation>无法导入设置：%1</translation>
     </message>
     <message>
-        <source>Cleaned up %1</source>
-        <translation type="vanished">已清理 %1</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="148"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="153"/>
         <source>Shortcut created on the desktop</source>
         <translation>已在桌面创建快捷方式</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="148"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="153"/>
         <source>Could not create the shortcut</source>
         <translation>无法创建快捷方式</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="150"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="155"/>
         <source>Shortcuts are a Windows thing</source>
         <translation>快捷方式只在 Windows 上有意义</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="159"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="188"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="164"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="193"/>
         <source>Settings file (*.json)</source>
         <translation>设置文件 (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="165"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="170"/>
         <source>There are no settings to export yet</source>
         <translation>还没有可导出的设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="175"/>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="179"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="180"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="184"/>
         <source>Could not export the settings: %1</source>
         <translation>无法导出设置：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="182"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="187"/>
         <source>Settings exported</source>
         <translation>设置已导出</translation>
     </message>
     <message>
-        <source>Could not export the settings</source>
-        <translation type="vanished">无法导出设置</translation>
-    </message>
-    <message>
-        <source>Could not import the settings</source>
-        <translation type="vanished">无法导入设置</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="221"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="226"/>
         <source>Settings imported; they apply the next time the launcher starts</source>
         <translation>设置已导入，下次启动启动器时生效</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="227"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="232"/>
         <source>Address</source>
         <translation>地址</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="231"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="236"/>
         <source>Where to save it</source>
         <translation>保存到哪里</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="242"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="247"/>
         <source>Downloading…</source>
         <translation>正在下载…</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="263"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="268"/>
         <source>Saved to %1</source>
         <translation>已保存到 %1</translation>
     </message>
     <message>
-        <location filename="../src/ui/pages/ToolsPage.cpp" line="264"/>
+        <location filename="../src/ui/pages/ToolsPage.cpp" line="269"/>
         <source>Download failed: %1</source>
         <translation>下载失败：%1</translation>
     </message>

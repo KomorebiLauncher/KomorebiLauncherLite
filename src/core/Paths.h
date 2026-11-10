@@ -17,6 +17,28 @@ namespace Komorebi {
 /// The launcher's data directory, with a trailing separator removed.
 QString dataRoot();
 
+/**
+ * Where the data directory is when nobody said otherwise: `%APPDATA%\KomorebiLauncherLite`.
+ *
+ * This one never moves, so it is where the pointer to a moved data directory lives. Settings,
+ * accounts and the game all live in `dataRoot()`, which cannot be read from a file inside itself.
+ */
+QString defaultDataRoot();
+
+/// The file that remembers a data directory the player picked: `defaultDataRoot()/data-root.txt`.
+QString dataRootPointer();
+
+/**
+ * Points the launcher at `directory` (an empty string goes back to `defaultDataRoot()`), and
+ * returns false with `error` filled when the pointer could not be written.
+ *
+ * Nothing is moved here: the caller decides what to do with the files already on disk.
+ */
+bool setDataRoot(const QString& directory, QString* error);
+
+/// Whether the data directory is one the player chose rather than the default.
+bool hasChosenDataRoot();
+
 /// `<dataRoot>/instances`
 QString instancesRoot();
 

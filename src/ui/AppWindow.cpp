@@ -2,10 +2,14 @@
 #include "ui/AppWindow.h"
 
 #include <QApplication>
+#include <QCoreApplication>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QMessageBox>
 #include <QPainter>
+#include <QProcess>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -165,6 +169,25 @@ void AppWindow::openSettings()
     // opacity shows up at once.
     update();
     setStatus(tr("Settings saved (the language changes next time the launcher starts)"));
+
+    // Everything else reads the data directory once, while starting, so a new one only counts after
+    // a fresh start. Offering that start here saves the player from hunting for the shortcut.
+    if (dialog.dataDirectoryChanged()) {
+        const auto answer = QMessageBox::question(
+            this, tr("Data directory"),
+            tr("The data directory is now\n%1\n\nThe launcher has to start again to use it. Restart now?")
+                .arg(QDir::toNativeSeparators(Komorebi::dataRoot())),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        if (answer == QMessageBox::Yes) {
+            // Same arguments as this start, so a debugging run keeps its page and flags.
+            if (QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                                        QCoreApplication::arguments().mid(1))) {
+                QCoreApplication::quit();
+                return;
+            }
+        }
+        setStatus(tr("Restart the launcher to use the new data directory"));
+    }
 }
 
 void AppWindow::setStatus(const QString& text)

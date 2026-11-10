@@ -19,6 +19,7 @@
 | Java 运行时按版本自动下载（Mojang 运行时，装进数据目录的 `java/`） | 可用 |
 | 高性能显卡（写 Windows 图形首选项）、进程优先级、原生库解包 | 可用 |
 | 下载源（官方 / 镜像 / 仅官方 / 仅镜像，可自定义镜像）、并发数、限速 | 可用 |
+| 数据目录可换到别的盘（设置里选目录，可选择顺手把现有文件复制过去） | 可用 |
 | 实例级设置（内存 / 参数 / 备注按版本覆盖） | 可用 |
 | 微软账户登录（设备码），启动时带正版档案 | 可用 |
 | 整合包：CurseForge / Modrinth 搜索与安装、本地导入（`.zip` / `.mrpack`） | 可用 |
@@ -44,8 +45,8 @@ run-local.bat        # 打开窗口（数据目录 build\data，用于这台机�
 发一个版本只需要打一个标签，其余由 CI（`.github/workflows/release.yml`）做完：
 
 ```powershell
-git tag -a v0.1.2 -m "Komorebi Lite 0.1.2"
-git push origin v0.1.2
+git tag -a v0.1.3 -m "Komorebi Lite 0.1.3"
+git push origin v0.1.3
 ```
 
 标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建三个包，只上传成 artifact 供试用，不发 Release。
@@ -58,7 +59,7 @@ git push origin v0.1.2
 | `KomorebiLite-Setup-<版本>.exe` | Inno Setup 打的安装包，装到当前用户目录，带开始菜单与卸载项，不弹 UAC |
 | `KomorebiLite-<版本>.exe` | 静态版 Qt 链接进 exe，单文件，不用解压 |
 
-单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.2 -BuildDir build-static -Static -Verify`。`-Verify` 会在一个空目录里跑一遍 `--selftest`、再截一张窗口图、最后打开整合包页面：主题没打进 exe、或者下载线程一启动就崩的那次，都会在这里直接失败，而不是发到一个打不开的界面上。
+单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.3 -BuildDir build-static -Static -Verify`。`-Verify` 会在一个空目录里跑一遍 `--selftest`、再截一张窗口图、最后打开整合包页面：主题没打进 exe、或者下载线程一启动就崩的那次，都会在这里直接失败，而不是发到一个打不开的界面上。
 
 随 exe 一起发的 Visual C++ 运行时不能用这台机器系统目录里的那份：GitHub runner 上装的是 14.29，而它的编译器是 14.44，用新头文件编出来的对象由旧运行时代劳会在启动线程时直接崩掉——0.1.1 的整合包页面打不开就是这个原因。`tools\package.ps1` 现在从构建目录的 `CMakeCache.txt` 读出工具集版本，按版本去 `VC\Redist\MSVC\<版本>\x64\Microsoft.VC143.CRT` 取整套文件（含 `windeployqt` 从来不带的 `msvcp140_atomic_wait.dll` 和 `vcruntime140_threads.dll`），版本对不上就不打包。
 
@@ -80,7 +81,9 @@ git push origin v0.1.2
   logs\                       每次启动的游戏日志
 ```
 
-设置 `KOMOREBI_DATA` 可以换数据目录（测试用）。
+数据目录不写死在这里：设置里的「数据目录」可以换成任意一个目录（比如空间更大的 D 盘），换完重启启动器生效。换了以后，上一段这个位置只留一个 `data-root.txt`，里面一行写新目录的路径——它是启动器唯一需要记住的东西，删掉它就回到 `%APPDATA%\KomorebiLauncherLite`。选新目录时启动器会问一次要不要把现有文件复制过去：选复制就只复制、不删原件（`tmp\` 是临时文件，不复制）；也可以只切换不复制，旧的目录原样留着，想删自己删。复制可以中途停，停在哪儿就是哪儿，指针还没写，数据目录仍是原来的那个。
+
+设置 `KOMOREBI_DATA` 可以直接指定数据目录（优先级高于 `data-root.txt`，测试用）。
 
 ## 诊断入口
 

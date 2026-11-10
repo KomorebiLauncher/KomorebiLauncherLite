@@ -2,19 +2,35 @@
 #include "core/Paths.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QProcessEnvironment>
+#include <QSaveFile>
 #include <QStandardPaths>
 
 namespace Komorebi {
 
-QString dataRoot()
-{
-    // An explicit setting wins, then the roaming directory on Windows, then Qt's idea of it.
-    const QString override = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_DATA"));
-    if (!override.isEmpty())
-        return QDir::cleanPath(override);
+namespace {
 
+/// The remembered data directory, or an empty string when there is none worth using.
+QString readDataRootPointer()
+{
+    QFile file(dataRootPointer());
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return {};
+
+    const QString line = QString::fromUtf8(file.readAll()).trimmed();
+    // A relative path in here would depend on the working directory the launcher was started from,
+    // which is not something a player can be expected to control.
+    if (line.isEmpty() || !QDir::isAbsolutePath(line))
+        return {};
+    return QDir::cleanPath(line);
+}
+
+}  // namespace
+
+QString defaultDataRoot()
+{
 #if defined(Q_OS_WIN)
     const QString roaming = QProcessEnvironment::systemEnvironment().value(QStringLiteral("APPDATA"));
     if (!roaming.isEmpty())
@@ -23,6 +39,84 @@ QString dataRoot()
 
     return QDir::cleanPath(QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation))
                                .filePath(QStringLiteral("KomorebiLauncherLite")));
+}
+
+QString dataRootPointer()
+{
+    return QDir(defaultDataRoot()).filePath(QStringLiteral("data-root.txt"));
+}
+
+QString dataRoot()
+{
+    // An explicit setting wins, then the directory the player picked, then the roaming one on Windows,
+    // then Qt's idea of it.
+    const QString override = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_DATA"));
+    if (!override.isEmpty())
+        return QDir::cleanPath(override);
+
+    const QString chosen = readDataRootPointer();
+    if (!chosen.isEmpty())
+        return chosen;
+
+    return defaultDataRoot();
+}
+
+bool setDataRoot(const QString& directory, QString* error)
+{
+    const QString pointer = dataRootPointer();
+    if (directory.isEmpty()) {
+        // Going back to the default: the pointer file is the whole of the old arrangement.
+        if (!QFile::exists(pointer) || QFile::remove(pointer))
+            return true;
+        if (error)
+            *error = QStringLiteral("could not remove %1").arg(QDir::toNativeSeparators(pointer));
+        return false;
+    }
+
+    const QString target = QDir::cleanPath(QDir(directory).absolutePath());
+    if (!QDir().mkpath(target)) {
+        if (error)
+            *error = QStringLiteral("could not create %1").arg(QDir::toNativeSeparators(target));
+        return false;
+    }
+
+    // Writing a file there says more than mkpath does: the directory can exist and still be read-only.
+    const QString probePath = QDir(target).filePath(QStringLiteral("data-root-probe.tmp"));
+    QFile probe(probePath);
+    if (!probe.open(QIODevice::WriteOnly) || probe.write("ok") != 2) {
+        if (error)
+            *error = QStringLiteral("could not write to %1").arg(QDir::toNativeSeparators(target));
+        return false;
+    }
+    probe.close();
+    probe.remove();
+
+    if (!QDir().mkpath(defaultDataRoot())) {
+        if (error)
+            *error = QStringLiteral("could not create %1").arg(QDir::toNativeSeparators(defaultDataRoot()));
+        return false;
+    }
+
+    // QSaveFile commits by renaming, so a crash halfway leaves the old pointer rather than nothing.
+    QSaveFile file(pointer);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (error)
+            *error = QStringLiteral("could not write %1").arg(QDir::toNativeSeparators(pointer));
+        return false;
+    }
+    file.write(QDir::toNativeSeparators(target).toUtf8());
+    file.write("\n");
+    if (!file.commit()) {
+        if (error)
+            *error = QStringLiteral("could not write %1").arg(QDir::toNativeSeparators(pointer));
+        return false;
+    }
+    return true;
+}
+
+bool hasChosenDataRoot()
+{
+    return !readDataRootPointer().isEmpty();
 }
 
 QString instancesRoot()

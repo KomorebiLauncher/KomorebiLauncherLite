@@ -3,14 +3,21 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QIntValidator>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QProgressDialog>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
+#include "core/Paths.h"
+#include "core/util/DataMove.h"
 #include "kit/Kit.h"
 
 using namespace Komorebi;
@@ -64,6 +71,54 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     titleFont.setBold(true);
     title->setFont(titleFont);
     layout->addWidget(title);
+
+    // ---- where the game lives
+    // Asked for first because it is the one setting that can free a whole drive: versions, assets,
+    // libraries, Java and the saves all sit under it.
+    auto* dataForm = new QFormLayout();
+    dataForm->setSpacing(8);
+    m_dataDirectory = QDir::cleanPath(Komorebi::dataRoot());
+    m_dataDirectoryField = new Komorebi::Field(page);
+    m_dataDirectoryField->setReadOnly(true);
+    auto* browseData = new Komorebi::Button(tr("Browse…"), page);
+    auto* defaultData = new Komorebi::Button(tr("Default"), page);
+    // A path is long and a read-only field scrolls to its tail, so the interesting part would be the
+    // end of the path at every moment; put the caret back where it started after each change.
+    const auto showDataDirectory = [this] {
+        const QString shown = QDir::toNativeSeparators(m_dataDirectory);
+        m_dataDirectoryField->setText(shown);
+        m_dataDirectoryField->setCursorPosition(0);
+        m_dataDirectoryField->setToolTip(shown);
+    };
+    showDataDirectory();
+    auto* dataRow = new QVBoxLayout();
+    dataRow->setSpacing(6);
+    dataRow->addWidget(m_dataDirectoryField);
+    auto* dataButtons = new QHBoxLayout();
+    dataButtons->addStretch(1);
+    dataButtons->addWidget(browseData);
+    dataButtons->addWidget(defaultData);
+    dataRow->addLayout(dataButtons);
+    dataForm->addRow(tr("Data directory"), dataRow);
+    dataForm->addRow(
+        QString(),
+        hintLabel(page, tr("Versions, libraries, assets, Java, accounts and your saves all live here. "
+                           "Moving it to another drive is fine; the launcher asks before copying anything, "
+                           "and the change takes effect the next time it starts.")));
+    layout->addLayout(dataForm);
+
+    connect(browseData, &QPushButton::clicked, this, [this, showDataDirectory] {
+        const QString chosen = QFileDialog::getExistingDirectory(
+            this, tr("Choose a data directory"), m_dataDirectory, QFileDialog::ShowDirsOnly);
+        if (chosen.isEmpty())
+            return;
+        m_dataDirectory = QDir::cleanPath(QDir::fromNativeSeparators(chosen));
+        showDataDirectory();
+    });
+    connect(defaultData, &QPushButton::clicked, this, [this, showDataDirectory] {
+        m_dataDirectory = QDir::cleanPath(Komorebi::defaultDataRoot());
+        showDataDirectory();
+    });
 
     // ---- launching
     auto* launchForm = new QFormLayout();
@@ -189,12 +244,14 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     m_msaClientId = new Komorebi::Field(page);
     m_msaClientId->setPlaceholderText(QStringLiteral("00000000-0000-0000-0000-000000000000"));
     m_msaClientId->setText(settings.msaClientId);
-    accountForm->addRow(tr("Microsoft app id"), m_msaClientId);
+    accountForm->addRow(tr("Microsoft app id (sign-in)"), m_msaClientId);
     accountForm->addRow(
         QString(),
-        hintLabel(page, tr("Needed for Microsoft sign-in: create a public-client app in Azure and paste its "
-                           "application (client) id here. The KOMOREBI_MSA_CLIENT_ID environment variable also "
-                           "works. Without an app id the sign-in can only fail.")));
+        hintLabel(page, tr("Only needed to sign in with a Microsoft account: create a public-client app in "
+                           "Azure and paste its application (client) id here. Playing offline needs nothing "
+                           "in this field, and the launcher ships no app id of its own, so leaving it empty "
+                           "means Microsoft sign-in can only fail. The KOMOREBI_MSA_CLIENT_ID environment "
+                           "variable also works.")));
     layout->addLayout(accountForm);
 
     // ---- appearance
@@ -251,7 +308,95 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
         m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());
         m_result.msaClientId = m_msaClientId->text().trimmed();
+
+        if (QDir::cleanPath(m_dataDirectory) != QDir::cleanPath(Komorebi::dataRoot())) {
+            QString error;
+            if (!switchDataDirectory(m_dataDirectory, &error)) {
+                if (!error.isEmpty())
+                    QMessageBox::warning(this, tr("Data directory"), error);
+                return;
+            }
+        }
         accept();
     });
     connect(cancel, &QPushButton::clicked, this, &QDialog::reject);
+}
+
+bool SettingsDialog::switchDataDirectory(const QString& target, QString* error)
+{
+    const QString current = QDir::cleanPath(Komorebi::dataRoot());
+    const QString wanted = QDir::cleanPath(target);
+    const auto show = [](const QString& path) { return QDir::toNativeSeparators(path); };
+
+    if (!QDir::isAbsolutePath(wanted)) {
+        *error = tr("%1 is not a full path.").arg(show(wanted));
+        return false;
+    }
+    // Copying a directory onto itself, or into a directory that contains it, would walk in circles.
+    if (Komorebi::staysInside(current, wanted) || Komorebi::staysInside(wanted, current)) {
+        *error = tr("The new directory has to be outside the current one, and not contain it either.");
+        return false;
+    }
+
+    // Copying is offered rather than assumed: someone pointing at an empty drive usually wants their
+    // files along, someone pointing at a folder they already filled does not.
+    QMessageBox ask(QMessageBox::Question, tr("Data directory"),
+                    tr("Move everything from\n%1\nto\n%2?").arg(show(current), show(wanted)), QMessageBox::NoButton, this);
+    auto* copyAndSwitch = ask.addButton(tr("Copy and switch"), QMessageBox::AcceptRole);
+    auto* switchOnly = ask.addButton(tr("Switch without copying"), QMessageBox::DestructiveRole);
+    auto* keepIt = ask.addButton(tr("Leave it alone"), QMessageBox::RejectRole);
+    ask.setDefaultButton(copyAndSwitch);
+    ask.exec();
+    if (ask.clickedButton() == keepIt || ask.clickedButton() == nullptr)
+        return false;
+
+    if (ask.clickedButton() == copyAndSwitch) {
+        if (!QDir().mkpath(wanted)) {
+            *error = tr("Could not create %1.").arg(show(wanted));
+            return false;
+        }
+
+        QProgressDialog progress(tr("Copying the data directory…"), tr("Stop"), 0, 100, this);
+        progress.setWindowTitle(tr("Data directory"));
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(0);
+        progress.setValue(0);
+
+        const Komorebi::DataCopyResult copy = Komorebi::copyDataDirectory(
+            current, wanted, [&progress](const QString& path, int files, qint64 bytes) {
+                // The number of files is not known until the walk is done, so the bar reports motion
+                // and the label says what is happening.
+                progress.setLabelText(tr("Copying %1\n%2 files, %3 MB")
+                                          .arg(path)
+                                          .arg(files)
+                                          .arg(bytes / (1024.0 * 1024.0), 0, 'f', 1));
+                progress.setValue(qMin(99, progress.value() + 1));
+                QCoreApplication::processEvents();
+                return !progress.wasCanceled();
+            });
+        progress.setValue(100);
+
+        if (copy.cancelled) {
+            *error = tr("Copying stopped, so the data directory is unchanged. Anything already copied is "
+                        "left in %1 and can be deleted.")
+                         .arg(show(wanted));
+            return false;
+        }
+        if (!copy.error.isEmpty()) {
+            *error = tr("Copying failed: %1\nThe data directory is unchanged.").arg(copy.error);
+            return false;
+        }
+    }
+
+    // Back to the default means "forget the pointer", not "remember the default as a choice".
+    const QString remember = wanted == QDir::cleanPath(Komorebi::defaultDataRoot()) ? QString() : wanted;
+    QString pointerError;
+    if (!Komorebi::setDataRoot(remember, &pointerError)) {
+        *error = tr("Could not remember the new data directory: %1").arg(pointerError);
+        return false;
+    }
+
+    m_dataDirectoryChanged = true;
+    error->clear();
+    return true;
 }
