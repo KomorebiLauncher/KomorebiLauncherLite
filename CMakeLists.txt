@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 # One place names the version: the tag a release is cut from, the number in the executable's
 # properties and the line on the About page all come from here.
-project(KomorebiNext VERSION 0.1.4 LANGUAGES CXX)
+project(KomorebiNext VERSION 0.1.5 LANGUAGES CXX)
 
 # The build needs the compiler to speak English. Ninja tracks header dependencies by watching the
 # include lines MSVC prints, and it recognises them by their English prefix; with a localized
