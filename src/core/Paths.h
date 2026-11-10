@@ -54,6 +54,19 @@ bool chosenDataRootIsMissing();
 /// Whether `directory` holds anything this launcher writes: settings, accounts, a version, assets…
 bool looksLikeDataRoot(const QString& directory);
 
+/**
+ * The data directory the launcher was moved to, when the pointer that recorded it has gone.
+ *
+ * The pointer lives inside `defaultDataRoot()`, so deleting that folder — easy to do by hand once the
+ * data has been copied elsewhere — used to take the choice with it and leave the launcher silently
+ * starting on an empty default directory. A second copy of the pointer, kept in `%LOCALAPPDATA%`, is
+ * what this reads; it never decides anything by itself, it only makes the question askable.
+ *
+ * Empty when the pointer is still there, when no second copy exists, or when the second copy names
+ * the default directory anyway.
+ */
+QString forgottenDataRoot();
+
 /// `<dataRoot>/instances`
 QString instancesRoot();
 

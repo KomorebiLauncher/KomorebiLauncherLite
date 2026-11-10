@@ -99,54 +99,57 @@ GPL-3.0 授权。标志与界面均为原创。
 <context>
     <name>AppWindow</name>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="57"/>
+        <location filename="../src/ui/AppWindow.cpp" line="58"/>
         <source>Install a version</source>
         <translation>安装新版本</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="79"/>
+        <location filename="../src/ui/AppWindow.cpp" line="80"/>
         <source>Modpacks</source>
         <translation>整合包</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="80"/>
+        <location filename="../src/ui/AppWindow.cpp" line="81"/>
         <source>Content</source>
         <translation>内容</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="81"/>
+        <location filename="../src/ui/AppWindow.cpp" line="82"/>
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="82"/>
+        <location filename="../src/ui/AppWindow.cpp" line="83"/>
         <source>Accounts</source>
         <translation>账户</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="83"/>
+        <location filename="../src/ui/AppWindow.cpp" line="84"/>
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="84"/>
+        <location filename="../src/ui/AppWindow.cpp" line="85"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="85"/>
+        <location filename="../src/ui/AppWindow.cpp" line="86"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="177"/>
-        <location filename="../src/ui/AppWindow.cpp" line="203"/>
-        <location filename="../src/ui/AppWindow.cpp" line="219"/>
+        <location filename="../src/ui/AppWindow.cpp" line="178"/>
+        <location filename="../src/ui/AppWindow.cpp" line="210"/>
+        <location filename="../src/ui/AppWindow.cpp" line="220"/>
+        <location filename="../src/ui/AppWindow.cpp" line="240"/>
+        <location filename="../src/ui/AppWindow.cpp" line="250"/>
+        <location filename="../src/ui/AppWindow.cpp" line="266"/>
         <source>Data directory</source>
         <translation>数据目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="178"/>
+        <location filename="../src/ui/AppWindow.cpp" line="179"/>
         <source>The data directory is now
 %1
 
@@ -157,12 +160,58 @@ The launcher has to start again to use it. Restart now?</source>
 启动器需要重新启动才能使用它。现在就重启吗？</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="183"/>
+        <location filename="../src/ui/AppWindow.cpp" line="184"/>
         <source>Restart the launcher to use the new data directory</source>
         <translation>重启启动器以使用新的数据目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="204"/>
+        <location filename="../src/ui/AppWindow.cpp" line="211"/>
+        <source>This launcher was using
+%1
+for its data, and the file that remembered it is gone, along with the folder that file lived in.
+
+That directory is not there either, so this start uses %2.</source>
+<translation>启动器上次用
+%1
+来放数据，而记住它的那个文件已经不在了，连同那个文件所在的文件夹一起。
+
+那个目录也不在了，所以这次启动用 %2。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="221"/>
+        <source>This launcher was using
+%1
+for its data, and the file that remembered it — kept in %2 — is gone. The folder that file lived in has probably been deleted.
+
+The directory itself is still there, with everything in it. Go back to it?</source>
+<translation>启动器上次用
+%1
+来放数据，记住它的那个文件（放在 %2）已经不在了 —— 那个文件所在的文件夹大概被删掉了。
+
+目录本身还在，里面的东西一样没少。要回去吗？</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="226"/>
+        <source>Go back to it</source>
+<translation>回到那里</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="227"/>
+        <source>Start over with the default directory</source>
+<translation>用默认目录重新开始</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="240"/>
+        <source>Could not remember that directory: %1</source>
+<translation>无法记住那个目录：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="244"/>
+        <source>Restart the launcher to use that data directory</source>
+<translation>重启启动器以使用那个数据目录</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="251"/>
         <source>The data directory this launcher was using is not there:
 %1
 
@@ -177,43 +226,43 @@ Go back to the default directory, %2?</source>
 要回到默认目录 %2 吗？</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="210"/>
+        <location filename="../src/ui/AppWindow.cpp" line="257"/>
         <source>Use the default directory</source>
         <translation>使用默认目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="211"/>
+        <location filename="../src/ui/AppWindow.cpp" line="258"/>
         <source>Wait for it to come back</source>
         <translation>等它回来</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="219"/>
+        <location filename="../src/ui/AppWindow.cpp" line="266"/>
         <source>Could not forget the missing directory: %1</source>
         <translation>无法清除那个已不存在的目录：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="223"/>
+        <location filename="../src/ui/AppWindow.cpp" line="270"/>
         <source>Restart the launcher to use the default data directory</source>
         <translation>重启启动器以使用默认数据目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="59"/>
+        <location filename="../src/ui/AppWindow.cpp" line="60"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="113"/>
-        <location filename="../src/ui/AppWindow.cpp" line="144"/>
+        <location filename="../src/ui/AppWindow.cpp" line="114"/>
+        <location filename="../src/ui/AppWindow.cpp" line="145"/>
         <source>Ready</source>
         <translation>准备就绪</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="78"/>
+        <location filename="../src/ui/AppWindow.cpp" line="79"/>
         <source>Play</source>
         <translation>启动游戏</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="171"/>
+        <location filename="../src/ui/AppWindow.cpp" line="172"/>
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>设置已保存（语言在下次启动生效）</translation>
     </message>
@@ -1267,7 +1316,7 @@ Started %1 time(s), last %2</source>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
         <source>The directory remembered from last time is not there any more. Pick another one here, or press Default to go back to the default directory.</source>
-<translation>上次记住的目录已经不在了。在这里另选一个，或者按「默认」回到默认目录。</translation>
+        <translation>上次记住的目录已经不在了。在这里另选一个，或者按「默认」回到默认目录。</translation>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="134"/>

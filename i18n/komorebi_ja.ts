@@ -99,54 +99,57 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
 <context>
     <name>AppWindow</name>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="57"/>
+        <location filename="../src/ui/AppWindow.cpp" line="58"/>
         <source>Install a version</source>
         <translation>バージョンをインストール</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="79"/>
+        <location filename="../src/ui/AppWindow.cpp" line="80"/>
         <source>Modpacks</source>
         <translation>MOD パック</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="80"/>
+        <location filename="../src/ui/AppWindow.cpp" line="81"/>
         <source>Content</source>
         <translation>コンテンツ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="81"/>
+        <location filename="../src/ui/AppWindow.cpp" line="82"/>
         <source>Java</source>
         <translation>Java</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="82"/>
+        <location filename="../src/ui/AppWindow.cpp" line="83"/>
         <source>Accounts</source>
         <translation>アカウント</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="83"/>
+        <location filename="../src/ui/AppWindow.cpp" line="84"/>
         <source>Logs</source>
         <translation>ログ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="84"/>
+        <location filename="../src/ui/AppWindow.cpp" line="85"/>
         <source>Tools</source>
         <translation>ツール</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="85"/>
+        <location filename="../src/ui/AppWindow.cpp" line="86"/>
         <source>About</source>
         <translation>このアプリについて</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="177"/>
-        <location filename="../src/ui/AppWindow.cpp" line="203"/>
-        <location filename="../src/ui/AppWindow.cpp" line="219"/>
+        <location filename="../src/ui/AppWindow.cpp" line="178"/>
+        <location filename="../src/ui/AppWindow.cpp" line="210"/>
+        <location filename="../src/ui/AppWindow.cpp" line="220"/>
+        <location filename="../src/ui/AppWindow.cpp" line="240"/>
+        <location filename="../src/ui/AppWindow.cpp" line="250"/>
+        <location filename="../src/ui/AppWindow.cpp" line="266"/>
         <source>Data directory</source>
         <translation>データディレクトリ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="178"/>
+        <location filename="../src/ui/AppWindow.cpp" line="179"/>
         <source>The data directory is now
 %1
 
@@ -158,12 +161,58 @@ The launcher has to start again to use it. Restart now?</source>
 使用するにはランチャーの再起動が必要です。今すぐ再起動しますか？</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="183"/>
+        <location filename="../src/ui/AppWindow.cpp" line="184"/>
         <source>Restart the launcher to use the new data directory</source>
         <translation>新しいデータディレクトリを使うにはランチャーを再起動してください</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="204"/>
+        <location filename="../src/ui/AppWindow.cpp" line="211"/>
+        <source>This launcher was using
+%1
+for its data, and the file that remembered it is gone, along with the folder that file lived in.
+
+That directory is not there either, so this start uses %2.</source>
+<translation>このランチャーは
+%1
+をデータ用に使っていましたが、それを覚えていたファイルが、そのファイルのあったフォルダごと無くなりました。
+
+そのディレクトリも存在しないため、今回の起動では %2 を使用します。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="221"/>
+        <source>This launcher was using
+%1
+for its data, and the file that remembered it — kept in %2 — is gone. The folder that file lived in has probably been deleted.
+
+The directory itself is still there, with everything in it. Go back to it?</source>
+<translation>このランチャーは
+%1
+をデータ用に使っていましたが、それを覚えていたファイル（%2 にありました）が無くなりました。そのファイルのあったフォルダが削除されたようです。
+
+ディレクトリ自体は中身ごとそのまま残っています。そこに戻しますか？</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="226"/>
+        <source>Go back to it</source>
+<translation>そこに戻す</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="227"/>
+        <source>Start over with the default directory</source>
+<translation>既定のディレクトリで最初から始める</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="240"/>
+        <source>Could not remember that directory: %1</source>
+<translation>そのディレクトリを記憶できませんでした：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="244"/>
+        <source>Restart the launcher to use that data directory</source>
+<translation>そのデータディレクトリを使うにはランチャーを再起動してください</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/AppWindow.cpp" line="251"/>
         <source>The data directory this launcher was using is not there:
 %1
 
@@ -178,43 +227,43 @@ Go back to the default directory, %2?</source>
 既定のディレクトリ %2 に戻しますか？</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="210"/>
+        <location filename="../src/ui/AppWindow.cpp" line="257"/>
         <source>Use the default directory</source>
         <translation>既定のディレクトリを使う</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="211"/>
+        <location filename="../src/ui/AppWindow.cpp" line="258"/>
         <source>Wait for it to come back</source>
         <translation>戻るまで待つ</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="219"/>
+        <location filename="../src/ui/AppWindow.cpp" line="266"/>
         <source>Could not forget the missing directory: %1</source>
         <translation>見つからないディレクトリを忘れられませんでした：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="223"/>
+        <location filename="../src/ui/AppWindow.cpp" line="270"/>
         <source>Restart the launcher to use the default data directory</source>
         <translation>既定のデータディレクトリを使うにはランチャーを再起動してください</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="59"/>
+        <location filename="../src/ui/AppWindow.cpp" line="60"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="113"/>
-        <location filename="../src/ui/AppWindow.cpp" line="144"/>
+        <location filename="../src/ui/AppWindow.cpp" line="114"/>
+        <location filename="../src/ui/AppWindow.cpp" line="145"/>
         <source>Ready</source>
         <translation>準備完了</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="78"/>
+        <location filename="../src/ui/AppWindow.cpp" line="79"/>
         <source>Play</source>
         <translation>ゲームを起動</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="171"/>
+        <location filename="../src/ui/AppWindow.cpp" line="172"/>
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>設定を保存しました（言語は次回起動時に反映されます）</translation>
     </message>
@@ -1268,7 +1317,7 @@ Started %1 time(s), last %2</source>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
         <source>The directory remembered from last time is not there any more. Pick another one here, or press Default to go back to the default directory.</source>
-<translation>前回記憶したディレクトリがもうありません。ここで別のディレクトリを選ぶか、「既定」を押して既定のディレクトリに戻してください。</translation>
+        <translation>前回記憶したディレクトリがもうありません。ここで別のディレクトリを選ぶか、「既定」を押して既定のディレクトリに戻してください。</translation>
     </message>
     <message>
         <location filename="../src/ui/SettingsDialog.cpp" line="134"/>
