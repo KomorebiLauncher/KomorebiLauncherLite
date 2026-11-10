@@ -161,6 +161,9 @@ void AppWindow::openSettings()
     m_settings = dialog.result();
     m_settings.save();
     m_launchPage->applySettings(m_settings);
+    // The wallpaper is painted by this window, not by any child page: ask for a repaint so a new
+    // opacity shows up at once.
+    update();
     setStatus(tr("Settings saved (the language changes next time the launcher starts)"));
 }
 

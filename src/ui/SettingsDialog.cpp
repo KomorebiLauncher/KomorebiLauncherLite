@@ -25,6 +25,17 @@ QLineEdit* numberField(QWidget* parent, int minimum, int maximum, int value)
     return field;
 }
 
+/// A sentence under a field: softer ink than the field itself, and a bounded width so it wraps
+/// instead of stretching the dialog.
+QLabel* hintLabel(QWidget* parent, const QString& text)
+{
+    auto* label = new QLabel(text, parent);
+    label->setWordWrap(true);
+    label->setMaximumWidth(400);
+    label->setStyleSheet(QStringLiteral("color: %1;").arg(Komorebi::Colours::current().inkSoft.name()));
+    return label;
+}
+
 }  // namespace
 
 SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
@@ -81,13 +92,20 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     auto* sizeRow = new QHBoxLayout();
     m_width = numberField(page, 0, 16384, settings.width);
     m_height = numberField(page, 0, 16384, settings.height);
+    // 0 means "whatever the version asks for": an empty field lets the placeholder say so instead
+    // of showing a literal 0.
+    if (settings.width == 0)
+        m_width->clear();
+    if (settings.height == 0)
+        m_height->clear();
     m_width->setPlaceholderText(tr("width"));
     m_height->setPlaceholderText(tr("height"));
     sizeRow->addWidget(m_width);
     sizeRow->addWidget(new QLabel(QStringLiteral("×"), page));
     sizeRow->addWidget(m_height);
     sizeRow->addStretch(1);
-    launchForm->addRow(tr("Window size"), sizeRow);
+    launchForm->addRow(tr("Game window size"), sizeRow);
+    launchForm->addRow(QString(), hintLabel(page, tr("0 means whatever the version asks for; an empty field means the same.")));
 
     m_java = new Komorebi::Field(page);
     m_java->setPlaceholderText(tr("Empty: choose the runtime the version asks for"));
@@ -165,13 +183,37 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     downloadForm->addRow(tr("Speed limit (KB/s)"), m_speedLimit);
     layout->addLayout(downloadForm);
 
+    // ---- signing in
+    auto* accountForm = new QFormLayout();
+    accountForm->setSpacing(8);
+    m_msaClientId = new Komorebi::Field(page);
+    m_msaClientId->setPlaceholderText(QStringLiteral("00000000-0000-0000-0000-000000000000"));
+    m_msaClientId->setText(settings.msaClientId);
+    accountForm->addRow(tr("Microsoft app id"), m_msaClientId);
+    accountForm->addRow(
+        QString(),
+        hintLabel(page, tr("Needed for Microsoft sign-in: create a public-client app in Azure and paste its "
+                           "application (client) id here. The KOMOREBI_MSA_CLIENT_ID environment variable also "
+                           "works. Without an app id the sign-in can only fail.")));
+    layout->addLayout(accountForm);
+
     // ---- appearance
     auto* appearForm = new QFormLayout();
     appearForm->setSpacing(8);
+    auto* wallpaperRow = new QHBoxLayout();
     m_wallpaperOpacity = new Komorebi::Slider(Qt::Horizontal, page);
     m_wallpaperOpacity->setRange(0, 100);
     m_wallpaperOpacity->setValue(settings.wallpaperOpacity);
-    appearForm->addRow(tr("Wallpaper"), m_wallpaperOpacity);
+    auto* opacityValue = new QLabel(QStringLiteral("%1%").arg(m_wallpaperOpacity->value()), page);
+    opacityValue->setMinimumWidth(40);
+    opacityValue->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    connect(m_wallpaperOpacity, &QSlider::valueChanged, this, [opacityValue](int value) {
+        opacityValue->setText(QStringLiteral("%1%").arg(value));
+    });
+    wallpaperRow->addWidget(m_wallpaperOpacity, 1);
+    wallpaperRow->addWidget(opacityValue);
+    appearForm->addRow(tr("Wallpaper"), wallpaperRow);
+    appearForm->addRow(QString(), hintLabel(page, tr("Has no effect when the theme carries no wallpaper.")));
     layout->addLayout(appearForm);
 
     auto* hint = new QLabel(tr("A language change takes effect the next time the launcher starts."), page);
@@ -208,6 +250,7 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.mirrorBase = m_mirrorBase->text().trimmed();
         m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
         m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());
+        m_result.msaClientId = m_msaClientId->text().trimmed();
         accept();
     });
     connect(cancel, &QPushButton::clicked, this, &QDialog::reject);

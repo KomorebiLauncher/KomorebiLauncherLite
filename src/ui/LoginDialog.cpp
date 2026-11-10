@@ -14,6 +14,17 @@
 
 using namespace Komorebi;
 
+namespace {
+
+/// True when the sign-in stopped only because no app id is configured: that is the one failure the
+/// player can fix themselves, so it gets its own sentence instead of the core's terse English.
+bool missingAppId(const QString& error)
+{
+    return error.contains(QLatin1String("app id"), Qt::CaseInsensitive);
+}
+
+}  // namespace
+
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
 {
@@ -86,9 +97,17 @@ LoginDialog::LoginDialog(QWidget* parent)
     QString error;
     m_code = MicrosoftAuth::startDeviceCode(&error);
     if (m_code.deviceCode.isEmpty()) {
-        m_codeLabel->setText(QStringLiteral("—"));
-        m_copy->setEnabled(false);
-        m_hint->setText(tr("Could not start the sign-in: %1").arg(error));
+        // There is nothing to type and nothing to copy, so the whole browser step goes away -- the
+        // page, the code row and both buttons -- and the hint below says why.
+        step1->setVisible(false);
+        link->setVisible(false);
+        step2->setVisible(false);
+        m_codeLabel->setVisible(false);
+        m_copy->setVisible(false);
+        m_open->setVisible(false);
+        m_hint->setText(missingAppId(error)
+                            ? tr("Microsoft sign-in needs an application (client) id. Add one under Settings → Microsoft app id.")
+                            : tr("Could not start the sign-in: %1").arg(error));
         return;
     }
 
@@ -127,7 +146,9 @@ void LoginDialog::poll()
         break;
     case PollResult::State::Failed:
         m_timer->stop();
-        setHint(tr("Sign-in failed: %1").arg(result.error));
+        setHint(missingAppId(result.error)
+                    ? tr("Microsoft sign-in needs an application (client) id. Add one under Settings → Microsoft app id.")
+                    : tr("Sign-in failed: %1").arg(result.error));
         break;
     }
 }
