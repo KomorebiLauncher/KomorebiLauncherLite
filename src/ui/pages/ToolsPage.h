@@ -30,5 +30,9 @@ class ToolsPage : public QWidget {
     void exportSettings();
     void importSettings();
     void downloadFile();
+    /// Reports a download that ran on its own thread; always called on the GUI thread.
+    void finishDownload(const QString& target, bool ok, const QString& error);
     void reload();
+
+    Komorebi::Button* m_downloadButton = nullptr;
 };

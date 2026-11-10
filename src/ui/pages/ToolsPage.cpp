@@ -7,15 +7,22 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QInputDialog>
+#include <QJsonDocument>
 #include <QLabel>
+#include <QMessageBox>
+#include <QPointer>
 #include <QProcess>
+#include <QSaveFile>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QVBoxLayout>
 
 #include <QDateTime>
+
+#include <thread>
 
 #include "core/Paths.h"
 #include "core/Settings.h"
@@ -69,45 +76,60 @@ ToolsPage::ToolsPage(QWidget* parent)
     hint->setWordWrap(true);
     layout->addWidget(hint);
 
-    // The jobs sit on a paper plate, a row each: text on the left, the button right after it.
+    // The jobs sit on a paper plate, one grid row each: text on the left, the button in one column on
+    // the right, so the buttons line up whatever the language does to their width. The plate is wide
+    // enough for the longest sentence a translation has: at 680 Japanese wrapped in the middle of a
+    // word.
     auto* plate = new QFrame(this);
     plate->setObjectName(QStringLiteral("plate"));
     plate->setStyleSheet(QStringLiteral("QFrame#plate { background: rgba(250, 247, 240, 0.66);"
                                         " border: 1px solid rgba(201, 194, 180, 0.9); border-radius: 6px; }"));
-    plate->setMaximumWidth(680);
-    auto* grid = new QVBoxLayout(plate);
+    plate->setMaximumWidth(760);
+    auto* grid = new QGridLayout(plate);
     grid->setContentsMargins(18, 14, 18, 14);
-    grid->setSpacing(10);
+    grid->setHorizontalSpacing(12);
+    grid->setVerticalSpacing(10);
+    grid->setColumnStretch(0, 1);
+    int rowIndex = 0;
 
-    const auto addRow = [this, plate, grid](const QString& label, const QString& buttonText, void (ToolsPage::*slot)()) {
-        auto* row = new QHBoxLayout();
-        row->setSpacing(12);
+    const auto addRow = [this, plate, grid, &rowIndex](const QString& label, const QString& buttonText,
+                                                       void (ToolsPage::*slot)()) {
         auto* text = new QLabel(label, plate);
         text->setWordWrap(true);
-        text->setMinimumWidth(320);
-        row->addWidget(text, 1);
+        grid->addWidget(text, rowIndex, 0);
         auto* button = new Button(buttonText, plate);
         button->setMinimumWidth(130);
-        row->addWidget(button, 0);
+        grid->addWidget(button, rowIndex, 1, Qt::AlignRight | Qt::AlignVCenter);
         connect(button, &QPushButton::clicked, this, slot);
-        grid->addLayout(row);
+        ++rowIndex;
+        return button;
     };
 
     addRow(tr("Game logs, crash reports and temporary files left behind."), tr("Clean up"), &ToolsPage::cleanJunk);
     addRow(tr("A shortcut on the desktop that opens this launcher."), tr("Create shortcut"), &ToolsPage::createShortcut);
     addRow(tr("The launcher's settings, to carry to another machine."), tr("Export settings"), &ToolsPage::exportSettings);
     addRow(tr("Read settings from a file."), tr("Import settings"), &ToolsPage::importSettings);
-    addRow(tr("Download one file by its address."), tr("Download a file"), &ToolsPage::downloadFile);
+    m_downloadButton = addRow(tr("Download one file by its address."), tr("Download a file"), &ToolsPage::downloadFile);
 
-    layout->addWidget(plate, 0, Qt::AlignLeft);
+    // The plate fills the page up to its maximum instead of shrinking to its hint: a row whose text
+    // is longer than the hint (Japanese) would otherwise wrap inside the widest label.
+    layout->addWidget(plate);
     layout->addStretch(1);
 }
 
 void ToolsPage::cleanJunk()
 {
+    // Deleting is not something the player can take back, so it asks first and says what it means.
+    if (QMessageBox::question(this, tr("Clean up"),
+                              tr("Remove the game logs, crash reports and temporary files? This cannot be undone."))
+        != QMessageBox::Yes)
+        return;
+
     const qint64 freed = Komorebi::cleanJunk(dataRoot());
-    emit status(tr("Cleaned up %1").arg(humanSize(freed)));
+    emit status(freed > 0 ? tr("Cleaned up %1 of logs, crash reports and temporary files").arg(humanSize(freed))
+                          : tr("Nothing to clean up"));
 }
+
 void ToolsPage::createShortcut()
 {
 #if defined(Q_OS_WIN)
@@ -143,10 +165,26 @@ void ToolsPage::exportSettings()
     if (target.isEmpty())
         return;
 
-    const QString source = QDir(dataRoot()).filePath(QStringLiteral("settings.json"));
-    if (QFile::exists(target))
-        QFile::remove(target);
-    emit status(QFile::copy(source, target) ? tr("Settings exported") : tr("Could not export the settings"));
+    QFile source(QDir(dataRoot()).filePath(QStringLiteral("settings.json")));
+    if (!source.open(QIODevice::ReadOnly)) {
+        emit status(tr("There are no settings to export yet"));
+        return;
+    }
+    const QByteArray data = source.readAll();
+    source.close();
+
+    // QSaveFile writes a temporary file beside the target and renames it on commit: a half-written
+    // export can never replace a settings file that was already there.
+    QSaveFile out(target);
+    if (!out.open(QIODevice::WriteOnly)) {
+        emit status(tr("Could not export the settings: %1").arg(out.errorString()));
+        return;
+    }
+    if (out.write(data) != data.size() || !out.commit()) {
+        emit status(tr("Could not export the settings: %1").arg(out.errorString()));
+        return;
+    }
+    emit status(tr("Settings exported"));
 }
 
 void ToolsPage::importSettings()
@@ -156,11 +194,33 @@ void ToolsPage::importSettings()
     if (source.isEmpty())
         return;
 
+    QFile file(source);
+    if (!file.open(QIODevice::ReadOnly)) {
+        emit status(tr("Could not read the settings file: %1").arg(file.errorString()));
+        return;
+    }
+    const QByteArray data = file.readAll();
+    file.close();
+
+    // Only a JSON object is a settings file. Checking before writing anything means a wrong file
+    // picked in the dialog costs nothing instead of leaving the launcher with no settings.
+    const QJsonDocument document = QJsonDocument::fromJson(data);
+    if (!document.isObject()) {
+        emit status(tr("That file is not a settings file"));
+        return;
+    }
+
+    const QByteArray text = document.toJson(QJsonDocument::Indented);
     const QString target = QDir(dataRoot()).filePath(QStringLiteral("settings.json"));
-    if (QFile::exists(target))
-        QFile::remove(target);
-    if (!QFile::copy(source, target)) {
-        emit status(tr("Could not import the settings"));
+    QDir().mkpath(QFileInfo(target).absolutePath());
+
+    QSaveFile out(target);
+    if (!out.open(QIODevice::WriteOnly)) {
+        emit status(tr("Could not import the settings: %1").arg(out.errorString()));
+        return;
+    }
+    if (out.write(text) != text.size() || !out.commit()) {
+        emit status(tr("Could not import the settings: %1").arg(out.errorString()));
         return;
     }
     emit status(tr("Settings imported; they apply the next time the launcher starts"));
@@ -179,9 +239,34 @@ void ToolsPage::downloadFile()
     if (target.isEmpty())
         return;
 
-    const FetchResult result = fetchFile(url, target, {});
-    emit status(result.ok ? tr("Saved to %1").arg(QDir::toNativeSeparators(target))
-                          : tr("Download failed: %1").arg(result.error));
+    // A server that never answers holds the request until the timeout: on the window's own thread
+    // that froze the launcher for the whole wait, so the fetch runs on its own thread and reports
+    // back through the event loop.
+    if (m_downloadButton)
+        m_downloadButton->setEnabled(false);
+    emit status(tr("Downloading…"));
+
+    QPointer<ToolsPage> guard(this);
+    std::thread([guard, url, target] {
+        const FetchResult result = fetchFile(url, target, {});
+        if (!guard)
+            return;
+        QMetaObject::invokeMethod(
+            guard.data(),
+            [guard, target, result] {
+                if (guard)
+                    guard->finishDownload(target, result.ok, result.error);
+            },
+            Qt::QueuedConnection);
+    }).detach();
+}
+
+void ToolsPage::finishDownload(const QString& target, bool ok, const QString& error)
+{
+    if (m_downloadButton)
+        m_downloadButton->setEnabled(true);
+    emit status(ok ? tr("Saved to %1").arg(QDir::toNativeSeparators(target))
+                   : tr("Download failed: %1").arg(error));
 }
 
 void ToolsPage::reload()
