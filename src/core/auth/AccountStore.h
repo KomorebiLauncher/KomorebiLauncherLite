@@ -24,6 +24,12 @@ class AccountStore {
     static bool add(const MinecraftAccount& account);
 
     static void remove(const QString& uuid);
+
+    /// The account the game plays as; empty when nobody was picked, which means the first one.
+    static QString activeUuid();
+
+    /// Picks the account the game plays as; a uuid that is not in the store changes nothing.
+    static bool setActive(const QString& uuid);
 };
 
 }  // namespace Komorebi

@@ -72,6 +72,30 @@ QString unseal(const QString& sealedBase64)
 
 }  // namespace
 
+/// Writes the whole file in one go, so a half-written account list can never be read back.
+namespace {
+
+bool writeRoot(const QJsonObject& root)
+{
+    const QString path = accountsPath();
+    QDir().mkpath(QFileInfo(path).absolutePath());
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    return file.commit();
+}
+
+QJsonObject readRoot()
+{
+    QFile file(accountsPath());
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    return QJsonDocument::fromJson(file.readAll()).object();
+}
+
+}  // namespace
+
 QList<MinecraftAccount> AccountStore::load()
 {
     QList<MinecraftAccount> accounts;
@@ -96,6 +120,19 @@ QList<MinecraftAccount> AccountStore::load()
 
 bool AccountStore::save(const QList<MinecraftAccount>& accounts)
 {
+    // Which account is in use lives in the same file, so writing the list has to keep it; an account
+    // that is gone cannot stay the choice.
+    QString active = activeUuid();
+    bool stillThere = false;
+    for (const auto& account : accounts) {
+        if (account.uuid == active) {
+            stillThere = true;
+            break;
+        }
+    }
+    if (!stillThere)
+        active.clear();
+
     QJsonArray list;
     for (const auto& account : accounts) {
         QJsonObject object;
@@ -109,14 +146,31 @@ bool AccountStore::save(const QList<MinecraftAccount>& accounts)
 
     QJsonObject root;
     root.insert(QStringLiteral("accounts"), list);
+    root.insert(QStringLiteral("active"), active);
 
-    const QString path = accountsPath();
-    QDir().mkpath(QFileInfo(path).absolutePath());
-    QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly))
+    return writeRoot(root);
+}
+
+QString AccountStore::activeUuid()
+{
+    return readRoot().value(QStringLiteral("active")).toString();
+}
+
+bool AccountStore::setActive(const QString& uuid)
+{
+    QJsonObject root = readRoot();
+    bool found = false;
+    for (const auto& entry : root.value(QStringLiteral("accounts")).toArray()) {
+        if (entry.toObject().value(QStringLiteral("uuid")).toString() == uuid) {
+            found = true;
+            break;
+        }
+    }
+    if (!found)
         return false;
-    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    return file.commit();
+
+    root.insert(QStringLiteral("active"), uuid);
+    return writeRoot(root);
 }
 
 bool AccountStore::add(const MinecraftAccount& account)

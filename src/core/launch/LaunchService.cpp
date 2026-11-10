@@ -59,6 +59,14 @@ PreparedLaunch prepareLaunch(const Settings& settings, const QString& versionId,
     const QList<MinecraftAccount> accounts = AccountStore::load();
     if (!accounts.isEmpty()) {
         MinecraftAccount account = accounts.first();
+        // The account picked on the accounts page, not simply the oldest one in the list.
+        const QString active = AccountStore::activeUuid();
+        for (const auto& candidate : accounts) {
+            if (!active.isEmpty() && candidate.uuid == active) {
+                account = candidate;
+                break;
+            }
+        }
         QString refreshError;
         if (account.refreshToken.isEmpty() || !MicrosoftAuth::refresh(&account, &refreshError)) {
             // The stored token may be old; the launch goes on offline rather than failing.
