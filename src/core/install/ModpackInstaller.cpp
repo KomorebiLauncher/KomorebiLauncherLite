@@ -201,9 +201,15 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
     // 1. the game
     report(QStringLiteral("game"), 0, 0, index.minecraftVersion);
     VersionInstaller installer(dataRoot());
+    installer.onProgress = onProgress;
     const InstallResult game = installer.install(index.minecraftVersion, withAssets);
     if (!game.ok) {
         result.error = QStringLiteral("the game could not be installed: %1").arg(game.failed.isEmpty() ? game.error : game.failed.first());
+        cleanup();
+        return result;
+    }
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
         cleanup();
         return result;
     }
@@ -263,34 +269,54 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
         }
     }
 
-    // 4. every file the index lists, at the path it gives
-    int done = 0;
+    // 4. every file the index lists, at the path it gives. The urls are in the index, so they are
+    // fetched together -- a pack with two hundred mods should not take two hundred round trips.
+    QList<FetchJob> jobs;
     for (const auto& entry : index.files) {
         const auto file = entry.toObject();
         const QString path = file.value(QStringLiteral("path")).toString();
         const auto downloads = file.value(QStringLiteral("downloads")).toArray();
-        if (path.isEmpty() || downloads.isEmpty())
+        if (path.isEmpty() || downloads.isEmpty() || path.contains(QLatin1String("..")))
             continue;
 
-        report(QStringLiteral("files"), done++, index.files.size(), path);
         const QString target = QDir(packDirectory).filePath(path);
         if (QFileInfo::exists(target)) {
             ++result.skipped;
             continue;
         }
-        QDir().mkpath(QFileInfo(target).absolutePath());
-        if (!fetchFile(downloads.first().toString(), target, {}).ok) {
-            result.failed << path;
+        const QString sha1 = file.value(QStringLiteral("hashes")).toObject().value(QStringLiteral("sha1")).toString();
+        jobs.append({ downloads.first().toString(), target, sha1 });
+    }
+    const FetchSummary fetched = fetchMany(jobs, 8, [&](int done, int total) {
+        report(QStringLiteral("files"), done, total, {});
+    });
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        cleanup();
+        return result;
+    }
+    result.downloaded += fetched.downloaded;
+    result.failed += fetched.failed;
+
+    // 5. overrides: `overrides` applies everywhere, `client-overrides` only to the client -- and this
+    // launcher only ever installs the client, so a pack that keeps its configs in there lost them.
+    for (const QString& folder : { QStringLiteral("overrides"), QStringLiteral("client-overrides") }) {
+        const QString source = QDir(tempPath).filePath(folder);
+        if (!QFileInfo::exists(source))
             continue;
-        }
-        ++result.downloaded;
+        report(QStringLiteral("overrides"), 0, 0, folder);
+        copyTree(source, packDirectory);
     }
 
-    // 5. overrides, which the format keeps in a folder of that name
-    const QString overrides = QDir(tempPath).filePath(QStringLiteral("overrides"));
-    if (QFileInfo::exists(overrides)) {
-        report(QStringLiteral("overrides"), 0, 0, QStringLiteral("overrides"));
-        copyTree(overrides, packDirectory);
+    if (!result.failed.isEmpty()) {
+        // A pack missing part of its files starts and then crashes, or looks nothing like the pack.
+        // Saying so beats sending the player to the Play page with a broken install.
+        result.error = QStringLiteral("%1 of %2 files could not be downloaded: %3")
+                           .arg(result.failed.size())
+                           .arg(jobs.size())
+                           .arg(result.failed.first());
+        cleanup();
+        return result;
     }
 
     cleanup();
@@ -336,9 +362,15 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     // 1. the game itself
     report(QStringLiteral("game"), 0, 0, info.minecraftVersion);
     VersionInstaller installer(dataRoot());
+    installer.onProgress = onProgress;
     const InstallResult game = installer.install(info.minecraftVersion, withAssets);
     if (!game.ok) {
         result.error = QStringLiteral("the game could not be installed: %1").arg(game.failed.isEmpty() ? game.error : game.failed.first());
+        cleanup();
+        return result;
+    }
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
         cleanup();
         return result;
     }
@@ -378,6 +410,12 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
         baseVersion = loader.versionId;
     }
 
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        cleanup();
+        return result;
+    }
+
     // 3. the pack is a version of its own, on top of the loader
     const QString packId = packVersionId(info);
     const QString packDirectory = versionDirectory(packId);
@@ -408,12 +446,16 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     int done = 0;
     for (const auto& entry : files) {
         const auto file = entry.toObject();
+        if (requestCancelled()) {
+            result.error = QStringLiteral("cancelled");
+            cleanup();
+            return result;
+        }
         const int projectId = file.value(QStringLiteral("projectID")).toInt();
         const int fileId = file.value(QStringLiteral("fileID")).toInt();
         if (projectId <= 0 || fileId <= 0)
             continue;
 
-        report(QStringLiteral("mods"), done++, files.size(), QString::number(projectId));
         // The API knows the file name; the pack only carries ids.
         const QList<CurseForgeFile> list = CurseForge::files(projectId, &error);
         QString name;
@@ -423,6 +465,8 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
                 break;
             }
         }
+
+        report(QStringLiteral("mods"), ++done, files.size(), name.isEmpty() ? QString::number(projectId) : name);
         if (name.isEmpty()) {
             result.failed << QStringLiteral("project %1 file %2 (the API did not list it)").arg(projectId).arg(fileId);
             continue;
@@ -458,6 +502,14 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     }
 
     cleanup();
+    if (!result.failed.isEmpty()) {
+        // Same rule as an .mrpack: a pack with files missing is not installed, it is broken.
+        result.error = QStringLiteral("%1 of %2 files could not be downloaded: %3")
+                           .arg(result.failed.size())
+                           .arg(files.size())
+                           .arg(result.failed.first());
+        return result;
+    }
     result.versionId = packId;
     result.ok = true;
     return result;
