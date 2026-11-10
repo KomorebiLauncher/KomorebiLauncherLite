@@ -107,7 +107,12 @@ void Button::paintEvent(QPaintEvent*)
 Field::Field(QWidget* parent) : QLineEdit(parent)
 {
     setFrame(false);
-    setTextMargins(10, 0, 10, 0);
+    setTextMargins(11, 0, 11, 0);
+    // A line edit fills its own background with the Base colour and the theme makes Base the same
+    // paper the window is painted with, so the style painted over the plate this class draws and every
+    // input in the launcher came out with no frame at all. Handing the background to the stylesheet's
+    // transparent keeps the drawing in paintEvent, where the plate and its focus border live.
+    setStyleSheet(QStringLiteral("background: transparent; border: none; padding: 0;"));
 }
 
 void Field::paintEvent(QPaintEvent* event)
