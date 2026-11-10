@@ -58,7 +58,7 @@ git push origin v0.1.1
 | `KomorebiLite-Setup-<版本>.exe` | Inno Setup 打的安装包，装到当前用户目录，带开始菜单与卸载项，不弹 UAC |
 | `KomorebiLite-<版本>.exe` | 静态版 Qt 链接进 exe，单文件，不用解压 |
 
-单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.0 -BuildDir build-static -Static -Verify`。
+单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.1 -BuildDir build-static -Static -Verify`。`-Verify` 会先截图，再跑一遍 `--selftest`：主题没打进 exe 的那次打包会在这里直接失败，而不是发到一个打不开的界面上。
 
 安装包需要 Inno Setup（`winget install JRSoftware.InnoSetup`），没有它时 `tools\package.ps1` 只出 zip 并提示一句。中文安装界面用的是仓库里 `tools/inno/ChineseSimplified.isl`，因为 Inno Setup 自己不带中文。
 
