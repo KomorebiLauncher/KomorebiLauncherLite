@@ -193,6 +193,10 @@ jobs:
           {
             echo "Komorebi Lite $VERSION —— 轻量级 Minecraft 启动器，三种装法，挑一个用。"
             echo
+            if [ -f "../docs/release-notes/$VERSION.md" ]; then
+              cat "../docs/release-notes/$VERSION.md"
+              echo
+            fi
             echo "## 下载"
             echo
             echo "| 文件 | 说明 |"

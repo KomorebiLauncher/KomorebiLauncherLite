@@ -51,6 +51,8 @@ git push origin v0.1.3
 
 标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建三个包，只上传成 artifact 供试用，不发 Release。
 
+版本自己要说明的话写在 `docs/release-notes/<版本>.md`（例如 `docs/release-notes/0.1.4.md`），发布时 CI 会把它插在说明的开头，后面的下载、校验、使用几段照旧自动生成；没有这个文件就只有自动那几段。
+
 一个版本出三个包，内容一致，选一种装法即可：
 
 | 文件 | 怎么来的 |
