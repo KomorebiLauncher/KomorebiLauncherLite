@@ -201,7 +201,7 @@ jobs:
             echo "| \`KomorebiLite-$VERSION.exe\` | 单文件版：一个 exe 就是全部，不用解压，双击就用 |"
             echo "| \`KomorebiLite-$VERSION-windows-x64.zip\` | 绿色版：解压到任意目录即用 |"
             echo
-            echo "Windows 10/11，64 位。三种包内容一致，数据目录都是 \`%APPDATA%\\KomorebiLauncherLite\`，与完整版互不影响。"
+            echo "Windows 10/11，64 位。三种包内容一致，数据目录默认是 \`%APPDATA%\\KomorebiLauncherLite\`，可以在设置里换到别的盘，与完整版互不影响。"
             echo
             echo "## 校验"
             echo
