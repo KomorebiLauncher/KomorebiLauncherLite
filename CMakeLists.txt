@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 # One place names the version: the tag a release is cut from, the number in the executable's
 # properties and the line on the About page all come from here.
-project(KomorebiNext VERSION 0.1.0 LANGUAGES CXX)
+project(KomorebiNext VERSION 0.1.1 LANGUAGES CXX)
 
 # The build needs the compiler to speak English. Ninja tracks header dependencies by watching the
 # include lines MSVC prints, and it recognises them by their English prefix; with a localized
@@ -58,6 +58,19 @@ if(WIN32)
     configure_file(resources/windows.rc.in ${CMAKE_CURRENT_BINARY_DIR}/windows.rc @ONLY)
     target_sources(komorebi-lite PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/windows.rc)
 endif()
+
+# The theme travels with the binary twice: copied next to it, where a player can edit it, and
+# compiled in, because the single-file build has nothing next to it to copy from. Without the second
+# copy that build had no tokens, no sheet and no wallpaper -- it opened unstyled and black. The
+# folder wins when it exists, so an edited theme still takes effect.
+qt_add_resources(komorebi-lite "theme"
+    PREFIX "/theme"
+    BASE theme
+    FILES
+        theme/light/theme.json
+        theme/light/theme.css
+        theme/light/background.png
+)
 target_compile_definitions(komorebi-lite PRIVATE KOMOREBI_VERSION="${PROJECT_VERSION}")
 # Three languages, compiled in: the source is English, and the two translation files next to it
 # carry 简体中文 and 日本語.
@@ -97,7 +110,8 @@ if(WIN32)
 endif()
 target_include_directories(komorebi-lite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# The theme travels with the binary: tokens and the sheet are read at startup, not compiled in.
+# The theme also sits next to the executable, in the build tree and in the packaged folder, so a
+# build and a portable copy read the same files the resource above carries.
 file(GLOB_RECURSE THEME_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/theme/*)
 foreach(file ${THEME_FILES})
     file(RELATIVE_PATH rel ${CMAKE_CURRENT_SOURCE_DIR} ${file})

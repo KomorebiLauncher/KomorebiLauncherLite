@@ -8,6 +8,8 @@
 
 #include <QWidget>
 
+#include <memory>
+
 #include "core/Settings.h"
 #include "core/VersionStore.h"
 
@@ -27,6 +29,7 @@ class LaunchPage : public QWidget {
 
    public:
     explicit LaunchPage(const Komorebi::Settings& settings, QWidget* parent = nullptr);
+    ~LaunchPage() override;
 
     void reload();
     void applySettings(const Komorebi::Settings& settings);
@@ -70,7 +73,9 @@ class LaunchPage : public QWidget {
     QProcess* m_game = nullptr;
 
     struct RepairState;
-    RepairState* m_repair = nullptr;
+    /// Shared with the thread that runs the repair: the page can be closed while that thread is still
+    /// writing progress into it, and it must not write into freed memory.
+    std::shared_ptr<RepairState> m_repair;
     QProgressDialog* m_repairDialog = nullptr;
     QTimer* m_repairPoll = nullptr;
 };

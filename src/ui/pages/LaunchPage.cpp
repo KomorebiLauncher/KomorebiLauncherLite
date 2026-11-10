@@ -69,6 +69,18 @@ QString logPathFor(const QString& versionId)
 
 }  // namespace
 
+LaunchPage::~LaunchPage()
+{
+    // Closing the window in the middle of a repair used to let the repair thread write into a state
+    // this page had already deleted. The thread keeps its own reference now, so the state outlives
+    // the page; the cancellation flag has to stop aiming at it, and the repair is asked to stop.
+    if (m_repair) {
+        m_repair->cancelled = true;
+        setCancellationFlag(nullptr);
+        m_repair.reset();
+    }
+}
+
 LaunchPage::LaunchPage(const Settings& settings, QWidget* parent)
     : QWidget(parent), m_settings(settings), m_store(versionsRoot())
 {
@@ -380,8 +392,8 @@ void LaunchPage::completeFiles()
     // "Complete files" used to open the installer, which asked the player to pick a version again --
     // and installing that version never touched the one that was actually missing files. The repair
     // below follows inheritsFrom and fetches exactly what the launch plan could not find.
-    m_repair = new RepairState;
-    RepairState* state = m_repair;
+    m_repair = std::make_shared<RepairState>();
+    const std::shared_ptr<RepairState> state = m_repair;
 
     auto* dialog = new QProgressDialog(tr("Completing %1…").arg(m_selected), tr("Cancel"), 0, 0, this);
     dialog->setWindowTitle(tr("Complete files"));
@@ -455,19 +467,28 @@ void LaunchPage::pollRepair()
     if (m_repairPoll)
         m_repairPoll->stop();
 
-    const bool ok = m_repair->ok.load();
-    const bool cancelled = m_repair->cancelled.load();
-    const QString error = m_repair->error;
-    const int downloaded = m_repair->downloaded;
-    const int skipped = m_repair->skipped;
+    // Read under the lock the repair thread writes with, then let the state go: the thread holds the
+    // other reference, so the state stays alive until that thread has finished with it.
+    bool ok = false;
+    bool cancelled = false;
+    QString error;
+    int downloaded = 0;
+    int skipped = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_repair->mutex);
+        ok = m_repair->ok.load();
+        cancelled = m_repair->cancelled.load();
+        error = m_repair->error;
+        downloaded = m_repair->downloaded;
+        skipped = m_repair->skipped;
+    }
 
     if (m_repairDialog) {
         m_repairDialog->close();
         m_repairDialog->deleteLater();
         m_repairDialog = nullptr;
     }
-    delete m_repair;
-    m_repair = nullptr;
+    m_repair.reset();
 
     if (ok) {
         const QString message = downloaded > 0 ? tr("%1 file(s) fetched").arg(downloaded)

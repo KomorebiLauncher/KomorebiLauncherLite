@@ -8,6 +8,8 @@
 
 #include <QDialog>
 
+#include <memory>
+
 #include "core/VersionStore.h"
 
 class QComboBox;
@@ -25,6 +27,7 @@ class InstallDialog : public QDialog {
 
    public:
     explicit InstallDialog(const Komorebi::VersionStore& store, QWidget* parent = nullptr);
+    ~InstallDialog() override;
 
     /// The id that was installed, empty when nothing was.
     QString installedId() const { return m_installed; }
@@ -47,5 +50,7 @@ class InstallDialog : public QDialog {
     QString m_installed;
 
     struct State;
-    State* m_state = nullptr;
+    /// Shared with the install thread: the dialog can be closed while that thread is running, and the
+    /// state has to outlive the dialog instead of being written into after it is gone.
+    std::shared_ptr<State> m_state;
 };

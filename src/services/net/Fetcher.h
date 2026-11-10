@@ -3,6 +3,11 @@
  *  Downloads. One request at a time is easy to write and slow to use: every file opened a new
  *  connection, and a version has thousands of files. This keeps one connection pool and runs a
  *  few requests at once, which is what makes an install take minutes instead of half an hour.
+ *
+ *  Everything here is blocking and may be called from any thread: the pool belongs to a thread of
+ *  its own that outlives the callers, and each call is carried out there and waited for. That is
+ *  also why a call can be made from a thread that is about to end -- a page that searches on a
+ *  throw-away thread, say -- which the pool itself would not allow.
  */
 
 #pragma once

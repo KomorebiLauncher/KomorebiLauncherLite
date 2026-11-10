@@ -12,6 +12,7 @@
 #include <QQueue>
 
 #include <atomic>
+#include <memory>
 
 #include "core/content/CurseForge.h"
 
@@ -33,6 +34,7 @@ class ModpacksPage : public QWidget {
 
    public:
     explicit ModpacksPage(QWidget* parent = nullptr);
+    ~ModpacksPage() override;
 
    signals:
     void status(const QString& text);
@@ -73,7 +75,9 @@ class ModpacksPage : public QWidget {
     int m_iconGeneration = 0;
 
     QList<Komorebi::CurseForgeProject> m_projects;
-    Job* m_job = nullptr;
+    /// Shared with the thread that runs the install: the page can be closed while that thread is
+    /// still writing progress into the job, and it must not write into freed memory.
+    std::shared_ptr<Job> m_job;
     bool m_firstShown = false;
     std::atomic<int> m_searchGeneration{ 0 };
     std::atomic<int> m_probeGeneration{ 0 };

@@ -24,7 +24,8 @@ struct Theme {
 
     QColor colour(const QString& token) const;
 
-    /// Reads `themeDir/theme.json` and the sheet it names; returns an empty theme on failure.
+    /// Reads `themeDir/theme.json` and the sheet it names, falling back to the copy compiled into
+    /// the binary when the folder is not there; returns an empty theme only when neither has one.
     static Theme load(const QString& themeDir);
 
     /// Sets the palette and stylesheet the theme describes.

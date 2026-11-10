@@ -66,6 +66,18 @@ if ($Static) {
                 if (-not $process.WaitForExit(120000)) { throw "the single file did not finish within two minutes" }
                 if ($process.ExitCode -ne 0) { throw "the single file could not start (exit code $($process.ExitCode))" }
                 if (-not (Test-Path (Join-Path $alone 'verify.png'))) { throw "the single file painted nothing" }
+
+                # Rendering, not just starting: the self test looks at the pixels of a window, a
+                # button and a field. A build without its theme is still a running process that
+                # writes a screenshot, so only this catches it.
+                $selftest = Start-Process -FilePath (Join-Path $alone 'komorebi-lite.exe') -PassThru `
+                    -ArgumentList @('--selftest')
+                if (-not $selftest.WaitForExit(120000)) { throw "the single file did not finish its self test within two minutes" }
+                if ($selftest.ExitCode -ne 0) {
+                    $log = Join-Path $alone 'selftest.log'
+                    if (Test-Path $log) { Write-Host (Get-Content $log -Raw) }
+                    throw "the single file failed its self test (exit code $($selftest.ExitCode))"
+                }
                 Write-Host "alone in an empty directory: ok"
             } finally {
                 if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit(10000) | Out-Null }

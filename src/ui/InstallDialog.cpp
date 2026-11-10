@@ -20,6 +20,7 @@
 #include "core/content/PrismMeta.h"
 #include "core/install/ForgeInstaller.h"
 #include "kit/Kit.h"
+#include "services/net/Fetcher.h"
 
 using namespace Komorebi;
 
@@ -34,6 +35,8 @@ struct InstallDialog::State {
     /// The version list is fetched once, in a thread, and then only filtered by the kind combo.
     std::atomic<bool> loading{ false };
     std::atomic<bool> manifestReady{ false };
+    /// Set when the dialog goes away: the install thread watches it through the downloader.
+    std::atomic<bool> cancelled{ false };
     std::mutex mutex;
     VersionManifest manifest;
     QString manifestError;
@@ -43,8 +46,19 @@ struct InstallDialog::State {
     QString versionId;
 };
 
+InstallDialog::~InstallDialog()
+{
+    // Closing the dialog used to leave the install running into a state that nothing read any more,
+    // and the state itself was never freed. The thread keeps its own reference, so it can finish
+    // safely; asking it to stop is what turns "closed while downloading" into a stopped download.
+    if (m_state) {
+        m_state->cancelled = true;
+        setCancellationFlag(nullptr);
+    }
+}
+
 InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
-    : QDialog(parent), m_store(store), m_state(new State)
+    : QDialog(parent), m_store(store), m_state(std::make_shared<State>())
 {
     setWindowTitle(tr("Install a version"));
     setMinimumWidth(520);
@@ -142,7 +156,7 @@ void InstallDialog::loadManifest()
 
     // The list is a network request, and the dialog is on screen while it runs: fetching it on the
     // UI thread froze the whole window behind a busy cursor until Mojang answered.
-    State* state = m_state;
+    const std::shared_ptr<State> state = m_state;
     std::thread([state] {
         QString error;
         VersionManifest manifest = VersionManifest::fetch(&error);
@@ -213,7 +227,9 @@ void InstallDialog::startInstall()
 
     const QString dataRoot = Komorebi::dataRoot();
     const QString loader = m_loader->currentData().toString();
-    State* state = m_state;
+    const std::shared_ptr<State> state = m_state;
+    // The close button, and the window behind it, can stop this install mid-download.
+    setCancellationFlag(&state->cancelled);
     std::thread([state, dataRoot, id, loader] {
         VersionInstaller installer(dataRoot);
         installer.onProgress = [state](const InstallProgress& progress) {
@@ -326,6 +342,9 @@ void InstallDialog::pollProgress()
             error = m_state->error;
         }
         const bool ok = m_state->ok.load();
+        // The downloader was pointed at this state's flag when the install started; it points at
+        // nothing again once the thread has finished, so a later install can set its own.
+        setCancellationFlag(nullptr);
         m_progressLog->appendPlainText(ok ? tr("Installed: %1 file(s) downloaded, %2 already present")
                                                .arg(m_state->downloaded.load())
                                                .arg(m_state->skipped.load())

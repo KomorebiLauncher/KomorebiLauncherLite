@@ -10,11 +10,14 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSaveFile>
+#include <QSemaphore>
 #include <QThread>
 #include <QTimer>
 
+#include <condition_variable>
 #include <functional>
 #include <memory>
+#include <mutex>
 
 #include "services/net/DownloadSite.h"
 
@@ -33,11 +36,96 @@ constexpr int kJsonTimeoutMs = 60000;
 /// plain pointer was a data race that could be seen as garbage exactly when a download was running.
 std::atomic<std::atomic<bool>*> cancellationFlag{ nullptr };
 
-/// One connection pool for the whole process.
+/**
+ * The one thread that owns the one connection pool.
+ *
+ * A QNetworkAccessManager, and every reply, timer and socket notifier it hands out, belongs to the
+ * thread that created it, and Qt means it: using one from another thread is not a slow path, it is
+ * undefined behaviour. This launcher cannot promise that, because the calls are blocking and the
+ * callers are everywhere -- a search runs on a thread that lives for one request, the install that
+ * follows runs on a different one, and the command-line hooks run on the window's own thread. The
+ * old code kept the manager in a function-local static, so it belonged to whichever thread happened
+ * to ask first, which was a download thread that had already ended by the time the player pressed
+ * install. That is the click that closed the launcher: the reply was built as a child of a manager
+ * whose thread was gone.
+ *
+ * The fix is a thread of its own, alive for as long as the process, that owns the manager and the
+ * event loop it needs. Every entry point below hands its work over and waits; a call made from the
+ * network thread itself (an installer that fetches inside a download, say) runs inline, because
+ * waiting on itself would deadlock the only thread that could complete the work.
+ */
+class NetworkThread : public QThread {
+   public:
+    NetworkThread()
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        start();
+        // Nothing may be handed over before run() has created the objects it runs on.
+        m_ready.wait(lock, [this] { return m_relay != nullptr; });
+    }
+
+    /// Runs `work` on the network thread and returns once it has finished.
+    void run(std::function<void()> work)
+    {
+        if (QThread::currentThread() == this) {
+            work();
+            return;
+        }
+
+        QSemaphore finished;
+        QObject* relay = m_relay;
+        if (relay
+            && QMetaObject::invokeMethod(
+                relay, [work, &finished] {
+                    work();
+                    finished.release();
+                },
+                Qt::QueuedConnection)) {
+            finished.acquire();
+            return;
+        }
+
+        // The thread never starts or stops on its own, so this only happens while the process is
+        // going down. Running the work here is wrong-threaded, but a hang would be worse.
+        work();
+    }
+
+    QNetworkAccessManager& manager() const { return *m_manager; }
+
+   protected:
+    void run() override
+    {
+        QNetworkAccessManager manager;
+        QObject relay;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_manager = &manager;
+            m_relay = &relay;
+        }
+        m_ready.notify_all();
+        exec();
+    }
+
+   private:
+    mutable std::mutex m_mutex;
+    std::condition_variable m_ready;
+    QNetworkAccessManager* m_manager = nullptr;
+    QObject* m_relay = nullptr;
+};
+
+NetworkThread& networkThread()
+{
+    // Deliberately never destroyed. It has to outlive anything that can still be downloading, and
+    // tearing a QNetworkAccessManager down after QCoreApplication is gone is a crash on exit -- the
+    // process is ending at that point anyway.
+    static NetworkThread* instance = new NetworkThread;
+    return *instance;
+}
+
+/// Only valid on the network thread: every caller goes through networkThread().
 QNetworkAccessManager& manager()
 {
-    static QNetworkAccessManager instance;
-    return instance;
+    return networkThread().manager();
 }
 
 QNetworkRequest makeRequest(const QString& url)
@@ -123,26 +211,9 @@ JsonResult requestOnce(const QString& url, const QList<QPair<QString, QString>>&
     return result;
 }
 
-}  // namespace
+/// The bodies below run on the network thread; the public functions only hand them over.
 
-void setCancellationFlag(std::atomic<bool>* flag)
-{
-    cancellationFlag.store(flag);
-}
-
-bool requestCancelled()
-{
-    const std::atomic<bool>* flag = cancellationFlag.load();
-    return flag && flag->load();
-}
-
-JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers)
-{
-    // A POST goes where it says: mirrors hold files, not services.
-    return requestOnce(url, headers, &body);
-}
-
-JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& headers)
+JsonResult getJsonHere(const QString& url, const QList<QPair<QString, QString>>& headers)
 {
     JsonResult result;
     for (const QString& candidate : candidateUrls(url)) {
@@ -157,7 +228,7 @@ JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& hea
     return result;
 }
 
-FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1)
+FetchResult fetchFileHere(const QString& url, const QString& target, const QString& sha1)
 {
     FetchResult result;
 
@@ -209,7 +280,8 @@ FetchResult fetchFile(const QString& url, const QString& target, const QString& 
     return result;
 }
 
-FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress)
+FetchSummary fetchManyHere(const QList<FetchJob>& jobs, int concurrency,
+                           const std::function<void(int done, int total)>& onProgress = {})
 {
     FetchSummary summary;
 
@@ -387,21 +459,70 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         relaxed.reserve(mismatched.size());
         for (const auto& job : mismatched)
             relaxed.append({ job.url, job.target, {} });
-        const FetchSummary second = fetchMany(relaxed, concurrency);
+        const FetchSummary second = fetchManyHere(relaxed, concurrency);
         summary.downloaded += second.downloaded;
         summary.failed += second.failed;
     }
     return summary;
 }
 
-BytesResult fetchBytes(const QString& url)
+BytesResult fetchBytesHere(const QString& url)
 {
     BytesResult result;
-    const JsonResult answer = getJson(url, { { QStringLiteral("Accept"), QStringLiteral("application/json") } });
+    const JsonResult answer = getJsonHere(url, { { QStringLiteral("Accept"), QStringLiteral("application/json") } });
     result.ok = answer.status >= 200 && answer.status < 300;
     result.data = answer.body;
     if (!result.ok)
         result.error = answer.error.isEmpty() ? QStringLiteral("no answer for %1").arg(url) : answer.error;
+    return result;
+}
+
+}  // namespace
+
+void setCancellationFlag(std::atomic<bool>* flag)
+{
+    cancellationFlag.store(flag);
+}
+
+bool requestCancelled()
+{
+    const std::atomic<bool>* flag = cancellationFlag.load();
+    return flag && flag->load();
+}
+
+JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers)
+{
+    // A POST goes where it says: mirrors hold files, not services.
+    JsonResult result;
+    networkThread().run([&] { result = requestOnce(url, headers, &body); });
+    return result;
+}
+
+JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& headers)
+{
+    JsonResult result;
+    networkThread().run([&] { result = getJsonHere(url, headers); });
+    return result;
+}
+
+FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1)
+{
+    FetchResult result;
+    networkThread().run([&] { result = fetchFileHere(url, target, sha1); });
+    return result;
+}
+
+FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::function<void(int done, int total)>& onProgress)
+{
+    FetchSummary summary;
+    networkThread().run([&] { summary = fetchManyHere(jobs, concurrency, onProgress); });
+    return summary;
+}
+
+BytesResult fetchBytes(const QString& url)
+{
+    BytesResult result;
+    networkThread().run([&] { result = fetchBytesHere(url); });
     return result;
 }
 

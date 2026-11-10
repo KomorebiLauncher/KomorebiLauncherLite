@@ -44,8 +44,8 @@ run-local.bat        # 打开窗口（数据目录 build\data，用于这台机�
 发一个版本只需要打一个标签，其余由 CI（`.github/workflows/release.yml`）做完：
 
 ```powershell
-git tag -a v0.1.0 -m "Komorebi Lite 0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "Komorebi Lite 0.1.1"
+git push origin v0.1.1
 ```
 
 标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建三个包，只上传成 artifact 供试用，不发 Release。

@@ -161,6 +161,20 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     emit status(tr("Search for a pack, or import one you already have"));
 }
 
+ModpacksPage::~ModpacksPage()
+{
+    // The window can be closed while a pack is being installed, and the page is a child of it. The
+    // install thread keeps its own reference to the job, so the job outlives the page instead of
+    // being written into after the page is gone; what has to happen here is that the process-wide
+    // cancellation pointer stops aiming at a job this page is dropping, and that nothing is left
+    // polling a widget that is about to be destroyed.
+    if (m_job) {
+        m_job->cancelled = true;
+        setCancellationFlag(nullptr);
+        m_job.reset();
+    }
+}
+
 void ModpacksPage::showEvent(QShowEvent* event)
 {
     QWidget::showEvent(event);
@@ -389,12 +403,12 @@ void ModpacksPage::installSelected()
         // A Modrinth version carries its own file url; the pack itself is the same .mrpack the
         // importer accepts, so the two paths end in the same installer.
         startJob(
-            [this, project](Job& job) {
+            [project](Job& job) {
                 QString error;
                 const QList<CurseForgeFile> versions = Modrinth::versions(project.slug, {}, {}, &error);
                 if (versions.isEmpty()) {
                     std::lock_guard<std::mutex> lock(job.mutex);
-                    job.error = tr("the pack has no downloadable version: %1").arg(error);
+                    job.error = ModpacksPage::tr("the pack has no downloadable version: %1").arg(error);
                     return;
                 }
 
@@ -409,18 +423,18 @@ void ModpacksPage::installSelected()
                 ScratchDirectory temp("pack");
                 if (!temp.isValid()) {
                     std::lock_guard<std::mutex> lock(job.mutex);
-                    job.error = tr("no place to unpack the pack");
+                    job.error = ModpacksPage::tr("no place to unpack the pack");
                     return;
                 }
                 const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));
                 {
                     std::lock_guard<std::mutex> lock(job.mutex);
-                    job.stage = tr("downloading the pack");
+                    job.stage = ModpacksPage::tr("downloading the pack");
                     job.current = chosen.version;
                 }
                 if (!Modrinth::download(chosen.url, zip, &error)) {
                     std::lock_guard<std::mutex> lock(job.mutex);
-                    job.error = tr("could not download the pack: %1").arg(error);
+                    job.error = ModpacksPage::tr("could not download the pack: %1").arg(error);
                     return;
                 }
 
@@ -444,12 +458,12 @@ void ModpacksPage::installSelected()
     }
 
     startJob(
-        [this, project](Job& job) {
+        [project](Job& job) {
             QString error;
             const QList<CurseForgeFile> files = CurseForge::files(project.id, &error);
             if (files.isEmpty()) {
                 std::lock_guard<std::mutex> lock(job.mutex);
-                job.error = tr("the pack has no downloadable file: %1").arg(error);
+                job.error = ModpacksPage::tr("the pack has no downloadable file: %1").arg(error);
                 return;
             }
 
@@ -465,18 +479,18 @@ void ModpacksPage::installSelected()
             ScratchDirectory temp("pack");
             if (!temp.isValid()) {
                 std::lock_guard<std::mutex> lock(job.mutex);
-                job.error = tr("no place to unpack the pack");
+                job.error = ModpacksPage::tr("no place to unpack the pack");
                 return;
             }
             const QString zip = QDir(temp.path()).filePath(chosen.fileName);
             {
                 std::lock_guard<std::mutex> lock(job.mutex);
-                job.stage = tr("downloading the pack");
+                job.stage = ModpacksPage::tr("downloading the pack");
                 job.current = chosen.fileName;
             }
             if (!CurseForge::downloadFile(project.id, chosen.id, zip, &error)) {
                 std::lock_guard<std::mutex> lock(job.mutex);
-                job.error = tr("could not download the pack: %1").arg(error);
+                job.error = ModpacksPage::tr("could not download the pack: %1").arg(error);
                 return;
             }
 
@@ -508,7 +522,7 @@ void ModpacksPage::importZip()
 
     m_install->setEnabled(false);
     startJob(
-        [this, path](Job& job) {
+        [path](Job& job) {
             const ModpackResult result = installPack(path, true, [&job](const InstallProgress& progress) {
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.stage = progress.stage;
@@ -528,8 +542,10 @@ void ModpacksPage::importZip()
 
 void ModpacksPage::startJob(const std::function<void(Job&)>& work, const QString& label)
 {
-    m_job = new Job;
-    Job* job = m_job;
+    // The job is shared with the thread below rather than owned by the page: closing the window in
+    // the middle of an install handed that thread a pointer to memory the page had just deleted.
+    m_job = std::make_shared<Job>();
+    const std::shared_ptr<Job> job = m_job;
     m_hint->setText(tr("Installing %1…").arg(label));
     m_progress->setRange(0, 0);
     m_progress->setValue(0);
@@ -594,14 +610,25 @@ void ModpacksPage::pollInstall()
     }
 
     m_poll->stop();
-    const bool ok = m_job->ok;
-    const bool cancelled = m_job->cancelled.load();
-    const QString error = m_job->error;
-    const QString versionId = m_job->versionId;
-    const int downloaded = m_job->downloaded;
-    const int failed = m_job->failed;
-    delete m_job;
-    m_job = nullptr;
+    // Everything the job has to say is read under its lock: the strings are written by the install
+    // thread, and reading them bare raced with it. Only then let the job go -- that thread has
+    // finished, and the page's reference is the last one.
+    bool ok = false;
+    bool cancelled = false;
+    QString error;
+    QString versionId;
+    int downloaded = 0;
+    int failed = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_job->mutex);
+        ok = m_job->ok;
+        cancelled = m_job->cancelled.load();
+        error = m_job->error;
+        versionId = m_job->versionId;
+        downloaded = m_job->downloaded;
+        failed = m_job->failed;
+    }
+    m_job.reset();
     setCancellationFlag(nullptr);
     m_progress->setRange(0, 100);
     m_progress->setVisible(false);

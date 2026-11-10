@@ -118,8 +118,8 @@ int main(int argc, char** argv)
     QApplication::setOrganizationName(QStringLiteral("KomorebiLite"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/komorebi-lite-256.png")));
 
-    // Themes travel next to the binary while the launcher is young; a packaged build would read
-    // them from the data directory instead.
+    // A theme next to the binary wins, so an edited copy still applies; the same files are compiled
+    // in, which is all the single-file build has -- it has no folder to read and used to open black.
     const QString themeDir = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("theme/light"));
     // What the downloader does for the rest of the run: where files come from, how many at once.
     {
