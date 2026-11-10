@@ -305,6 +305,9 @@ if ($Verify) {
         $env:QT_QPA_PLATFORM = $null
         Remove-Item $data -Recurse -Force -ErrorAction SilentlyContinue
         Get-ChildItem $stage -Filter '*.log' | Remove-Item -Force -ErrorAction SilentlyContinue
+        # The self test renders a few widgets to pictures next to the executable while it runs. They
+        # are there to look at after a failure, not to travel inside the package.
+        Get-ChildItem $stage -Filter 'selftest-*.png' | Remove-Item -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $stage 'verify.png') -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $stage 'verify-modpacks.png') -Force -ErrorAction SilentlyContinue
     }
