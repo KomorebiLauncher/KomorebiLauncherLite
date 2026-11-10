@@ -84,11 +84,25 @@ void copyTree(const QString& from, const QString& to)
 }
 QString packVersionId(const ModpackInfo& info)
 {
-    QString base = info.name;
-    base.replace(QRegularExpression(QStringLiteral("[^A-Za-z0-9._-]")), QStringLiteral("-"));
-    while (base.contains(QLatin1String("--")))
-        base.replace(QLatin1String("--"), QLatin1String("-"));
-    return QStringLiteral("%1-%2").arg(base, info.version.isEmpty() ? QStringLiteral("1") : info.version);
+    // Both halves of the id come from the pack's own index, i.e. from whoever wrote the pack, and the
+    // result becomes a directory name under versions/. A character that could leave that directory
+    // ("/", "\", ":") is replaced, and dots at either end are dropped so no part can be "." or "..".
+    const auto sanitise = [](const QString& value, const QString& fallback) {
+        QString cleaned = value;
+        cleaned.replace(QRegularExpression(QStringLiteral("[^A-Za-z0-9._-]")), QStringLiteral("-"));
+        while (cleaned.contains(QLatin1String("--")))
+            cleaned.replace(QLatin1String("--"), QLatin1String("-"));
+        while (!cleaned.isEmpty() && (cleaned.startsWith(QLatin1Char('.')) || cleaned.startsWith(QLatin1Char('-'))))
+            cleaned.remove(0, 1);
+        while (!cleaned.isEmpty() && (cleaned.endsWith(QLatin1Char('.')) || cleaned.endsWith(QLatin1Char('-'))))
+            cleaned.chop(1);
+        return cleaned.isEmpty() ? fallback : cleaned;
+    };
+    const QString base = sanitise(info.name, QStringLiteral("pack"));
+    const QString version = sanitise(info.version, QStringLiteral("1"));
+    const QString id = QStringLiteral("%1-%2").arg(base, version);
+    Q_ASSERT(isSafeComponent(id));
+    return id;
 }
 
 }  // namespace
@@ -276,10 +290,17 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
         const auto file = entry.toObject();
         const QString path = file.value(QStringLiteral("path")).toString();
         const auto downloads = file.value(QStringLiteral("downloads")).toArray();
-        if (path.isEmpty() || downloads.isEmpty() || path.contains(QLatin1String("..")))
+        if (path.isEmpty() || downloads.isEmpty())
             continue;
 
-        const QString target = QDir(packDirectory).filePath(path);
+        // The path is written by the pack, so it decides nothing by itself: it has to land inside the
+        // pack's own directory. An absolute path, a drive letter or ".." would otherwise write
+        // anywhere the player can write, and the install would still say it went well.
+        const QString target = safeJoin(packDirectory, path);
+        if (target.isEmpty()) {
+            result.failed << QStringLiteral("%1 (not a path inside the pack)").arg(path);
+            continue;
+        }
         if (QFileInfo::exists(target)) {
             ++result.skipped;
             continue;
@@ -311,9 +332,9 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
     if (!result.failed.isEmpty()) {
         // A pack missing part of its files starts and then crashes, or looks nothing like the pack.
         // Saying so beats sending the player to the Play page with a broken install.
-        result.error = QStringLiteral("%1 of %2 files could not be downloaded: %3")
+        result.error = QStringLiteral("%1 of %2 files could not be installed: %3")
                            .arg(result.failed.size())
-                           .arg(jobs.size())
+                           .arg(index.files.size())
                            .arg(result.failed.first());
         cleanup();
         return result;
@@ -472,7 +493,13 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             continue;
         }
 
-        const QString target = QDir(modsDirectory).filePath(name);
+        // The file name comes from the API, so it is kept to the mods folder: a name with a
+        // separator in it is reduced to its last component, and ".." is refused outright.
+        const QString target = safeJoin(modsDirectory, QFileInfo(name).fileName());
+        if (target.isEmpty()) {
+            result.failed << QStringLiteral("%1 (not a path inside the pack)").arg(name);
+            continue;
+        }
         if (QFileInfo::exists(target)) {
             ++result.skipped;
             continue;

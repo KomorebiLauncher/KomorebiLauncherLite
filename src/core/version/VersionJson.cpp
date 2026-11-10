@@ -17,7 +17,10 @@ Environment Environment::current()
 #if defined(Q_OS_WIN)
     environment.osName = QStringLiteral("windows");
 #elif defined(Q_OS_MACOS)
-    environment.osName = QStringLiteral("darwin");
+    // "osx", not "darwin": the names in a version description are Minecraft's, and Minecraft calls
+    // this platform "osx" in both its rules and its natives. Answering "darwin" here matched nothing,
+    // which on macOS dropped every platform-specific library and left the natives directory empty.
+    environment.osName = QStringLiteral("osx");
 #else
     environment.osName = QStringLiteral("linux");
 #endif
@@ -126,6 +129,7 @@ Download readDownload(const QJsonObject& object)
     download.path = object.value(QStringLiteral("path")).toString();
     download.url = object.value(QStringLiteral("url")).toString();
     download.sha1 = object.value(QStringLiteral("sha1")).toString();
+    download.id = object.value(QStringLiteral("id")).toString();
     download.size = qint64(object.value(QStringLiteral("size")).toDouble());
     return download;
 }
@@ -241,7 +245,15 @@ VersionJson VersionJson::fromJson(const QByteArray& json)
 
     const auto index = root.value(QStringLiteral("assetIndex")).toObject();
     version.assetIndex = readDownload(index);
-    version.assetIndex.path = QStringLiteral("indexes/%1.json").arg(index.value(QStringLiteral("id")).toString());
+    // The id becomes the file name of the index, so it is checked before it is used as one: an id
+    // like "../../x" would otherwise decide the path itself. Refusing it leaves the download with no
+    // path, which is what `valid()` reports -- the installer then says so instead of writing outside.
+    const QString indexId = index.value(QStringLiteral("id")).toString();
+    static const QRegularExpression indexIdPattern(QStringLiteral("\\A[A-Za-z0-9._-]+\\z"));
+    if (indexIdPattern.match(indexId).hasMatch())
+        version.assetIndex.path = QStringLiteral("indexes/%1.json").arg(indexId);
+    else
+        version.assetIndex.path.clear();
 
     // mavenFiles: the same shape as libraries, but they belong to an installer rather than to the
     // game. They still have to be on the classpath for the loader to run its processors.

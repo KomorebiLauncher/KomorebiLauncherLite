@@ -14,7 +14,7 @@ namespace Komorebi {
 
 /// What the rules of a library or an argument ask about the machine it runs on.
 struct Environment {
-    QString osName;  ///< windows, darwin, linux
+    QString osName;  ///< windows, osx, linux -- the names a version description uses
     QString osArch;  ///< x86, x86_64, arm64
     QString osVersion;
 
@@ -47,6 +47,7 @@ struct Download {
     QString path;  ///< relative to the libraries root
     QString url;
     QString sha1;
+    QString id;  ///< the asset index id; empty for every other use of this struct
     qint64 size = 0;
     bool valid() const { return !path.isEmpty(); }
 };

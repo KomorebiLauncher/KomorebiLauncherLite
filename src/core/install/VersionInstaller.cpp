@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
 
@@ -136,6 +137,12 @@ InstallResult VersionInstaller::install(const QString& versionId, bool withAsset
 InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool withAssets)
 {
     InstallResult result;
+    // `install()` checks the id the player asked for; this one uses the id the remote description
+    // carries, which is the other way a "version" name reaches versions/<id>.
+    if (!isSafeComponent(version.id)) {
+        result.error = QStringLiteral("%1 is not a version id").arg(version.id);
+        return result;
+    }
     const auto report = [this](const QString& stage, int done, int total, const QString& current) {
         if (onProgress)
             onProgress({ stage, done, total, current });
@@ -175,11 +182,19 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
 
     // 3. the libraries: the parser already dropped the ones this platform does not need
     QList<FetchJob> libraryJobs;
+    const QString librariesDirectory = QDir(m_dataRoot).filePath(QStringLiteral("libraries"));
     for (const auto& library : parsed.libraries) {
         const Download& download = library.isNative() ? library.natives : library.artifact;
         if (!download.valid())
             continue;
-        libraryJobs.append({ download.url, QDir(m_dataRoot).filePath(QStringLiteral("libraries/") + download.path), download.sha1 });
+        // The path is written by a server, so it decides nothing by itself: it has to stay inside
+        // libraries/. safeJoin refuses "..", an absolute path and a drive letter.
+        const QString target = safeJoin(librariesDirectory, download.path);
+        if (target.isEmpty()) {
+            result.failed << QStringLiteral("%1 (not a path inside the libraries directory)").arg(download.path);
+            continue;
+        }
+        libraryJobs.append({ download.url, target, download.sha1 });
     }
     const FetchSummary libraryResult = fetchMany(libraryJobs, 8, [&](int done, int total) {
         report(QStringLiteral("libraries"), done, total, {});
@@ -225,35 +240,57 @@ InstallResult VersionInstaller::installFrom(const RemoteVersion& version, bool w
     }
 
     // 5. the asset index, and then the assets it lists
-    if (parsed.assetIndex.valid()) {
-        const QString indexPath = QDir(m_dataRoot).filePath(QStringLiteral("assets/") + parsed.assetIndex.path);
-        report(QStringLiteral("assets index"), 0, 0, parsed.assetIndex.path);
-        const FetchResult fetched = fetchFile(parsed.assetIndex.url, indexPath, parsed.assetIndex.sha1);
-        if (!fetched.ok) {
-            result.failed << QStringLiteral("%1 (%2)").arg(indexPath, fetched.error);
+    const QString assetsDirectory = QDir(m_dataRoot).filePath(QStringLiteral("assets"));
+    if (parsed.assetIndex.path.isEmpty()) {
+        // A description that names an index but whose id could not be used as a file name reaches
+        // here: saying nothing would report a successful install with no assets in it.
+        if (!parsed.assetIndex.id.isEmpty() || !parsed.assetIndex.url.isEmpty())
+            result.failed << QStringLiteral("%1 (an asset index id must be a file name)").arg(parsed.assetIndex.id);
+    } else {
+        const QString indexPath = safeJoin(assetsDirectory, parsed.assetIndex.path);
+        if (indexPath.isEmpty()) {
+            // The index name is not usable as one: refuse it instead of reading or writing wherever
+            // it points. This leaves the install reported as failed, which is the honest answer.
+            result.failed << QStringLiteral("%1 (not a path inside the assets directory)").arg(parsed.assetIndex.path);
         } else {
-            fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
-        }
-
-        if (withAssets && fetched.ok) {
-            const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
-            const auto objects = index.value(QStringLiteral("objects")).toObject();
-            QList<FetchJob> assetJobs;
-            assetJobs.reserve(objects.size());
-            for (auto it = objects.begin(); it != objects.end(); ++it) {
-                const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
-                if (hash.size() < 2)
-                    continue;
-                assetJobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash),
-                                   QDir(m_dataRoot).filePath(QStringLiteral("assets/objects/%1/%2").arg(hash.left(2), hash)),
-                                   hash });
+            report(QStringLiteral("assets index"), 0, 0, parsed.assetIndex.path);
+            const FetchResult fetched = fetchFile(parsed.assetIndex.url, indexPath, parsed.assetIndex.sha1);
+            if (!fetched.ok) {
+                result.failed << QStringLiteral("%1 (%2)").arg(indexPath, fetched.error);
+            } else {
+                fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
             }
-            const FetchSummary assetResult = fetchMany(assetJobs, 12, [&](int done, int total) {
-                report(QStringLiteral("assets"), done, total, {});
-            });
-            result.downloaded += assetResult.downloaded;
-            result.skipped += assetResult.skipped;
-            result.failed += assetResult.failed;
+
+            if (withAssets && fetched.ok) {
+                const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
+                const auto objects = index.value(QStringLiteral("objects")).toObject();
+                QList<FetchJob> assetJobs;
+                assetJobs.reserve(objects.size());
+                // An object is named by its sha1 and stored under its first two characters. Anything
+                // that is not forty hex digits is not a hash, so it is refused rather than used as a
+                // path -- a hash is the one field of an asset index that becomes a file name.
+                static const QRegularExpression hashPattern(QStringLiteral("\\A[0-9a-f]{40}\\z"));
+                const QString objectsDirectory = QDir(assetsDirectory).filePath(QStringLiteral("objects"));
+                for (auto it = objects.begin(); it != objects.end(); ++it) {
+                    const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
+                    if (!hashPattern.match(hash).hasMatch()) {
+                        result.failed << QStringLiteral("%1 (not an asset hash)").arg(it.key());
+                        continue;
+                    }
+                    const QString target = safeJoin(objectsDirectory, QStringLiteral("%1/%2").arg(hash.left(2), hash));
+                    if (target.isEmpty()) {
+                        result.failed << QStringLiteral("%1 (not a path inside the assets directory)").arg(hash);
+                        continue;
+                    }
+                    assetJobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash), target, hash });
+                }
+                const FetchSummary assetResult = fetchMany(assetJobs, 12, [&](int done, int total) {
+                    report(QStringLiteral("assets"), done, total, {});
+                });
+                result.downloaded += assetResult.downloaded;
+                result.skipped += assetResult.skipped;
+                result.failed += assetResult.failed;
+            }
         }
     }
 
@@ -293,11 +330,18 @@ InstallResult VersionInstaller::repair(const QString& versionId)
     if (version.clientJar.valid() && !QFileInfo::exists(jarPath))
         jobs.append({ version.clientJar.url, jarPath, version.clientJar.sha1 });
 
-    // 2. libraries, including the ones a loader brought with it
+    // 2. libraries, including the ones a loader brought with it. The path comes from the merged
+    // description, so it is checked against the libraries directory before anything is fetched: a
+    // repair reads the same metadata an install does, and a tampered one must not decide the target.
+    const QString librariesDirectory = QDir(m_dataRoot).filePath(QStringLiteral("libraries"));
     const auto addFile = [&](const Download& download) {
         if (!download.valid())
             return;
-        const QString target = QDir(m_dataRoot).filePath(QStringLiteral("libraries/") + download.path);
+        const QString target = safeJoin(librariesDirectory, download.path);
+        if (target.isEmpty()) {
+            result.failed << QStringLiteral("%1 (not a path inside the libraries directory)").arg(download.path);
+            return;
+        }
         if (QFileInfo::exists(target))
             return;
         jobs.append({ download.url, target, download.sha1 });
@@ -308,27 +352,43 @@ InstallResult VersionInstaller::repair(const QString& versionId)
         addFile(library.isNative() ? library.natives : library.artifact);
 
     // 3. the asset index, then the objects it points at
-    if (version.assetIndex.valid()) {
-        const QString indexPath = QDir(m_dataRoot).filePath(QStringLiteral("assets/") + version.assetIndex.path);
-        if (!QFileInfo::exists(indexPath)) {
-            QDir().mkpath(QFileInfo(indexPath).absolutePath());
-            const FetchResult fetched = fetchFile(version.assetIndex.url, indexPath, version.assetIndex.sha1);
-            if (!fetched.ok) {
-                result.failed << QStringLiteral("%1 (%2)").arg(indexPath, fetched.error);
-            } else {
-                fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
+    const QString assetsDirectory = QDir(m_dataRoot).filePath(QStringLiteral("assets"));
+    if (version.assetIndex.path.isEmpty()) {
+        if (!version.assetIndex.id.isEmpty() || !version.assetIndex.url.isEmpty())
+            result.failed << QStringLiteral("%1 (an asset index id must be a file name)").arg(version.assetIndex.id);
+    } else {
+        const QString indexPath = safeJoin(assetsDirectory, version.assetIndex.path);
+        if (indexPath.isEmpty()) {
+            result.failed << QStringLiteral("%1 (not a path inside the assets directory)").arg(version.assetIndex.path);
+        } else {
+            if (!QFileInfo::exists(indexPath)) {
+                QDir().mkpath(QFileInfo(indexPath).absolutePath());
+                const FetchResult fetched = fetchFile(version.assetIndex.url, indexPath, version.assetIndex.sha1);
+                if (!fetched.ok) {
+                    result.failed << QStringLiteral("%1 (%2)").arg(indexPath, fetched.error);
+                } else {
+                    fetched.alreadyPresent ? ++result.skipped : ++result.downloaded;
+                }
             }
-        }
-        const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
-        const auto objects = index.value(QStringLiteral("objects")).toObject();
-        for (auto it = objects.begin(); it != objects.end(); ++it) {
-            const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
-            if (hash.size() < 2)
-                continue;
-            const QString target = QDir(m_dataRoot).filePath(QStringLiteral("assets/objects/%1/%2").arg(hash.left(2), hash));
-            if (QFileInfo::exists(target))
-                continue;
-            jobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash), target, hash });
+            const auto index = QJsonDocument::fromJson(readAll(indexPath).toUtf8()).object();
+            const auto objects = index.value(QStringLiteral("objects")).toObject();
+            static const QRegularExpression hashPattern(QStringLiteral("\\A[0-9a-f]{40}\\z"));
+            const QString objectsDirectory = QDir(assetsDirectory).filePath(QStringLiteral("objects"));
+            for (auto it = objects.begin(); it != objects.end(); ++it) {
+                const QString hash = it.value().toObject().value(QStringLiteral("hash")).toString();
+                if (!hashPattern.match(hash).hasMatch()) {
+                    result.failed << QStringLiteral("%1 (not an asset hash)").arg(it.key());
+                    continue;
+                }
+                const QString target = safeJoin(objectsDirectory, QStringLiteral("%1/%2").arg(hash.left(2), hash));
+                if (target.isEmpty()) {
+                    result.failed << QStringLiteral("%1 (not a path inside the assets directory)").arg(hash);
+                    continue;
+                }
+                if (QFileInfo::exists(target))
+                    continue;
+                jobs.append({ QStringLiteral("https://resources.download.minecraft.net/%1/%2").arg(hash.left(2), hash), target, hash });
+            }
         }
     }
 

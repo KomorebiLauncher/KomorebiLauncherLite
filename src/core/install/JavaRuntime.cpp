@@ -26,7 +26,7 @@ QString platformKey()
     const Environment environment = Environment::current();
     if (environment.osName == QLatin1String("windows"))
         return environment.osArch == QLatin1String("arm64") ? QStringLiteral("windows-arm64") : QStringLiteral("windows-x64");
-    if (environment.osName == QLatin1String("darwin"))
+    if (environment.osName == QLatin1String("osx"))
         return environment.osArch == QLatin1String("arm64") ? QStringLiteral("mac-os-arm64") : QStringLiteral("mac-os");
     return environment.osArch == QLatin1String("x86") ? QStringLiteral("linux-i386") : QStringLiteral("linux");
 }

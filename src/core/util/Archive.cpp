@@ -38,6 +38,12 @@ bool looksLikeArchive(const QString& path)
 
 bool extractArchive(const QString& archive, const QString& targetDirectory, QString* error, const QStringList& only)
 {
+    // Every failure below reports through `error`; a caller that only cares whether it worked should
+    // not have to pass a pointer it does not use.
+    QString unusedError;
+    if (!error)
+        error = &unusedError;
+
     if (!QFileInfo::exists(archive)) {
         *error = QStringLiteral("%1 does not exist").arg(archive);
         return false;

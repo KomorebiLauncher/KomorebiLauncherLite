@@ -25,7 +25,9 @@ namespace Komorebi {
 
 namespace {
 
-/// How long one file may take before that source is given up on.
+/// How long a transfer may go without receiving anything before that source is given up on. It is an
+/// idle timeout, not a deadline for the whole file: a hundred megabytes on a slow link is not an
+/// error, a connection that stopped delivering is.
 constexpr int kTimeoutMs = 30000;
 
 /// Small documents from metadata services can be slow without being broken.
@@ -137,25 +139,43 @@ QNetworkRequest makeRequest(const QString& url)
     return request;
 }
 
-/// A reply read to completion, with a way out when the server says nothing.
-QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error, int* status = nullptr)
+/// A reply read to completion, with a way out when the server stops sending.
+///
+/// `timeoutMs` is how long the transfer may go without receiving anything, not how long the whole
+/// request may take: a large file on a slow link is not a failure, a connection that has gone silent
+/// is. The length the server declared is handed back, so a caller can tell a whole body from the part
+/// of one that arrived before the peer went away.
+QByteArray readReply(QNetworkReply* reply, int timeoutMs, QString* error, int* status = nullptr,
+                     qint64* contentLength = nullptr)
 {
     QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     QTimer timer;
     timer.setSingleShot(true);
+    const auto restart = [&] { timer.start(timeoutMs); };
+
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::readyRead, &loop, restart);
     QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
         reply->abort();
         loop.quit();
     });
-    timer.start(timeoutMs);
+    restart();
     loop.exec();
 
     if (status)
         *status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    const qint64 declared = reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
+    if (contentLength)
+        *contentLength = declared;
     const QByteArray data = reply->readAll();
-    if (reply->error() != QNetworkReply::NoError && data.isEmpty())
+    // A body that arrived in part is not a body. A peer that closed early, a transfer that stalled
+    // and a request that was aborted all leave bytes behind; writing them out would produce a file
+    // that looks installed and is not, which is exactly the failure this launcher cannot afford.
+    if (reply->error() != QNetworkReply::NoError) {
         *error = QStringLiteral("network: %1").arg(reply->errorString());
+    } else if (declared > 0 && data.size() != declared) {
+        *error = QStringLiteral("network: the server sent %1 of %2 bytes").arg(data.size()).arg(declared);
+    }
     reply->deleteLater();
     return data;
 }
@@ -253,7 +273,10 @@ FetchResult fetchFileHere(const QString& url, const QString& target, const QStri
             QString error;
             int status = 0;
             const QByteArray data = readReply(reply, kTimeoutMs, &error, &status);
-            if (data.isEmpty() || (status >= 400 && status < 600)) {
+            // An error is an error even when part of the body arrived: `readReply` also refuses a
+            // body shorter than the length the server declared, so a truncated download never
+            // reaches the disk as if it had worked.
+            if (!error.isEmpty() || data.isEmpty() || (status >= 400 && status < 600)) {
                 result.error = error.isEmpty() ? QStringLiteral("HTTP %1 from %2").arg(status).arg(candidate) : error;
                 QThread::msleep(400);
                 continue;
@@ -392,8 +415,20 @@ FetchSummary fetchManyHere(const QList<FetchJob>& jobs, int concurrency,
                 return;
             }
 
+            const qint64 declared = reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
             const QByteArray data = reply->readAll();
             reply->deleteLater();
+
+            if (declared > 0 && data.size() != declared) {
+                // The peer promised a length and broke off before sending it: the same retry as a 4xx,
+                // rather than a file that is silently short.
+                if (retries < 2) {
+                    QTimer::singleShot(500, &loop, [&, job, index, retries] { attempt(job, index, retries + 1); });
+                    return;
+                }
+                attempt(job, index + 1, 0);
+                return;
+            }
 
             if (policy.speedLimitKb > 0) {
                 const qint64 budgetMs = (data.size() / 1024) * 1000 / policy.speedLimitKb;

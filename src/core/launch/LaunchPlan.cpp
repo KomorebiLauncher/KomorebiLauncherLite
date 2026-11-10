@@ -5,9 +5,12 @@
 
 #include "core/JavaScan.h"
 
+#include <QDateTime>
 #include <QDir>
 #include "core/Paths.h"
+#include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
 #include <cmath>
@@ -19,14 +22,36 @@ namespace Komorebi {
 
 QString LaunchPlan::commandLine() const
 {
+    // For the log, not for a shell: QProcess::start() takes the argument list itself. It still has to
+    // be copy-pasteable, so the quoting follows the same rules the C runtime uses when it parses a
+    // command line -- quotes are escaped, and backslashes before a quote are doubled.
+    const auto quote = [](const QString& value) {
+        if (!value.contains(QLatin1Char(' ')) && !value.contains(QLatin1Char('\t')) && !value.contains(QLatin1Char('"')))
+            return value;
+        QString escaped;
+        int backslashes = 0;
+        for (const QChar character : value) {
+            if (character == QLatin1Char('\\')) {
+                ++backslashes;
+                continue;
+            }
+            if (character == QLatin1Char('"')) {
+                escaped += QString(backslashes * 2 + 1, QLatin1Char('\\'));
+                escaped += character;
+            } else {
+                escaped += QString(backslashes, QLatin1Char('\\'));
+                escaped += character;
+            }
+            backslashes = 0;
+        }
+        escaped += QString(backslashes * 2, QLatin1Char('\\'));
+        return QLatin1Char('"') + escaped + QLatin1Char('"');
+    };
+
     QStringList parts;
-    parts << QLatin1Char('"') + program + QLatin1Char('"');
-    for (const auto& argument : arguments) {
-        if (argument.contains(QLatin1Char(' ')))
-            parts << QLatin1Char('"') + argument + QLatin1Char('"');
-        else
-            parts << argument;
-    }
+    parts << quote(program);
+    for (const auto& argument : arguments)
+        parts << quote(argument);
     return parts.join(QLatin1Char(' '));
 }
 
@@ -240,19 +265,50 @@ LaunchPlan buildLaunchPlan(const LaunchRequest& request)
     // The natives path is not part of the classpath decision: a manifest that brings its own -cp
     // still needs to be told where the natives are.
     // Native libraries: LWJGL 3 unpacks what it needs itself, but anything before 1.13 expects the
-    // files to be there already, so they are unpacked when the version lists them.
+    // files to be there already, so they are unpacked when the version lists them. Doing that on
+    // every launch ran one `tar` per jar each time the player pressed Play, so the results are
+    // stamped: the note says which jars were unpacked, and only an unchanged list skips the work.
     if (!request.nativesRoot.isEmpty() && (!nativeJars.isEmpty() || request.legacyFix)) {
         QDir().mkpath(request.nativesRoot);
+        QStringList stamp;
         for (const auto& jar : nativeJars) {
-            if (!QFileInfo::exists(jar))
+            const QFileInfo info(jar);
+            if (!info.exists())
                 continue;
-            QString error;
-            if (!extractArchive(jar, request.nativesRoot, &error) && !error.isEmpty())
-                plan.error = QStringLiteral("could not unpack %1: %2").arg(QFileInfo(jar).fileName(), error);
+            stamp << QStringLiteral("%1:%2:%3")
+                         .arg(info.fileName())
+                         .arg(info.size())
+                         .arg(info.lastModified().toSecsSinceEpoch());
+        }
+        const QString stampPath = QDir(request.nativesRoot).filePath(QStringLiteral(".unpacked"));
+        QFile stampFile(stampPath);
+        bool current = stampFile.open(QIODevice::ReadOnly)
+                       && QString::fromUtf8(stampFile.readAll()) == stamp.join(QLatin1Char('\n'));
+        stampFile.close();
+        if (!current) {
+            for (const auto& jar : nativeJars) {
+                if (!QFileInfo::exists(jar))
+                    continue;
+                QString error;
+                if (!extractArchive(jar, request.nativesRoot, &error) && !error.isEmpty())
+                    plan.error = QStringLiteral("could not unpack %1: %2").arg(QFileInfo(jar).fileName(), error);
+            }
+            // Only a complete unpack is worth remembering: stamping a failure would retire the retry,
+            // and the player would meet the same broken natives on every launch with no second attempt.
+            if (plan.error.isEmpty()) {
+                QSaveFile written(stampPath);
+                if (written.open(QIODevice::WriteOnly)) {
+                    written.write(stamp.join(QLatin1Char('\n')).toUtf8());
+                    written.commit();
+                }
+            }
         }
     }
 
-    arguments << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
+    // A library path that is not there is not an empty argument: the JVM then simply has no natives
+    // of ours to look at, instead of being told to search the working directory.
+    if (!request.nativesRoot.isEmpty())
+        arguments << QStringLiteral("-Djava.library.path=") + request.nativesRoot;
 
     // The JVM unpacks natives and, for a loader, its installer work into java.io.tmpdir. The system
     // one is not always writable (a locked Temp, a policy, another user's leftovers), so the
