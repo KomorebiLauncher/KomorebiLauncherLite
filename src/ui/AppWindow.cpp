@@ -178,16 +178,49 @@ void AppWindow::openSettings()
             tr("The data directory is now\n%1\n\nThe launcher has to start again to use it. Restart now?")
                 .arg(QDir::toNativeSeparators(Komorebi::dataRoot())),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        if (answer == QMessageBox::Yes) {
-            // Same arguments as this start, so a debugging run keeps its page and flags.
-            if (QProcess::startDetached(QCoreApplication::applicationFilePath(),
-                                        QCoreApplication::arguments().mid(1))) {
-                QCoreApplication::quit();
-                return;
-            }
-        }
+        if (answer == QMessageBox::Yes && restartLauncher())
+            return;
         setStatus(tr("Restart the launcher to use the new data directory"));
     }
+}
+
+bool AppWindow::restartLauncher()
+{
+    // Same arguments as this start, so a debugging run keeps its page and flags.
+    if (!QProcess::startDetached(QCoreApplication::applicationFilePath(), QCoreApplication::arguments().mid(1)))
+        return false;
+    QCoreApplication::quit();
+    return true;
+}
+
+void AppWindow::warnAboutMissingDataRoot()
+{
+    if (!Komorebi::chosenDataRootIsMissing())
+        return;
+
+    const QString missing = QDir::toNativeSeparators(Komorebi::dataRoot());
+    const QString fallback = QDir::toNativeSeparators(Komorebi::defaultDataRoot());
+    QMessageBox box(QMessageBox::Warning, tr("Data directory"),
+                    tr("The data directory this launcher was using is not there:\n%1\n\n"
+                       "It may have been moved or renamed, or its drive is not connected. Until it is back "
+                       "this start has no versions, instances, accounts or saves to show.\n\n"
+                       "Go back to the default directory, %2?")
+                        .arg(missing, fallback),
+                    QMessageBox::NoButton, this);
+    auto* goBack = box.addButton(tr("Use the default directory"), QMessageBox::AcceptRole);
+    auto* waitForIt = box.addButton(tr("Wait for it to come back"), QMessageBox::RejectRole);
+    box.setDefaultButton(waitForIt);
+    box.exec();
+    if (box.clickedButton() != goBack)
+        return;
+
+    QString error;
+    if (!Komorebi::setDataRoot(QString(), &error)) {
+        QMessageBox::warning(this, tr("Data directory"), tr("Could not forget the missing directory: %1").arg(error));
+        return;
+    }
+    if (!restartLauncher())
+        setStatus(tr("Restart the launcher to use the default data directory"));
 }
 
 void AppWindow::setStatus(const QString& text)

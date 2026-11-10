@@ -39,6 +39,21 @@ bool setDataRoot(const QString& directory, QString* error);
 /// Whether the data directory is one the player chose rather than the default.
 bool hasChosenDataRoot();
 
+/// Whether this start takes the data directory from `KOMOREBI_DATA`, which wins over any setting.
+bool dataRootFromEnvironment();
+
+/**
+ * Whether the remembered data directory is no longer there.
+ *
+ * A pointer to a path that has gone — a folder moved by hand, one renamed, a drive not plugged in —
+ * is otherwise indistinguishable from a first start: the launcher comes up with no versions, no
+ * instances and no accounts, and never says why.
+ */
+bool chosenDataRootIsMissing();
+
+/// Whether `directory` holds anything this launcher writes: settings, accounts, a version, assets…
+bool looksLikeDataRoot(const QString& directory);
+
 /// `<dataRoot>/instances`
 QString instancesRoot();
 

@@ -119,6 +119,38 @@ bool hasChosenDataRoot()
     return !readDataRootPointer().isEmpty();
 }
 
+bool dataRootFromEnvironment()
+{
+    return !QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_DATA")).isEmpty();
+}
+
+bool chosenDataRootIsMissing()
+{
+    // The environment is not a remembered choice: a variable that points nowhere is the caller's own
+    // doing, and a test run must not be talked out of the directory it asked for.
+    if (dataRootFromEnvironment())
+        return false;
+    const QString chosen = readDataRootPointer();
+    return !chosen.isEmpty() && !QFileInfo(chosen).isDir();
+}
+
+bool looksLikeDataRoot(const QString& directory)
+{
+    const QDir root(directory);
+    if (directory.isEmpty() || !root.exists())
+        return false;
+
+    static const QStringList markers{ QStringLiteral("settings.json"), QStringLiteral("accounts.json"),
+                                      QStringLiteral("instances"),   QStringLiteral("versions"),
+                                      QStringLiteral("libraries"),   QStringLiteral("assets"),
+                                      QStringLiteral("java") };
+    for (const QString& marker : markers) {
+        if (QFileInfo(root.filePath(marker)).exists())
+            return true;
+    }
+    return false;
+}
+
 QString instancesRoot()
 {
     return QDir(dataRoot()).filePath(QStringLiteral("instances"));

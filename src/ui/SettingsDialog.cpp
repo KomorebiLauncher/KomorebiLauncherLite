@@ -43,6 +43,14 @@ QLabel* hintLabel(QWidget* parent, const QString& text)
     return label;
 }
 
+/// The same, in the accent colour: for something that will not do what the field above it suggests.
+QLabel* warningLabel(QWidget* parent, const QString& text)
+{
+    auto* label = hintLabel(parent, text);
+    label->setStyleSheet(QStringLiteral("color: %1;").arg(Komorebi::Colours::current().plum.name()));
+    return label;
+}
+
 }  // namespace
 
 SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
@@ -105,6 +113,20 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         hintLabel(page, tr("Versions, libraries, assets, Java, accounts and your saves all live here. "
                            "Moving it to another drive is fine; the launcher asks before copying anything, "
                            "and the change takes effect the next time it starts.")));
+    // Two ways this row can be a lie about what the next start will use, both worth saying plainly
+    // rather than letting the player change it and wonder why nothing happened.
+    if (Komorebi::dataRootFromEnvironment()) {
+        dataForm->addRow(QString(),
+                         warningLabel(page, tr("This start takes its data directory from the KOMOREBI_DATA "
+                                               "environment variable, which wins over anything chosen here.")));
+    } else if (Komorebi::chosenDataRootIsMissing()) {
+        // The path itself is in the field above, so this only has to say what to do about it: a path
+        // with no spaces in it cannot be wrapped inside a label this narrow, and was cut in half.
+        dataForm->addRow(QString(),
+                         warningLabel(page, tr("The directory remembered from last time is not there any more. "
+                                               "Pick another one here, or press Default to go back to the "
+                                               "default directory.")));
+    }
     layout->addLayout(dataForm);
 
     connect(browseData, &QPushButton::clicked, this, [this, showDataDirectory] {

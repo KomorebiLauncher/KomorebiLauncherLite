@@ -36,11 +36,21 @@ class AppWindow : public QMainWindow {
     /// Selects a page by position in the rail; used by the screenshot hook.
     void showPage(int index);
 
+    /**
+     * Says so when the remembered data directory is gone, and offers to go back to the default one.
+     *
+     * Called once, after the window is up. Without it a folder that was moved by hand looks like a
+     * fresh install to the player, who then believes their versions and accounts were deleted.
+     */
+    void warnAboutMissingDataRoot();
+
    protected:
     void paintEvent(QPaintEvent* event) override;
 
    private:
     void openSettings();
+    /// Starts another copy of the launcher with the same arguments and quits this one.
+    bool restartLauncher();
     void setStatus(const QString& text);
     void reloadEverything();
 

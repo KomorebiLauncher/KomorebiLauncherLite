@@ -15,6 +15,7 @@
 #include <QWidget>
 
 #include "core/auth/MicrosoftAuth.h"
+#include "core/Paths.h"
 #include "core/util/DataMove.h"
 #include "kit/Kit.h"
 
@@ -181,6 +182,29 @@ int runSelfTest()
             const DataCopyResult cancelled = copyDataDirectory(
                 source.path(), stopped.path(), [](const QString&, int, qint64) { return false; });
             report(cancelled.cancelled && cancelled.error.isEmpty(), "a copy can be stopped", QString());
+        }
+    }
+
+    // 10. spotting a data directory: a moved folder must not pass for an empty one
+    {
+        QTemporaryDir empty;
+        QTemporaryDir filled;
+        if (!empty.isValid() || !filled.isValid()) {
+            report(false, "temporary directories for the data directory test", QString());
+        } else {
+            report(!looksLikeDataRoot(empty.path()), "an empty directory is not a data directory", QString());
+            report(!looksLikeDataRoot(empty.filePath(QStringLiteral("gone"))),
+                   "a directory that is not there is not a data directory", QString());
+
+            QFile settings(filled.filePath(QStringLiteral("settings.json")));
+            if (settings.open(QIODevice::WriteOnly)) {
+                settings.write("{}");
+                settings.close();
+            }
+            report(looksLikeDataRoot(filled.path()), "settings.json marks a data directory", QString());
+            report(!dataRootFromEnvironment() || !chosenDataRootIsMissing(),
+                   "a directory given by KOMOREBI_DATA is never reported missing",
+                   QStringLiteral("KOMOREBI_DATA=%1").arg(qEnvironmentVariable("KOMOREBI_DATA")));
         }
     }
 

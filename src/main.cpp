@@ -952,6 +952,17 @@ int main(int argc, char** argv)
     }
     window.show();
 
+    // A remembered data directory that has gone looks like a first start, so say it aloud. The
+    // automated hooks stand aside: a modal question would hold up an unattended run.
+    bool unattended = arguments.contains(QStringLiteral("--selftest")) || arguments.contains(QStringLiteral("--screenshot"))
+                      || arguments.contains(QStringLiteral("--install"));
+    for (const QString& argument : arguments) {
+        if (argument.startsWith(QStringLiteral("--shot-")))
+            unattended = true;
+    }
+    if (!unattended)
+        window.warnAboutMissingDataRoot();
+
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.
     // A development hook for the per-version settings dialog.
