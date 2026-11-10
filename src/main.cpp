@@ -461,9 +461,11 @@ int main(int argc, char** argv)
         // Printed so a test can compare it with the file it gets: an empty line here means the API
         // answered without a hash, which is the only case where the download goes unchecked.
         out.write(QStringLiteral("sha1: %1\n").arg(chosen.sha1).toUtf8());
+        // empty when the API publishes no link of its own and the file has to be asked for
+        out.write(QStringLiteral("url: %1\n").arg(chosen.url).toUtf8());
 
         const QString target = QDir(QCoreApplication::applicationDirPath()).filePath(chosen.fileName);
-        if (!Komorebi::CurseForge::downloadFile(projectId, chosen.id, target, chosen.sha1, &error)) {
+        if (!Komorebi::CurseForge::downloadFile(projectId, chosen, target, &error)) {
             out.write(QStringLiteral("download failed: %1\n").arg(error).toUtf8());
             return 1;
         }

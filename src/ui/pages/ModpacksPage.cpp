@@ -488,7 +488,7 @@ void ModpacksPage::installSelected()
                 job.stage = ModpacksPage::tr("downloading the pack");
                 job.current = chosen.fileName;
             }
-            if (!CurseForge::downloadFile(project.id, chosen.id, zip, chosen.sha1, &error)) {
+            if (!CurseForge::downloadFile(project.id, chosen, zip, &error)) {
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.error = ModpacksPage::tr("could not download the pack: %1").arg(error);
                 return;

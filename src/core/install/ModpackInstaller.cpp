@@ -502,15 +502,14 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
 
         // The API knows the file name and the hash; the pack only carries ids.
         const QList<CurseForgeFile> list = CurseForge::files(projectId, &error);
-        QString name;
-        QString sha1;
+        CurseForgeFile chosen;
         for (const auto& candidate : list) {
             if (candidate.id == fileId) {
-                name = candidate.fileName;
-                sha1 = candidate.sha1;
+                chosen = candidate;
                 break;
             }
         }
+        const QString name = chosen.fileName;
 
         report(QStringLiteral("mods"), ++done, files.size(), name.isEmpty() ? QString::number(projectId) : name);
         if (name.isEmpty()) {
@@ -529,7 +528,7 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             ++result.skipped;
             continue;
         }
-        if (!CurseForge::downloadFile(projectId, fileId, target, sha1, &error)) {
+        if (!CurseForge::downloadFile(projectId, chosen, target, &error)) {
             result.failed << QStringLiteral("%1 (%2)").arg(name, error);
             continue;
         }

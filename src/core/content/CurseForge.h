@@ -43,9 +43,10 @@ class CurseForge {
     /// Files of a project, newest first.
     static QList<CurseForgeFile> files(int projectId, QString* error);
 
-    /// The file itself, through the download url the API hands out for it. The hash is checked when
-    /// the caller has one: a CDN that answers with something else is not accepted as the file.
-    static bool downloadFile(int projectId, int fileId, const QString& target, const QString& sha1,
+    /// The file itself. `files()` already carries the url for most files; the rest leave it to the
+    /// download-url endpoint, and the ones whose author allows no download outside CurseForge at all
+    /// are reported as that, not as the 403 they arrive as.
+    static bool downloadFile(int projectId, const CurseForgeFile& file, const QString& target,
                              QString* error);
 };
 

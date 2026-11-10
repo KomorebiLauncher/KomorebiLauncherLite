@@ -100,6 +100,9 @@ QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
         file.fileName = item.value(QStringLiteral("fileName")).toString();
         file.version = item.value(QStringLiteral("displayName")).toString();
         file.releaseType = QString::number(item.value(QStringLiteral("releaseType")).toInt());
+        // Most files carry their own CDN link; the ones that do not get one from the download-url
+        // endpoint, or cannot be downloaded at all -- see downloadFile().
+        file.url = item.value(QStringLiteral("downloadUrl")).toString();
         for (const auto& version : item.value(QStringLiteral("gameVersions")).toArray())
             file.gameVersions << version.toString();
         // The API lists the hashes as (value, algo) pairs, and algo is a number: 1 is sha1, 2 is md5.
@@ -118,22 +121,32 @@ QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
     return files;
 }
 
-bool CurseForge::downloadFile(int projectId, int fileId, const QString& target, const QString& sha1, QString* error)
+bool CurseForge::downloadFile(int projectId, const CurseForgeFile& file, const QString& target, QString* error)
 {
-    // The API hands out a signed url for the file, which is what keeps the CDN link stable.
-    const QString url = QStringLiteral("%1/mods/%2/files/%3/download-url").arg(QString::fromLatin1(kBase)).arg(projectId).arg(fileId);
-    const JsonResult result = getJson(url, headers());
-    const QJsonObject object = body(result, error);
-    if (!result.ok)
-        return false;
-
-    const QString downloadUrl = object.value(QStringLiteral("data")).toString();
+    QString downloadUrl = file.url;
     if (downloadUrl.isEmpty()) {
-        *error = QStringLiteral("CurseForge returned no download url");
-        return false;
+        // Some files come without a link of their own and expect the launcher to ask for one. The
+        // ones whose author allows no third-party download answer 403 here with an empty body,
+        // which says nothing to a player looking at the reason -- so that case is spelled out. A key
+        // that was refused would have failed the listing that produced this file in the first place.
+        const QString url = QStringLiteral("%1/mods/%2/files/%3/download-url").arg(QString::fromLatin1(kBase)).arg(projectId).arg(file.id);
+        const JsonResult result = getJson(url, headers());
+        QString reason;
+        const QJsonObject object = body(result, &reason);
+        if (!result.ok) {
+            *error = result.status == 403
+                ? QStringLiteral("the file's author does not allow it to be downloaded outside CurseForge")
+                : reason;
+            return false;
+        }
+        downloadUrl = object.value(QStringLiteral("data")).toString();
+        if (downloadUrl.isEmpty()) {
+            *error = QStringLiteral("CurseForge returned no download url");
+            return false;
+        }
     }
 
-    const FetchResult fetched = fetchFile(downloadUrl, target, sha1);
+    const FetchResult fetched = fetchFile(downloadUrl, target, file.sha1);
     if (!fetched.ok) {
         *error = fetched.error;
         return false;
