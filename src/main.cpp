@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QElapsedTimer>
+#include <QDebug>
 #include <QProcess>
 #include <QTimer>
 
@@ -49,6 +50,44 @@
 #include "ui/InstanceSettingsDialog.h"
 #include "core/InstanceConfig.h"
 #include "ui/LoginDialog.h"
+
+namespace {
+
+/**
+ * Opens one of the logs a development hook writes beside the build.
+ *
+ * These hooks are for a developer, so a log that cannot be opened is a nuisance rather than a
+ * reason to stop: the failure is said once and the hook goes on, writing into a closed file, which
+ * does nothing.
+ */
+void openHookLog(QFile& file)
+{
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        qWarning("%s", qPrintable(QStringLiteral("could not write %1").arg(file.fileName())));
+}
+
+/**
+ * Reads the version a hook was pointed at, by id or by the path to its description.
+ *
+ * A loader or a pack only records what it adds and points at the version it builds on, so a plan
+ * built from that one file is missing the game itself; both forms are resolved through the chain
+ * first, which is also what the window does before it launches anything.
+ */
+Komorebi::ResolvedVersion resolveHookVersion(const QString& idOrPath)
+{
+    Komorebi::ResolvedVersion resolved;
+    QString id = idOrPath;
+    if (QFileInfo::exists(idOrPath)) {
+        id = Komorebi::VersionJson::fromFile(idOrPath).id;
+        if (id.isEmpty()) {
+            resolved.error = QStringLiteral("%1 does not name a version").arg(idOrPath);
+            return resolved;
+        }
+    }
+    return Komorebi::resolveVersion(Komorebi::versionsRoot(), id);
+}
+
+}  // namespace
 
 int main(int argc, char** argv)
 {
@@ -126,7 +165,7 @@ int main(int argc, char** argv)
         const bool withAssets = !arguments.contains(QStringLiteral("--no-assets"));
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("install.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -250,7 +289,7 @@ int main(int argc, char** argv)
         const QString versionId = arguments.at(versionLaunchIndex + 1);
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -324,7 +363,7 @@ int main(int argc, char** argv)
     if (searchPacksIndex >= 0) {
         const QString query = searchPacksIndex + 1 < arguments.size() ? arguments.at(searchPacksIndex + 1) : QString();
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         QString error;
         const auto packs = Komorebi::CurseForge::searchModpacks(query, 10, &error);
         if (packs.isEmpty()) {
@@ -342,7 +381,7 @@ int main(int argc, char** argv)
     if (searchModrinthIndex >= 0) {
         const QString query = searchModrinthIndex + 1 < arguments.size() ? arguments.at(searchModrinthIndex + 1) : QString();
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         QString error;
         const auto packs = Komorebi::Modrinth::searchModpacks(query, 10, &error);
         if (packs.isEmpty()) {
@@ -361,7 +400,7 @@ int main(int argc, char** argv)
         const QString gameVersion = installModrinthIndex + 2 < arguments.size() ? arguments.at(installModrinthIndex + 2) : QString();
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("pack-install.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -407,7 +446,7 @@ int main(int argc, char** argv)
     if (downloadPackIndex >= 0 && downloadPackIndex + 1 < arguments.size()) {
         const int projectId = arguments.at(downloadPackIndex + 1).toInt();
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("packs.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
 
         QString error;
         const auto files = Komorebi::CurseForge::files(projectId, &error);
@@ -431,7 +470,7 @@ int main(int argc, char** argv)
     const int modpackIndex = arguments.indexOf(QStringLiteral("--modpack"));
     if (modpackIndex >= 0 && modpackIndex + 1 < arguments.size()) {
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("pack-install.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -456,7 +495,7 @@ int main(int argc, char** argv)
     const int fetchIndex = arguments.indexOf(QStringLiteral("--fetch"));
     if (fetchIndex >= 0 && fetchIndex + 2 < arguments.size()) {
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("fetch.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const Komorebi::FetchResult fetched = Komorebi::fetchFile(arguments.at(fetchIndex + 1), arguments.at(fetchIndex + 2), {});
         out.write(QStringLiteral("ok: %1\nbytes: %2\nerror: %3\n").arg(fetched.ok).arg(fetched.bytes).arg(fetched.error).toUtf8());
         return fetched.ok ? 0 : 1;
@@ -470,7 +509,7 @@ int main(int argc, char** argv)
         const QString loaderVersion = componentsIndex + 3 < arguments.size() ? arguments.at(componentsIndex + 3) : QString();
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("components.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         QString error;
         QString installed;
         const QString id = Komorebi::PrismMeta::install(uid, mcVersion, loaderVersion, &installed, &error);
@@ -486,7 +525,7 @@ int main(int argc, char** argv)
     if (arguments.contains(QStringLiteral("--clean"))) {
         const qint64 freed = Komorebi::cleanJunk(Komorebi::dataRoot());
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("clean.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         out.write(QStringLiteral("freed %1 bytes\n").arg(freed).toUtf8());
         return 0;
     }
@@ -497,7 +536,7 @@ int main(int argc, char** argv)
         QString error;
         const bool ok = Komorebi::extractArchive(arguments.at(unpackIndex + 1), arguments.at(unpackIndex + 2), &error);
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("unpack.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         out.write(QStringLiteral("%1: %2\n").arg(ok ? QStringLiteral("ok") : QStringLiteral("failed"), error).toUtf8());
         return ok ? 0 : 1;
     }
@@ -508,7 +547,7 @@ int main(int argc, char** argv)
     if (repairIndex >= 0 && repairIndex + 1 < arguments.size()) {
         const QString versionId = arguments.at(repairIndex + 1);
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("repair.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -539,7 +578,7 @@ int main(int argc, char** argv)
         const QString id = arguments.at(resolveIndex + 1);
         const Komorebi::ResolvedVersion resolved = Komorebi::resolveVersion(Komorebi::versionsRoot(), id);
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("resolve.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         out.write(QStringLiteral("id: %1\nok: %2\nerror: [%3]\nchain: %4\nbase: %5\nmain: %6\nlibraries: %7\n")
                       .arg(id, resolved.ok() ? QStringLiteral("yes") : QStringLiteral("no"), resolved.error,
                            resolved.chain.join(QLatin1Char(';')), resolved.baseId, resolved.version.mainClass)
@@ -552,7 +591,7 @@ int main(int argc, char** argv)
     const int loginIndex = arguments.indexOf(QStringLiteral("--login"));
     if (loginIndex >= 0) {
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("login.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -583,12 +622,18 @@ int main(int argc, char** argv)
 
     const int planIndex = arguments.indexOf(QStringLiteral("--launch-plan"));
     if (planIndex >= 0 && planIndex + 1 < arguments.size()) {
+        const Komorebi::ResolvedVersion resolved = resolveHookVersion(arguments.at(planIndex + 1));
+
         Komorebi::LaunchRequest request;
-        request.version = Komorebi::VersionJson::fromFile(arguments.at(planIndex + 1));
+        request.version = resolved.version;
 
         request.librariesRoot = Komorebi::librariesRoot();
         request.assetsRoot = Komorebi::assetsRoot();
         request.nativesRoot = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("natives"));
+        // the jar belongs to the version at the bottom of the chain, not to the loader
+        request.clientJar = resolved.ok()
+                                ? QDir(Komorebi::versionDirectory(resolved.baseId)).filePath(resolved.baseId + QStringLiteral(".jar"))
+                                : QString();
 
         const int gameIndex = arguments.indexOf(QStringLiteral("--game-dir"));
         request.gameDirectory = gameIndex >= 0 && gameIndex + 1 < arguments.size()
@@ -602,6 +647,10 @@ int main(int argc, char** argv)
             QStringList lines;
             lines << QStringLiteral("version: %1 (%2, java %3)").arg(request.version.id, request.version.mainClass)
                          .arg(request.version.javaMajor);
+            lines << QStringLiteral("chain: %1, base: %2").arg(resolved.chain.join(QStringLiteral(" -> ")),
+                                                              resolved.baseId.isEmpty() ? QStringLiteral("<none>") : resolved.baseId);
+            if (!resolved.error.isEmpty())
+                lines << QStringLiteral("resolve error: %1").arg(resolved.error);
             lines << QStringLiteral("java: %1").arg(plan.program.isEmpty() ? QStringLiteral("<none>") : plan.program);
             lines << QStringLiteral("libraries: %1, missing: %2").arg(request.version.libraries.size()).arg(plan.missingFiles.size());
             for (const auto& missing : plan.missingFiles.mid(0, 5))
@@ -612,18 +661,18 @@ int main(int argc, char** argv)
             lines << plan.commandLine();
             out.write(lines.join(QLatin1Char('\n')).toUtf8());
         }
-        return plan.valid() ? 0 : 1;
+        return resolved.ok() && plan.valid() ? 0 : 1;
     }
 
     // Launch for real: fetch what the version needs, build the plan, start the process and collect
     // its output. This is the development path for M2/M3 and prints everything it did.
     const int launchIndex = arguments.indexOf(QStringLiteral("--launch"));
     if (launchIndex >= 0 && launchIndex + 1 < arguments.size()) {
-        const QString versionPath = arguments.at(launchIndex + 1);
-        Komorebi::VersionJson version = Komorebi::VersionJson::fromFile(versionPath);
+        const Komorebi::ResolvedVersion resolved = resolveHookVersion(arguments.at(launchIndex + 1));
+        const Komorebi::VersionJson version = resolved.version;
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
@@ -631,9 +680,13 @@ int main(int argc, char** argv)
         };
 
         note(QStringLiteral("version %1, main %2, java %3").arg(version.id, version.mainClass).arg(version.javaMajor));
+        note(QStringLiteral("chain %1, base %2").arg(resolved.chain.join(QStringLiteral(" -> ")), resolved.baseId));
+        if (!resolved.error.isEmpty())
+            note(QStringLiteral("cannot resolve: %1").arg(resolved.error));
 
+        // a loader does not ship the game: the jar belongs to the version at the bottom of the chain
         const QString clientJar = Komorebi::safeJoin(Komorebi::librariesRoot(),
-                                                     QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+                                                     QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(resolved.baseId));
 
         const int gameDirIndex = arguments.indexOf(QStringLiteral("--game-dir"));
         const QString gameDirectory = gameDirIndex >= 0 && gameDirIndex + 1 < arguments.size()
@@ -668,7 +721,7 @@ int main(int argc, char** argv)
         // the game jar and the asset index are the two files a launch cannot do without
         {
             const QString jar = Komorebi::safeJoin(Komorebi::librariesRoot(),
-                                                   QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(version.id));
+                                                   QStringLiteral("net/minecraft/client/%1/client-%1.jar").arg(resolved.baseId));
             if (version.clientJar.url.isEmpty()) {
                 note(QStringLiteral("client jar: the manifest does not say where it is"));
             } else {
@@ -753,7 +806,7 @@ int main(int argc, char** argv)
         const QString metaRoot = QDir(Komorebi::dataRoot()).filePath(QStringLiteral("meta"));
 
         QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("launch.log")));
-        out.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        openHookLog(out);
         const auto note = [&out](const QString& line) {
             out.write(line.toUtf8());
             out.write("\n");
