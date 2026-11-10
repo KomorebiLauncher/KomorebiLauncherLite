@@ -24,8 +24,9 @@ class Modrinth {
     static QList<CurseForgeFile> versions(const QString& projectId, const QString& gameVersion, const QString& loader,
                                           QString* error);
 
-    /// Downloads one version's file.
-    static bool download(const QString& url, const QString& target, QString* error);
+    /// Downloads one version's file. The hash comes from the version record and is checked when it
+    /// is not empty, so a truncated or substituted body is refused rather than kept.
+    static bool download(const QString& url, const QString& target, const QString& sha1, QString* error);
 };
 
 }  // namespace Komorebi

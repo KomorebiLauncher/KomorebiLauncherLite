@@ -88,12 +88,13 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
         for (const auto& game : item.value(QStringLiteral("game_versions")).toArray())
             file.gameVersions << game.toString();
 
-        // The file itself is the first entry of `files`, which carries the url.
+        // The file itself is the first entry of `files`, which carries the url and the hashes.
         const auto list = item.value(QStringLiteral("files")).toArray();
         if (!list.isEmpty()) {
             const auto entryFile = list.first().toObject();
             file.url = entryFile.value(QStringLiteral("url")).toString();
             file.fileName = QFileInfo(entryFile.value(QStringLiteral("filename")).toString()).fileName();
+            file.sha1 = entryFile.value(QStringLiteral("hashes")).toObject().value(QStringLiteral("sha1")).toString();
         }
         if (!file.url.isEmpty())
             files.append(file);
@@ -101,9 +102,9 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
     return files;
 }
 
-bool Modrinth::download(const QString& url, const QString& target, QString* error)
+bool Modrinth::download(const QString& url, const QString& target, const QString& sha1, QString* error)
 {
-    const FetchResult fetched = fetchFile(url, target, {});
+    const FetchResult fetched = fetchFile(url, target, sha1);
     if (!fetched.ok) {
         *error = fetched.error;
         return false;

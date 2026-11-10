@@ -82,6 +82,16 @@ void copyTree(const QString& from, const QString& to)
         }
     }
 }
+
+/// A pack that fails halfway must not leave an instance behind that looks installed. A directory
+/// the install made for itself is its own to remove; one that was already there belongs to the
+/// player, and rolling that back would take their worlds with the pack.
+void discardNewInstance(const QString& directory, bool createdHere)
+{
+    if (createdHere)
+        QDir(directory).removeRecursively();
+}
+
 QString packVersionId(const ModpackInfo& info)
 {
     // Both halves of the id come from the pack's own index, i.e. from whoever wrote the pack, and the
@@ -269,6 +279,8 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
     info.version = index.version;
     const QString packId = packVersionId(info);
     const QString packDirectory = versionDirectory(packId);
+    // Whether this install is creating the instance decides whether a failure may remove it again.
+    const bool freshInstance = !QFileInfo::exists(packDirectory);
     QDir().mkpath(packDirectory);
     {
         QJsonObject version;
@@ -278,6 +290,7 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
         QFile write(QDir(packDirectory).filePath(packId + QStringLiteral(".json")));
         if (!write.open(QIODevice::WriteOnly | QIODevice::Truncate) || write.write(QJsonDocument(version).toJson()) < 0) {
             result.error = QStringLiteral("could not write the pack's version description");
+            discardNewInstance(packDirectory, freshInstance);
             cleanup();
             return result;
         }
@@ -286,12 +299,14 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
     // 4. every file the index lists, at the path it gives. The urls are in the index, so they are
     // fetched together -- a pack with two hundred mods should not take two hundred round trips.
     QList<FetchJob> jobs;
+    int considered = 0;  // entries that named a file at all; the ones with nothing to fetch are not
     for (const auto& entry : index.files) {
         const auto file = entry.toObject();
         const QString path = file.value(QStringLiteral("path")).toString();
         const auto downloads = file.value(QStringLiteral("downloads")).toArray();
         if (path.isEmpty() || downloads.isEmpty())
             continue;
+        ++considered;
 
         // The path is written by the pack, so it decides nothing by itself: it has to land inside the
         // pack's own directory. An absolute path, a drive letter or ".." would otherwise write
@@ -313,6 +328,7 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
     });
     if (requestCancelled()) {
         result.error = QStringLiteral("cancelled");
+        discardNewInstance(packDirectory, freshInstance);
         cleanup();
         return result;
     }
@@ -334,8 +350,9 @@ ModpackResult installMrpack(const QString& zipPath, bool withAssets,
         // Saying so beats sending the player to the Play page with a broken install.
         result.error = QStringLiteral("%1 of %2 files could not be installed: %3")
                            .arg(result.failed.size())
-                           .arg(index.files.size())
+                           .arg(considered)
                            .arg(result.failed.first());
+        discardNewInstance(packDirectory, freshInstance);
         cleanup();
         return result;
     }
@@ -440,6 +457,8 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     // 3. the pack is a version of its own, on top of the loader
     const QString packId = packVersionId(info);
     const QString packDirectory = versionDirectory(packId);
+    // Whether this install is creating the instance decides whether a failure may remove it again.
+    const bool freshInstance = !QFileInfo::exists(packDirectory);
     QDir().mkpath(packDirectory);
     {
         QJsonObject version;
@@ -449,6 +468,7 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
         QSaveFile file(QDir(packDirectory).filePath(packId + QStringLiteral(".json")));
         if (!file.open(QIODevice::WriteOnly) || !file.commit()) {
             result.error = QStringLiteral("could not write the pack's version description");
+            discardNewInstance(packDirectory, freshInstance);
             cleanup();
             return result;
         }
@@ -465,10 +485,12 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     QDir().mkpath(modsDirectory);
     const auto files = manifest.value(QStringLiteral("files")).toArray();
     int done = 0;
+    int considered = 0;  // entries that named a file at all; the ones with no ids are not
     for (const auto& entry : files) {
         const auto file = entry.toObject();
         if (requestCancelled()) {
             result.error = QStringLiteral("cancelled");
+            discardNewInstance(packDirectory, freshInstance);
             cleanup();
             return result;
         }
@@ -476,13 +498,16 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
         const int fileId = file.value(QStringLiteral("fileID")).toInt();
         if (projectId <= 0 || fileId <= 0)
             continue;
+        ++considered;
 
-        // The API knows the file name; the pack only carries ids.
+        // The API knows the file name and the hash; the pack only carries ids.
         const QList<CurseForgeFile> list = CurseForge::files(projectId, &error);
         QString name;
+        QString sha1;
         for (const auto& candidate : list) {
             if (candidate.id == fileId) {
                 name = candidate.fileName;
+                sha1 = candidate.sha1;
                 break;
             }
         }
@@ -504,7 +529,7 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             ++result.skipped;
             continue;
         }
-        if (!CurseForge::downloadFile(projectId, fileId, target, &error)) {
+        if (!CurseForge::downloadFile(projectId, fileId, target, sha1, &error)) {
             result.failed << QStringLiteral("%1 (%2)").arg(name, error);
             continue;
         }
@@ -533,8 +558,9 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
         // Same rule as an .mrpack: a pack with files missing is not installed, it is broken.
         result.error = QStringLiteral("%1 of %2 files could not be downloaded: %3")
                            .arg(result.failed.size())
-                           .arg(files.size())
+                           .arg(considered)
                            .arg(result.failed.first());
+        discardNewInstance(packDirectory, freshInstance);
         return result;
     }
     result.versionId = packId;

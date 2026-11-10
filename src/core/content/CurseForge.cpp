@@ -15,6 +15,8 @@ namespace {
 
 constexpr auto kBase = "https://api.curseforge.com/v1";
 constexpr int kMinecraft = 432;
+/// The hash algorithm numbers of the file API: 1 is sha1, 2 is md5. The wire format is a number.
+constexpr int kSha1 = 1;
 
 /// The key the project registered; a launcher cannot ask people for one, so it ships with it.
 constexpr auto kProjectKey = "$2a$10$hv6wkwyWxo2qzitWqO7NQ.eMQ8aCiMVSM3l53g90MgTOtZL/7t/mK";
@@ -100,13 +102,23 @@ QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
         file.releaseType = QString::number(item.value(QStringLiteral("releaseType")).toInt());
         for (const auto& version : item.value(QStringLiteral("gameVersions")).toArray())
             file.gameVersions << version.toString();
+        // The API lists the hashes as (value, algo) pairs, and algo is a number: 1 is sha1, 2 is md5.
+        // The sha1 is passed on so a download can be checked against the file the API described, not
+        // just its size.
+        for (const auto& hash : item.value(QStringLiteral("hashes")).toArray()) {
+            const auto record = hash.toObject();
+            if (record.value(QStringLiteral("algo")).toInt() == kSha1) {
+                file.sha1 = record.value(QStringLiteral("value")).toString();
+                break;
+            }
+        }
         if (file.id > 0)
             files.append(file);
     }
     return files;
 }
 
-bool CurseForge::downloadFile(int projectId, int fileId, const QString& target, QString* error)
+bool CurseForge::downloadFile(int projectId, int fileId, const QString& target, const QString& sha1, QString* error)
 {
     // The API hands out a signed url for the file, which is what keeps the CDN link stable.
     const QString url = QStringLiteral("%1/mods/%2/files/%3/download-url").arg(QString::fromLatin1(kBase)).arg(projectId).arg(fileId);
@@ -121,7 +133,7 @@ bool CurseForge::downloadFile(int projectId, int fileId, const QString& target, 
         return false;
     }
 
-    const FetchResult fetched = fetchFile(downloadUrl, target, {});
+    const FetchResult fetched = fetchFile(downloadUrl, target, sha1);
     if (!fetched.ok) {
         *error = fetched.error;
         return false;

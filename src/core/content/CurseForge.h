@@ -26,6 +26,7 @@ struct CurseForgeFile {
     QString displayName;
     QString fileName;
     QString url;           ///< where the file lives, when the source hands a url out directly
+    QString sha1;          ///< lowercase hex of the file, when the source publishes one
     QString version;       ///< the pack's own version string
     QStringList gameVersions;
     QString releaseType;   ///< release, beta, alpha
@@ -42,8 +43,10 @@ class CurseForge {
     /// Files of a project, newest first.
     static QList<CurseForgeFile> files(int projectId, QString* error);
 
-    /// The file itself, through the download url the API hands out for it.
-    static bool downloadFile(int projectId, int fileId, const QString& target, QString* error);
+    /// The file itself, through the download url the API hands out for it. The hash is checked when
+    /// the caller has one: a CDN that answers with something else is not accepted as the file.
+    static bool downloadFile(int projectId, int fileId, const QString& target, const QString& sha1,
+                             QString* error);
 };
 
 }  // namespace Komorebi

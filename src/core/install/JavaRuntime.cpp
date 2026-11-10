@@ -46,7 +46,9 @@ QString javaBinaryIn(const QString& home)
 {
 #if defined(Q_OS_WIN)
     return QDir(home).filePath(QStringLiteral("bin/java.exe"));
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
+    // A JDK bundle keeps its home in Contents/Home. A macOS port would still have to handle the
+    // jre.bundle/Contents/Home layout of the runtimes this launcher downloads for itself.
     return QDir(home).filePath(QStringLiteral("Contents/Home/bin/java"));
 #else
     return QDir(home).filePath(QStringLiteral("bin/java"));

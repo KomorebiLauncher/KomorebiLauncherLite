@@ -423,7 +423,8 @@ int main(int argc, char** argv)
         note(QStringLiteral("chosen: %1 (%2)").arg(chosen.version, chosen.fileName));
 
         Komorebi::ScratchDirectory temp(QStringLiteral("pack"));
-        const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));        if (!Komorebi::Modrinth::download(chosen.url, zip, &error)) {
+        const QString zip = QDir(temp.path()).filePath(QStringLiteral("pack.zip"));
+        if (!Komorebi::Modrinth::download(chosen.url, zip, chosen.sha1, &error)) {
             note(QStringLiteral("could not download the pack: %1").arg(error));
             return 1;
         }
@@ -457,9 +458,12 @@ int main(int argc, char** argv)
         // the newest release, or the newest file when the pack has no release
         const Komorebi::CurseForgeFile chosen = files.first();
         out.write(QStringLiteral("chosen: %1 (%2)\n").arg(chosen.displayName, chosen.fileName).toUtf8());
+        // Printed so a test can compare it with the file it gets: an empty line here means the API
+        // answered without a hash, which is the only case where the download goes unchecked.
+        out.write(QStringLiteral("sha1: %1\n").arg(chosen.sha1).toUtf8());
 
         const QString target = QDir(QCoreApplication::applicationDirPath()).filePath(chosen.fileName);
-        if (!Komorebi::CurseForge::downloadFile(projectId, chosen.id, target, &error)) {
+        if (!Komorebi::CurseForge::downloadFile(projectId, chosen.id, target, chosen.sha1, &error)) {
             out.write(QStringLiteral("download failed: %1\n").arg(error).toUtf8());
             return 1;
         }

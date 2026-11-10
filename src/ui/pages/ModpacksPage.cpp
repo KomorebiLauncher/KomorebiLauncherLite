@@ -432,7 +432,7 @@ void ModpacksPage::installSelected()
                     job.stage = ModpacksPage::tr("downloading the pack");
                     job.current = chosen.version;
                 }
-                if (!Modrinth::download(chosen.url, zip, &error)) {
+                if (!Modrinth::download(chosen.url, zip, chosen.sha1, &error)) {
                     std::lock_guard<std::mutex> lock(job.mutex);
                     job.error = ModpacksPage::tr("could not download the pack: %1").arg(error);
                     return;
@@ -488,7 +488,7 @@ void ModpacksPage::installSelected()
                 job.stage = ModpacksPage::tr("downloading the pack");
                 job.current = chosen.fileName;
             }
-            if (!CurseForge::downloadFile(project.id, chosen.id, zip, &error)) {
+            if (!CurseForge::downloadFile(project.id, chosen.id, zip, chosen.sha1, &error)) {
                 std::lock_guard<std::mutex> lock(job.mutex);
                 job.error = ModpacksPage::tr("could not download the pack: %1").arg(error);
                 return;

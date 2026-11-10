@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 # One place names the version: the tag a release is cut from, the number in the executable's
 # properties and the line on the About page all come from here.
-project(KomorebiNext VERSION 0.1.6 LANGUAGES CXX)
+project(KomorebiNext VERSION 0.1.7 LANGUAGES CXX)
 
 # The build needs the compiler to speak English. Ninja tracks header dependencies by watching the
 # include lines MSVC prints, and it recognises them by their English prefix; with a localized
@@ -147,3 +147,19 @@ if(JAVAC_EXECUTABLE)
 else()
     message(WARNING "javac was not found: installing OptiFine will report itself unavailable")
 endif()
+
+# The self-check is the only automated test: it drives the same code the launcher runs -- path
+# joining, version parsing, launch plans -- and writes its report next to the binary. It lives in
+# the executable rather than in a second target, because a Qt test framework would cost more build
+# time than the checks are worth. `ctest` gives CI and people one word for it either way.
+enable_testing()
+add_test(NAME selftest COMMAND komorebi-lite --selftest)
+# The checks build temporary directories. Handing them one inside the build tree keeps a run from
+# writing into the user's own temp directory, and keeps the test working where that directory is not
+# usable at all instead of failing with two unrelated-looking errors.
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
+set_tests_properties(selftest PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;TMP=${CMAKE_CURRENT_BINARY_DIR}/tmp;TEMP=${CMAKE_CURRENT_BINARY_DIR}/tmp"
+    TIMEOUT 600
+)
