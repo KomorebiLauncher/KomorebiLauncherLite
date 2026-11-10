@@ -31,6 +31,7 @@ class InstallDialog : public QDialog {
 
    private:
     void loadManifest();
+    void applyManifest();
     void startInstall();
     void pollProgress();
 

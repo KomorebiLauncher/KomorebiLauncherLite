@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "ui/InstallDialog.h"
 
-#include <QApplication>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -32,7 +31,12 @@ struct InstallDialog::State {
     std::atomic<int> total{ 0 };
     std::atomic<int> downloaded{ 0 };
     std::atomic<int> skipped{ 0 };
+    /// The version list is fetched once, in a thread, and then only filtered by the kind combo.
+    std::atomic<bool> loading{ false };
+    std::atomic<bool> manifestReady{ false };
     std::mutex mutex;
+    VersionManifest manifest;
+    QString manifestError;
     QString stage;
     QString current;
     QString error;
@@ -118,18 +122,57 @@ void InstallDialog::loadManifest()
     if (m_state->running)
         return;
 
+    // Switching between releases and snapshots only filters what is already here: the list is asked
+    // for once per dialog.
+    bool cached = false;
+    {
+        std::lock_guard<std::mutex> lock(m_state->mutex);
+        cached = !m_state->manifest.versions.isEmpty();
+    }
+    if (cached) {
+        applyManifest();
+        return;
+    }
+    if (m_state->loading)
+        return;
+
+    m_state->loading = true;
     m_hint->setText(tr("Fetching the version list…"));
     m_install->setEnabled(false);
-    QApplication::setOverrideCursor(Qt::BusyCursor);
-    QApplication::processEvents();
 
+    // The list is a network request, and the dialog is on screen while it runs: fetching it on the
+    // UI thread froze the whole window behind a busy cursor until Mojang answered.
+    State* state = m_state;
+    std::thread([state] {
+        QString error;
+        VersionManifest manifest = VersionManifest::fetch(&error);
+        {
+            std::lock_guard<std::mutex> lock(state->mutex);
+            state->manifest = std::move(manifest);
+            state->manifestError = error;
+        }
+        state->manifestReady = true;
+    }).detach();
+
+    m_poll->start();
+}
+
+void InstallDialog::applyManifest()
+{
+    VersionManifest manifest;
     QString error;
-    QString versionId;
-    const VersionManifest manifest = VersionManifest::fetch(&error);
-    QApplication::restoreOverrideCursor();
+    {
+        std::lock_guard<std::mutex> lock(m_state->mutex);
+        manifest = m_state->manifest;
+        error = m_state->manifestError;
+    }
+    m_state->loading = false;
+    m_state->manifestReady = false;
 
     if (manifest.versions.isEmpty()) {
         m_hint->setText(tr("Could not fetch the version list: %1").arg(error));
+        if (!m_state->running)
+            m_poll->stop();
         return;
     }
 
@@ -147,6 +190,8 @@ void InstallDialog::loadManifest()
                         .arg(m_versions->count())
                         .arg(manifest.latestRelease, manifest.latestSnapshot));
     m_install->setEnabled(m_versions->count() > 0);
+    if (!m_state->running)
+        m_poll->stop();
 }
 
 void InstallDialog::startInstall()
@@ -251,6 +296,12 @@ void InstallDialog::startInstall()
 
 void InstallDialog::pollProgress()
 {
+    if (m_state->manifestReady) {
+        applyManifest();
+        if (!m_state->running)
+            return;
+    }
+
     const int done = m_state->done.load();
     const int total = m_state->total.load();
     QString stage;
@@ -270,7 +321,6 @@ void InstallDialog::pollProgress()
         m_poll->stop();
         m_state->running = false;
         QString error;
-    QString versionId;
         {
             std::lock_guard<std::mutex> lock(m_state->mutex);
             error = m_state->error;

@@ -28,6 +28,11 @@ constexpr int kTimeoutMs = 30000;
 /// Small documents from metadata services can be slow without being broken.
 constexpr int kJsonTimeoutMs = 60000;
 
+/// Where the player's cancel button writes; nullptr means nobody is watching. The pointer itself is
+/// written from the page thread and read from the download thread, so it needs to be atomic too: a
+/// plain pointer was a data race that could be seen as garbage exactly when a download was running.
+std::atomic<std::atomic<bool>*> cancellationFlag{ nullptr };
+
 /// One connection pool for the whole process.
 QNetworkAccessManager& manager()
 {
@@ -120,6 +125,17 @@ JsonResult requestOnce(const QString& url, const QList<QPair<QString, QString>>&
 
 }  // namespace
 
+void setCancellationFlag(std::atomic<bool>* flag)
+{
+    cancellationFlag.store(flag);
+}
+
+bool requestCancelled()
+{
+    const std::atomic<bool>* flag = cancellationFlag.load();
+    return flag && flag->load();
+}
+
 JsonResult postJson(const QString& url, const QByteArray& body, const QList<QPair<QString, QString>>& headers)
 {
     // A POST goes where it says: mirrors hold files, not services.
@@ -130,6 +146,10 @@ JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& hea
 {
     JsonResult result;
     for (const QString& candidate : candidateUrls(url)) {
+        if (requestCancelled()) {
+            result.error = QStringLiteral("cancelled");
+            return result;
+        }
         result = requestOnce(candidate, headers, nullptr);
         if (result.status >= 200 && result.status < 400)
             return result;
@@ -140,6 +160,11 @@ JsonResult getJson(const QString& url, const QList<QPair<QString, QString>>& hea
 FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1)
 {
     FetchResult result;
+
+    if (requestCancelled()) {
+        result.error = QStringLiteral("cancelled");
+        return result;
+    }
 
     if (QFileInfo::exists(target) && !sha1.isEmpty() && fileSha1(target) == sha1) {
         result.ok = true;
@@ -214,6 +239,8 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     int active = 0;
     int next = 0;
     QList<FetchJob> mismatched;  // answered, but not with the file the metadata describes
+    QList<QNetworkReply*> inFlight;
+    bool aborted = false;
 
     std::function<void()> startNext;
 
@@ -224,6 +251,13 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         ++doneCount;
         if (onProgress)
             onProgress(doneCount, total);
+        // A cancelled install queues nothing new: filling the remaining jobs one by one from here is
+        // what made cancelling a 3000-file install walk three thousand stack frames deep.
+        if (aborted) {
+            if (active == 0)
+                loop.quit();
+            return;
+        }
         if (next >= pending.size() && active == 0)
             loop.quit();
         else
@@ -233,7 +267,7 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     std::function<void(const FetchJob&, int, int)> attempt;  // job, candidate index, retries used
 
     startNext = [&] {
-        while (active < qMax(1, concurrency) && next < pending.size()) {
+        while (!aborted && active < qMax(1, concurrency) && next < pending.size()) {
             const FetchJob job = pending.at(next++);
             ++active;
             attempt(job, 0, 0);
@@ -241,6 +275,13 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
     };
 
     attempt = [&](const FetchJob& job, int index, int retries) {
+        if (aborted)
+            return;
+        if (requestCancelled()) {
+            aborted = true;
+            finishOne(false, QStringLiteral("%1 (cancelled)").arg(job.target));
+            return;
+        }
         const QStringList candidates = candidateUrls(job.url);
         const int candidateCount = candidates.size();
         if (index >= candidateCount) {
@@ -253,10 +294,16 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         const bool fallbackSource = candidates.at(index) != job.url;
 
         QNetworkReply* reply = manager().get(makeRequest(candidates.at(index)));
+        inFlight.append(reply);
         // The reply arrives later, when this call has returned: everything the handler needs has to be
         // captured by value. Reaching back to `candidates` here read freed memory, which is what made
         // a failed download take the whole launcher down with it.
         QObject::connect(reply, &QNetworkReply::finished, &loop, [&, reply, job, index, retries, candidateCount, fallbackSource] {
+            inFlight.removeOne(reply);
+            if (aborted) {
+                reply->deleteLater();
+                return;
+            }
             const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (reply->error() != QNetworkReply::NoError || status >= 400) {
                 reply->deleteLater();
@@ -302,9 +349,35 @@ FetchSummary fetchMany(const QList<FetchJob>& jobs, int concurrency, const std::
         });
     };
 
+    // Cancel has to reach the downloads that are already running, not only the ones not started yet:
+    // a queue of three thousand files otherwise kept the window waiting for thirty-second timeouts.
+    QTimer cancelWatch;
+    cancelWatch.setInterval(100);
+    QObject::connect(&cancelWatch, &QTimer::timeout, &loop, [&] {
+        if (!requestCancelled())
+            return;
+        aborted = true;
+        const QList<QNetworkReply*> running = inFlight;
+        inFlight.clear();
+        for (QNetworkReply* reply : running) {
+            // The handler below reaches into this function's stack: disconnecting it first means the
+            // aborted reply cannot arrive after the loop is gone.
+            QObject::disconnect(reply, nullptr, &loop, nullptr);
+            reply->abort();
+            reply->deleteLater();
+        }
+        loop.quit();
+    });
+    cancelWatch.start();
+
     startNext();
-    if (active > 0)
+    if (active > 0 && !aborted)
         loop.exec();
+    cancelWatch.stop();
+
+    // A cancelled install reports what it managed to do; the caller already knows it was stopped.
+    if (aborted)
+        return summary;
 
     // Last pass for the files whose only answer was a copy the hash does not describe: fetch them
     // without the check. Without this an install fails while a usable file is one request away; with

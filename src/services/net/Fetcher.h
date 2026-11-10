@@ -13,6 +13,7 @@
 #include <QString>
 #include <QStringList>
 
+#include <atomic>
 #include <functional>
 
 namespace Komorebi {
@@ -42,6 +43,18 @@ struct FetchSummary {
     int skipped = 0;      ///< already on disk with the right hash
     QStringList failed;   ///< "target (reason)"
 };
+
+/**
+ * Where a running install looks to see whether the player asked it to stop.
+ *
+ * One pointer for the whole process is enough: installs are one at a time, and the alternative --
+ * threading a flag through every download call and every loop -- would touch every installer for a
+ * button. Set it before the work starts, clear it when the work is done.
+ */
+void setCancellationFlag(std::atomic<bool>* flag);
+
+/// True once the player pressed cancel; downloaders and installers check it and give up.
+bool requestCancelled();
 
 /// Downloads `url` to `target` unless the file is already there with the right hash.
 FetchResult fetchFile(const QString& url, const QString& target, const QString& sha1);
