@@ -24,11 +24,46 @@ namespace {
 QtMessageHandler previousHandler = nullptr;
 HANDLE currentProcess = nullptr;
 
-QString describe(QString name, DWORD64 displacement)
+QString symbolFor(DWORD64 address, QString* location);
+
+/// The module a code address belongs to, and how far into it the address sits. Symbol names need a
+/// program database next to the binary, which a release build does not ship, but the module and its
+/// offset are always there -- that is the part that says whether the fault is ours or Qt's.
+QString moduleFor(DWORD64 address, DWORD64* offset)
 {
-    if (name.isEmpty())
-        return QStringLiteral("?");
-    return name + QStringLiteral("+0x") + QString::number(displacement, 16);
+    HMODULE module = nullptr;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                            reinterpret_cast<LPCWSTR>(static_cast<quintptr>(address)), &module)
+        || !module)
+        return {};
+
+    wchar_t path[MAX_PATH] = {};
+    const DWORD length = GetModuleFileNameW(module, path, MAX_PATH);
+    if (length == 0)
+        return {};
+
+    *offset = address - reinterpret_cast<quintptr>(module);
+    return QString::fromWCharArray(path, int(length)).section(QLatin1Char('\\'), -1);
+}
+
+/// One stack line: the raw address, the owning module and its offset, then the symbol and source
+/// location when a program database happens to be available.
+QString frameText(DWORD64 address)
+{
+    DWORD64 offset = 0;
+    const QString module = moduleFor(address, &offset);
+
+    QString location;
+    const QString name = symbolFor(address, &location);
+
+    QString text = QStringLiteral("0x%1").arg(address, 0, 16);
+    if (!module.isEmpty())
+        text += QStringLiteral(" %1+0x%2").arg(module, QString::number(offset, 16));
+    if (!name.isEmpty())
+        text += QLatin1Char(' ') + name;
+    if (!location.isEmpty())
+        text += QLatin1Char(' ') + location;
+    return text;
 }
 
 QString symbolFor(DWORD64 address, QString* location)
@@ -45,7 +80,7 @@ QString symbolFor(DWORD64 address, QString* location)
     symbol->MaxNameLen = 255;
     DWORD64 offset = 0;
     if (SymFromAddr(currentProcess, address, &offset, symbol))
-        return describe(QString::fromLocal8Bit(symbol->Name), offset);
+        return QString::fromLocal8Bit(symbol->Name);
     return {};
 }
 
@@ -74,12 +109,7 @@ void writeFramesFromContext(QTextStream& out, CONTEXT context)
         if (!walked || frame.AddrPC.Offset == 0)
             break;
 
-        QString location;
-        const QString name = symbolFor(frame.AddrPC.Offset, &location);
-        out << QStringLiteral("#%1 0x%2 %3 %4\n")
-                   .arg(index)
-                   .arg(frame.AddrPC.Offset, 0, 16)
-                   .arg(name.isEmpty() ? QStringLiteral("?") : name, location);
+        out << QStringLiteral("#%1 %2\n").arg(index).arg(frameText(frame.AddrPC.Offset));
     }
 }
 
@@ -104,12 +134,8 @@ void writeQtFrames(const QString& message)
     const USHORT count = CaptureStackBackTrace(0, 64, frames, nullptr);
     for (USHORT index = 0; index < count; ++index) {
         const DWORD64 address = reinterpret_cast<DWORD64>(frames[index]);
-        QString location;
-        const QString name = symbols ? symbolFor(address, &location) : QString();
-        out << QStringLiteral("#%1 0x%2 %3 %4\n")
-                   .arg(index)
-                   .arg(address, 0, 16)
-                   .arg(name.isEmpty() ? QStringLiteral("?") : name, location);
+        const QString name = symbols ? frameText(address) : QStringLiteral("0x%1").arg(address, 0, 16);
+        out << QStringLiteral("#%1 %2\n").arg(index).arg(name);
     }
     if (symbols)
         SymCleanup(currentProcess);
@@ -163,12 +189,8 @@ void writeShortRecord(const char* what)
     const USHORT count = CaptureStackBackTrace(0, 64, frames, nullptr);
     for (USHORT index = 0; index < count; ++index) {
         const DWORD64 address = reinterpret_cast<DWORD64>(frames[index]);
-        QString location;
-        const QString name = symbols ? symbolFor(address, &location) : QString();
-        out << QStringLiteral("#%1 0x%2 %3 %4\n")
-                   .arg(index)
-                   .arg(address, 0, 16)
-                   .arg(name.isEmpty() ? QStringLiteral("?") : name, location);
+        const QString name = symbols ? frameText(address) : QStringLiteral("0x%1").arg(address, 0, 16);
+        out << QStringLiteral("#%1 %2\n").arg(index).arg(name);
     }
     if (symbols)
         SymCleanup(currentProcess);

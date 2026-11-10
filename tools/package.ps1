@@ -36,6 +36,51 @@ if (-not (Test-Path $exe)) { throw "no launcher at $exe; build first (build.bat)
 function Get-Sha256([string]$path) { (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() }
 function Format-Size([string]$path) { [math]::Round((Get-Item $path).Length / 1MB, 1) }
 
+# The Visual C++ files that travel next to the executable have to be the ones that came with the
+# toolset that compiled it, and the machine's system directory is not a substitute: a GitHub runner
+# carries a runtime older than its own compiler. The two do not agree on how a condition variable is
+# waited on, and the mismatch faults inside the runtime the moment a second thread is started -- that
+# is what took the launcher down when the modpack page began downloading on 0.1.1, with no message
+# and no window. The toolset is read from the build's own cache, so an old system runtime can never
+# be picked up silently again.
+function Get-VcRuntimeDir([string]$buildDir) {
+    $toolsetDir = $null
+    $cache = Join-Path $buildDir 'CMakeCache.txt'
+    if (Test-Path $cache) {
+        $line = Select-String -Path $cache -Pattern '^CMAKE_CXX_COMPILER:FILEPATH=(.+)$' -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($line) {
+            # ...\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe
+            $compiler = $line.Matches[0].Groups[1].Value.Trim()
+            $toolsetDir = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $compiler)))
+        }
+    }
+
+    $roots = @()
+    if ($toolsetDir) { $roots += (Join-Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $toolsetDir))) 'Redist/MSVC') }
+    if ($env:VCINSTALLDIR) { $roots += (Join-Path $env:VCINSTALLDIR 'Redist/MSVC') }
+
+    $wanted = $null
+    if ($toolsetDir) { $wanted = ((Split-Path -Leaf $toolsetDir) -split '\.')[0..1] -join '.' }
+
+    foreach ($root in $roots) {
+        if (-not (Test-Path $root)) { continue }
+        $candidates = @(Get-ChildItem -Path (Join-Path $root '*/x64/Microsoft.VC*.CRT') -Directory -ErrorAction SilentlyContinue)
+        if (-not $candidates) { continue }
+        foreach ($candidate in $candidates) {
+            # <root>\<version>\x64\Microsoft.VC143.CRT -- the version is two levels up, and there is
+            # also a plain "v143" junction that carries no version at all.
+            $versioned = Split-Path -Parent (Split-Path -Parent $candidate.FullName)
+            $version = Split-Path -Leaf $versioned
+            if ($version -notmatch '^\d+\.\d+') { continue }
+            $short = ($version -split '\.')[0..1] -join '.'
+            if ($wanted -and $short -ne $wanted) { continue }
+            return $candidate.FullName
+        }
+    }
+    return $null
+}
+
 # A statically linked launcher is already the single file the release offers. Nothing is copied next
 # to it, and the only question worth answering is whether it starts with no Qt anywhere else on the
 # machine: so it is run alone in an empty directory, with the system PATH and nothing else.
@@ -77,6 +122,24 @@ if ($Static) {
                     $log = Join-Path $alone 'selftest.log'
                     if (Test-Path $log) { Write-Host (Get-Content $log -Raw) }
                     throw "the single file failed its self test (exit code $($selftest.ExitCode))"
+                }
+
+                # The modpack page starts the download thread; a build whose runtime handling of
+                # threads is broken dies there without a word, so the page is opened here too.
+                $packsShot = Join-Path $alone 'verify-modpacks.png'
+                $savedDelay = $env:KOMOREBI_SHOT_DELAY
+                $env:KOMOREBI_SHOT_DELAY = '4000'
+                $packs = Start-Process -FilePath (Join-Path $alone 'komorebi-lite.exe') -PassThru `
+                    -ArgumentList @('--page', 'modpacks', '--screenshot', $packsShot)
+                try {
+                    if (-not $packs.WaitForExit(120000)) { throw "the single file did not open the modpack page within two minutes" }
+                    if ($packs.ExitCode -ne 0) {
+                        throw ("the modpack page brought the single file down (exit code 0x{0:X8})" -f $packs.ExitCode)
+                    }
+                    if (-not (Test-Path $packsShot)) { throw "the single file painted no modpack page" }
+                } finally {
+                    if (-not $packs.HasExited) { $packs.Kill(); $packs.WaitForExit(10000) | Out-Null }
+                    $env:KOMOREBI_SHOT_DELAY = $savedDelay
                 }
                 Write-Host "alone in an empty directory: ok"
             } finally {
@@ -140,21 +203,26 @@ foreach ($file in @('LICENSE', 'NOTICE.md', 'README.md')) {
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with exit code $LASTEXITCODE" }
 
 # windeployqt hands over the Visual C++ installer, which asks a player to install something before
-# the launcher starts. A portable zip carries the three runtime files instead.
+# the launcher starts. A portable zip carries the runtime files instead, taken from the toolset that
+# compiled the launcher rather than from whatever the building machine has installed.
 Remove-Item (Join-Path $stage 'vc_redist.x64.exe') -Force -ErrorAction SilentlyContinue
-$crt = @()
-if ($env:VCINSTALLDIR) {
-    $crt = Get-ChildItem -Path (Join-Path $env:VCINSTALLDIR 'Redist/MSVC/*/x64/Microsoft.VC*.CRT') -Directory -ErrorAction SilentlyContinue |
-        Select-Object -First 1
+$crt = Get-VcRuntimeDir $build
+if (-not $crt) { throw "no Visual C++ redistributable matching the compiler behind $exe; a release must not ship a runtime it did not build against" }
+# The files a program built with 14.3x and later can need; the ones that are absent are simply skipped.
+$runtimes = @('msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'msvcp140_atomic_wait.dll',
+              'msvcp140_codecvt_ids.dll', 'vcruntime140.dll', 'vcruntime140_1.dll',
+              'vcruntime140_threads.dll', 'concrt140.dll')
+foreach ($name in $runtimes) {
+    $file = Join-Path $crt $name
+    if (Test-Path $file) { Copy-Item $file $stage -Force }
 }
-if ($crt) {
-    foreach ($name in @('msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'concrt140.dll')) {
-        $file = Join-Path $crt.FullName $name
-        if (Test-Path $file) { Copy-Item $file $stage -Force }
-    }
-} else {
-    Write-Warning "no Visual Studio redistributable found; the zip assumes the C++ runtime is installed (run from a developer prompt with vcvars64)"
-}
+Write-Host "runtime:  $((Get-Item (Join-Path $stage 'msvcp140.dll')).VersionInfo.FileVersion) from $crt"
+# Being present is not enough, the files have to agree with the compiler whose headers built the
+# executable. This is the check that would have caught the release that crashed on the modpack page.
+$runtimeVersion = (Get-Item (Join-Path $stage 'msvcp140.dll')).VersionInfo.FileVersion
+$runtimeMinor = ($runtimeVersion -split '\.')[0..1] -join '.'
+$redistMinor = ((Split-Path -Leaf (Split-Path -Parent (Split-Path -Parent $crt))) -split '\.')[0..1] -join '.'
+if ($runtimeMinor -ne $redistMinor) { throw "the copied Visual C++ runtime is $runtimeVersion, but $crt says $redistMinor" }
 
 # The DirectX shader compiler belongs to Qt Quick: Widgets draws with GDI and the raster engine.
 foreach ($name in @('dxcompiler.dll', 'dxil.dll')) {
@@ -178,16 +246,24 @@ if ($Verify) {
         $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot"
         $env:KOMOREBI_DATA = $data
         $env:QT_PLUGIN_PATH = ''
-        $env:QT_QPA_PLATFORM = 'offscreen'
-        & (Join-Path $stage 'komorebi-lite.exe') --selftest
-        if ($LASTEXITCODE -ne 0) { throw "the packaged launcher failed its self test (exit code $LASTEXITCODE)" }
+        # The zip carries the window plugin and nothing else, so every check here has to use it;
+        # asking for the offscreen plugin leaves a modal "no platform plugin could be initialized"
+        # box on screen and a process that never ends. The launcher also has to be waited for by
+        # hand: it is a windowed executable, PowerShell does not wait for one, and that is how a
+        # self test that never actually ran managed to look green in CI.
+        $env:QT_QPA_PLATFORM = $null
+        $selftest = Start-Process -FilePath (Join-Path $stage 'komorebi-lite.exe') -PassThru -ArgumentList @('--selftest')
+        try {
+            if (-not $selftest.WaitForExit(120000)) { throw "the packaged launcher did not finish its self test within two minutes" }
+            if ($selftest.ExitCode -ne 0) { throw "the packaged launcher failed its self test (exit code $($selftest.ExitCode))" }
+            Write-Host "rendering self test: ok"
+        } finally {
+            if (-not $selftest.HasExited) { $selftest.Kill(); $selftest.WaitForExit(10000) | Out-Null }
+        }
         $log = Join-Path $stage 'selftest.log'
         if (Test-Path $log) { Write-Host (Get-Content $log -Raw) }
         # A windowed run as well: the self test renders without a screen, so it cannot catch a
-        # missing qwindows plugin. The page hook paints a window and quits by itself. The platform
-        # choice has to go away first, or this run asks for the offscreen plugin the zip does not
-        # carry.
-        $env:QT_QPA_PLATFORM = $null
+        # missing qwindows plugin. The page hook paints a window and quits by itself.
         $shot = Join-Path $stage 'verify.png'
         $process = Start-Process -FilePath (Join-Path $stage 'komorebi-lite.exe') -PassThru `
             -ArgumentList @('--page', 'about', '--screenshot', $shot)
@@ -200,6 +276,27 @@ if ($Verify) {
             # A launcher that stopped on an error dialog would keep its files open and hang CI.
             if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit(10000) | Out-Null }
         }
+
+        # The modpack page is the one page that starts a download thread, and a runtime that does not
+        # agree with the compiler kills the process inside that thread's first few instructions, with
+        # no dialog and no log. Opening the page is therefore part of the check, not an extra: the
+        # version of this bug that reached players had every other check green.
+        $packsShot = Join-Path $stage 'verify-modpacks.png'
+        $savedDelay = $env:KOMOREBI_SHOT_DELAY
+        $env:KOMOREBI_SHOT_DELAY = '4000'
+        $process = Start-Process -FilePath (Join-Path $stage 'komorebi-lite.exe') -PassThru `
+            -ArgumentList @('--page', 'modpacks', '--screenshot', $packsShot)
+        try {
+            if (-not $process.WaitForExit(120000)) { throw "the modpack page did not finish within two minutes" }
+            if ($process.ExitCode -ne 0) {
+                throw ("the modpack page brought the launcher down (exit code 0x{0:X8})" -f $process.ExitCode)
+            }
+            if (-not (Test-Path $packsShot) -or (Get-Item $packsShot).Length -lt 1024) { throw "the modpack page painted nothing" }
+            Write-Host "modpack page: ok ($((Get-Item $packsShot).Length) bytes of pixels)"
+        } finally {
+            if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit(10000) | Out-Null }
+            $env:KOMOREBI_SHOT_DELAY = $savedDelay
+        }
     } finally {
         $env:PATH = $savedPath
         $env:KOMOREBI_DATA = $savedData
@@ -208,6 +305,7 @@ if ($Verify) {
         Remove-Item $data -Recurse -Force -ErrorAction SilentlyContinue
         Get-ChildItem $stage -Filter '*.log' | Remove-Item -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $stage 'verify.png') -Force -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $stage 'verify-modpacks.png') -Force -ErrorAction SilentlyContinue
     }
 }
 

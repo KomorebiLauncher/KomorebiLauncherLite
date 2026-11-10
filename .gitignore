@@ -1,5 +1,7 @@
 build/
 build-check/
+build-rel/
+build-static/
 
 # Packed releases and the staging directory the packaging script leaves behind
 dist/
