@@ -112,4 +112,36 @@ bool Modrinth::download(const QString& url, const QString& target, const QString
     return true;
 }
 
+bool Modrinth::downloadBySha1(const QString& sha1, const QString& target, QString* error)
+{
+    if (sha1.isEmpty()) {
+        *error = QStringLiteral("no hash to look the file up by");
+        return false;
+    }
+
+    // The hash names the file exactly, so a version that carries several of them still resolves to
+    // the one the pack asked for.
+    const QString url = QStringLiteral("%1/version_file/%2?algorithm=sha1").arg(QString::fromLatin1(kBase), sha1);
+    const JsonResult result = getJson(url, headers());
+    if (!result.ok) {
+        *error = result.status == 404 ? QStringLiteral("Modrinth does not have this file")
+                                      : QStringLiteral("Modrinth answered %1").arg(result.status);
+        return false;
+    }
+
+    const QJsonObject object = QJsonDocument::fromJson(result.body).object();
+    for (const auto& entry : object.value(QStringLiteral("files")).toArray()) {
+        const auto file = entry.toObject();
+        if (file.value(QStringLiteral("hashes")).toObject().value(QStringLiteral("sha1")).toString() != sha1)
+            continue;
+        const QString downloadUrl = file.value(QStringLiteral("url")).toString();
+        if (downloadUrl.isEmpty())
+            break;
+        return download(downloadUrl, target, sha1, error);
+    }
+
+    *error = QStringLiteral("Modrinth does not have this file");
+    return false;
+}
+
 }  // namespace Komorebi

@@ -27,6 +27,11 @@ class Modrinth {
     /// Downloads one version's file. The hash comes from the version record and is checked when it
     /// is not empty, so a truncated or substituted body is refused rather than kept.
     static bool download(const QString& url, const QString& target, const QString& sha1, QString* error);
+
+    /// The same bytes from Modrinth, found by their hash. Authors who allow no download through the
+    /// CurseForge API often publish the same file here as well; the hash decides whether it is
+    /// really the same file, so a version that carries several files still yields the right one.
+    static bool downloadBySha1(const QString& sha1, const QString& target, QString* error);
 };
 
 }  // namespace Komorebi

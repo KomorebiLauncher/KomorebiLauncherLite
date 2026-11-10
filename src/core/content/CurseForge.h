@@ -45,9 +45,10 @@ class CurseForge {
 
     /// The file itself. `files()` already carries the url for most files; the rest leave it to the
     /// download-url endpoint, and the ones whose author allows no download outside CurseForge at all
-    /// are reported as that, not as the 403 they arrive as.
+    /// are reported as that, not as the 403 they arrive as. `restricted` is set for exactly that
+    /// case, so a caller with another source to try knows the retry is worth it.
     static bool downloadFile(int projectId, const CurseForgeFile& file, const QString& target,
-                             QString* error);
+                             QString* error, bool* restricted = nullptr);
 };
 
 }  // namespace Komorebi

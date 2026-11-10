@@ -13,6 +13,7 @@
 
 #include "core/Paths.h"
 #include "core/content/CurseForge.h"
+#include "core/content/Modrinth.h"
 #include "core/content/PrismMeta.h"
 #include "core/install/ForgeInstaller.h"
 #include "core/install/LoaderInstaller.h"
@@ -528,8 +529,18 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             ++result.skipped;
             continue;
         }
-        if (!CurseForge::downloadFile(projectId, chosen, target, &error)) {
-            result.failed << QStringLiteral("%1 (%2)").arg(name, error);
+        bool restricted = false;
+        if (!CurseForge::downloadFile(projectId, chosen, target, &error, &restricted)) {
+            // The author allows no download through the CurseForge API. The same bytes are often
+            // published on Modrinth, and the hash says whether they really are the same file, so ask
+            // there before counting this against the pack.
+            QString elsewhere;
+            if (restricted && Modrinth::downloadBySha1(chosen.sha1, target, &elsewhere)) {
+                ++result.downloaded;
+                continue;
+            }
+            result.failed << (restricted ? QStringLiteral("%1 (%2, and %3)").arg(name, error, elsewhere)
+                                         : QStringLiteral("%1 (%2)").arg(name, error));
             continue;
         }
         ++result.downloaded;

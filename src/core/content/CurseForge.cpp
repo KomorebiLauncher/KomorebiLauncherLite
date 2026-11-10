@@ -121,8 +121,12 @@ QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
     return files;
 }
 
-bool CurseForge::downloadFile(int projectId, const CurseForgeFile& file, const QString& target, QString* error)
+bool CurseForge::downloadFile(int projectId, const CurseForgeFile& file, const QString& target, QString* error,
+                              bool* restricted)
 {
+    if (restricted)
+        *restricted = false;
+
     QString downloadUrl = file.url;
     if (downloadUrl.isEmpty()) {
         // Some files come without a link of their own and expect the launcher to ask for one. The
@@ -134,6 +138,8 @@ bool CurseForge::downloadFile(int projectId, const CurseForgeFile& file, const Q
         QString reason;
         const QJsonObject object = body(result, &reason);
         if (!result.ok) {
+            if (restricted && result.status == 403)
+                *restricted = true;
             *error = result.status == 403
                 ? QStringLiteral("the file's author does not allow it to be downloaded outside CurseForge")
                 : reason;
