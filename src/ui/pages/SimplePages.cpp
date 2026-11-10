@@ -49,9 +49,10 @@ JavaPage::JavaPage(QWidget* parent)
     top->addWidget(heading(tr("Java"), this));
     top->addStretch(1);
     auto* refresh = new Button(tr("Look again"), this);
-    auto* useIt = new Button(tr("Use this one"), this);
-    useIt->setPrimary(true);
-    top->addWidget(useIt);
+    m_use = new Button(tr("Use this one"), this);
+    m_use->setPrimary(true);
+    m_use->setEnabled(false);
+    top->addWidget(m_use);
     top->addWidget(refresh);
     layout->addLayout(top);
 
@@ -69,12 +70,26 @@ JavaPage::JavaPage(QWidget* parent)
     layout->addWidget(m_list, 1);
 
     connect(refresh, &QPushButton::clicked, this, &JavaPage::reload);
-    connect(useIt, &QPushButton::clicked, this, [this] {
-        const auto* item = m_list->currentItem();
+    connect(m_list, &QListWidget::itemSelectionChanged, this,
+            [this] { m_use->setEnabled(m_list->currentItem() != nullptr); });
+    connect(m_use, &QPushButton::clicked, this, [this] {
+        auto* item = m_list->currentItem();
         if (!item)
             return;
-        emit javaChosen(item->data(Qt::UserRole).toString());
-        emit status(tr("Java pinned: %1").arg(item->data(Qt::UserRole).toString()));
+        const QString path = item->data(Qt::UserRole).toString();
+        emit javaChosen(path);
+        emit status(tr("Java pinned: %1").arg(path));
+
+        // The settings are written by now, so the mark can follow the runtime just picked; the list
+        // itself is only rebuilt when the player asks for it.
+        const QString mark = tr(" (pinned)");
+        for (int i = 0; i < m_list->count(); ++i) {
+            auto* row = m_list->item(i);
+            QString text = row->text();
+            if (text.endsWith(mark))
+                text.chop(mark.size());
+            row->setText(row == item ? text + mark : text);
+        }
     });
 
     reload();
@@ -83,6 +98,8 @@ JavaPage::JavaPage(QWidget* parent)
 void JavaPage::reload()
 {
     m_list->clear();
+    m_use->setEnabled(false);
+
     const QList<JavaRuntime> runtimes = JavaScan::find();
     for (const auto& runtime : runtimes) {
         const QString text = QStringLiteral("Java %1 · %2 · %3\n%4")
@@ -105,6 +122,8 @@ void JavaPage::reload()
     if (!settings.javaPath.isEmpty()) {
         for (int i = 0; i < m_list->count(); ++i) {
             if (m_list->item(i)->data(Qt::UserRole).toString() == settings.javaPath) {
+                auto* item = m_list->item(i);
+                item->setText(item->text() + tr(" (pinned)"));
                 m_list->setCurrentRow(i);
                 break;
             }
@@ -163,11 +182,18 @@ LogsPage::LogsPage(QWidget* parent)
             emit status(tr("Could not export %1").arg(QDir::toNativeSeparators(source)));
     });
     connect(clear, &QPushButton::clicked, this, [this] {
+        if (QMessageBox::question(this, tr("Clear"), tr("Delete every log file? This cannot be undone."))
+            != QMessageBox::Yes)
+            return;
         QDir directory(QDir(dataRoot()).filePath(QStringLiteral("logs")));
         for (const auto& entry : directory.entryList(QDir::Files))
             QFile::remove(directory.filePath(entry));
         reload();
         emit status(tr("Logs cleared"));
+    });
+    connect(m_list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
+        if (item)
+            QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(Qt::UserRole).toString()));
     });
 
     reload();
@@ -203,9 +229,10 @@ AccountsPage::AccountsPage(QWidget* parent)
     top->addStretch(1);
     auto* add = new Button(tr("Sign in with Microsoft"), this);
     add->setPrimary(true);
-    auto* remove = new Button(tr("Sign out"), this);
+    m_signOut = new Button(tr("Sign out"), this);
+    m_signOut->setEnabled(false);
     top->addWidget(add);
-    top->addWidget(remove);
+    top->addWidget(m_signOut);
     layout->addLayout(top);
 
     m_hint = new QLabel(tr("A Microsoft account is what lets the game join servers that require one."), this);
@@ -222,31 +249,87 @@ AccountsPage::AccountsPage(QWidget* parent)
     layout->addWidget(m_list, 1);
 
     connect(add, &QPushButton::clicked, this, &AccountsPage::signIn);
-    connect(remove, &QPushButton::clicked, this, [this] {
+    connect(m_signOut, &QPushButton::clicked, this, [this] {
         const auto* item = m_list->currentItem();
         if (!item)
+            return;
+        // Removing an account throws away its token and its name, and there is no undo: ask first.
+        const QString name = item->text().section(QLatin1Char('\n'), 0, 0).remove(tr(" (in use)"));
+        QMessageBox box(QMessageBox::Question, tr("Sign out"),
+                        tr("Sign out %1? The account is removed from this launcher and has to be added again.").arg(name),
+                        QMessageBox::NoButton, this);
+        QPushButton* yes = box.addButton(tr("Sign out"), QMessageBox::AcceptRole);
+        box.addButton(tr("Keep it"), QMessageBox::RejectRole);
+        box.exec();
+        if (box.clickedButton() != yes)
             return;
         AccountStore::remove(item->data(Qt::UserRole).toString());
         reload();
         emit status(tr("Signed out"));
     });
+    // Picking a row also picks the account the game plays as; reload() fills the list itself, so
+    // only a change the player makes here has to be written down.
+    connect(m_list, &QListWidget::currentRowChanged, this, [this](int row) {
+        if (m_loading || row < 0)
+            return;
+        const auto* item = m_list->item(row);
+        if (!item)
+            return;
+        if (AccountStore::setActive(item->data(Qt::UserRole).toString()))
+            refreshActiveMarks();
+    });
+    connect(m_list, &QListWidget::itemSelectionChanged, this, &AccountsPage::updateActions);
 
     reload();
 }
 
+/// Sign out only means something for the row that is picked, so the button follows the selection.
+void AccountsPage::updateActions()
+{
+    if (m_signOut)
+        m_signOut->setEnabled(m_list && m_list->currentRow() >= 0);
+}
+
 void AccountsPage::reload()
 {
+    m_loading = true;
     m_list->clear();
+
     const QList<MinecraftAccount> accounts = AccountStore::load();
     for (const auto& account : accounts) {
         auto* item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(account.name, account.uuid));
         item->setData(Qt::UserRole, account.uuid);
         m_list->addItem(item);
     }
+
     if (accounts.isEmpty())
         emit status(tr("No account signed in"));
-    else if (m_list->count() > 0)
-        m_list->setCurrentRow(0);
+
+    refreshActiveMarks();
+    m_loading = false;
+    updateActions();
+}
+
+/// Marks the account the game plays as and makes its row the current one, so the highlight and the
+/// mark never disagree. activeUuid() is empty until one is picked, and the first account is the one
+/// in use then.
+void AccountsPage::refreshActiveMarks()
+{
+    QString active = AccountStore::activeUuid();
+    if (active.isEmpty() && m_list->count() > 0)
+        active = m_list->item(0)->data(Qt::UserRole).toString();
+
+    const QString mark = tr(" (in use)");
+    for (int i = 0; i < m_list->count(); ++i) {
+        auto* item = m_list->item(i);
+        QString text = item->text();
+        if (text.startsWith(mark))
+            text.remove(0, mark.size());
+        const bool isActive = item->data(Qt::UserRole).toString() == active;
+        item->setText(isActive ? mark + text : text);
+        if (isActive)
+            m_list->setCurrentRow(i);
+    }
 }
 
 void AccountsPage::signIn()
@@ -265,7 +348,16 @@ void AccountsPage::signIn()
 QString AccountsPage::activeName()
 {
     const QList<MinecraftAccount> accounts = AccountStore::load();
-    return accounts.isEmpty() ? QString() : accounts.first().name;
+    if (accounts.isEmpty())
+        return {};
+
+    const QString active = AccountStore::activeUuid();
+    for (const auto& account : accounts) {
+        if (account.uuid == active)
+            return account.name;
+    }
+    // activeUuid() is empty when nobody was picked: the first account is the one in use then.
+    return accounts.first().name;
 }
 // ---------------------------------------------------------------- about
 

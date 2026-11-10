@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QMessageBox>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -86,10 +87,10 @@ ContentPage::ContentPage(QWidget* parent)
     actions->setSpacing(8);
     m_toggle = new Button(tr("Turn off"), this);
     m_toggle->setPrimary(true);
-    auto* remove = new Button(tr("Delete"), this);
+    m_remove = new Button(tr("Delete"), this);
     auto* folder = new Button(tr("Open folder"), this);
     actions->addWidget(m_toggle);
-    actions->addWidget(remove);
+    actions->addWidget(m_remove);
     actions->addWidget(folder);
     actions->addStretch(1);
     layout->addLayout(actions);
@@ -97,20 +98,23 @@ ContentPage::ContentPage(QWidget* parent)
     connect(refresh, &QPushButton::clicked, this, &ContentPage::loadFiles);
     connect(m_version, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this] { loadFiles(); });
     connect(m_kind, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this] { loadFiles(); });
+    connect(m_files, &QListWidget::itemSelectionChanged, this, &ContentPage::updateActions);
     connect(m_toggle, &QPushButton::clicked, this, [this] {
         const auto* item = m_files->currentItem();
         if (!item || !kKinds[m_kind->currentIndex()].toggleable)
             return;
+        // loadFiles() throws the items away, so the path and the name have to be copied now.
         const QString path = item->data(Qt::UserRole).toString();
+        const QString name = item->text();
         const bool off = path.endsWith(disabledSuffix());
         const QString target = off ? path.left(path.size() - disabledSuffix().size()) : path + disabledSuffix();
         if (QFileInfo::exists(target))
             QFile::remove(target);
         QFile::rename(path, target);
         loadFiles();
-        emit status(off ? tr("Turned on %1").arg(item->text()) : tr("Turned off %1").arg(item->text()));
+        emit status(off ? tr("Turned on %1").arg(name) : tr("Turned off %1").arg(name));
     });
-    connect(remove, &QPushButton::clicked, this, &ContentPage::removeSelected);
+    connect(m_remove, &QPushButton::clicked, this, &ContentPage::removeSelected);
     connect(folder, &QPushButton::clicked, this, &ContentPage::openFolder);
 
     reload();
@@ -128,6 +132,7 @@ void ContentPage::reload()
     if (m_version->count() == 0) {
         m_hint->setText(tr("No versions installed yet."));
         m_files->clear();
+        updateActions();
         return;
     }
 
@@ -148,6 +153,8 @@ void ContentPage::selectVersion(const QString& versionId)
 void ContentPage::loadFiles()
 {
     m_files->clear();
+    // The list is empty again, so both buttons are off until the player picks an item.
+    updateActions();
 
     const QString version = m_version->currentData().toString();
     if (version.isEmpty())
@@ -156,7 +163,6 @@ void ContentPage::loadFiles()
     const QDir directory(QDir(versionDirectory(version)).filePath(m_kind->currentData().toString()));
     if (!directory.exists()) {
         m_hint->setText(tr("This version has no %1 folder yet.").arg(m_kind->currentText().toLower()));
-        m_toggle->setEnabled(false);
         emit status(tr("Empty"));
         return;
     }
@@ -174,8 +180,17 @@ void ContentPage::loadFiles()
 
     const int count = m_files->count();
     m_hint->setText(count == 0 ? tr("Nothing here yet.") : tr("%1 item(s) in %2.").arg(count).arg(directory.absolutePath()));
-    m_toggle->setEnabled(count > 0 && kKinds[m_kind->currentIndex()].toggleable);
     emit status(tr("%1 item(s)").arg(count));
+}
+
+void ContentPage::updateActions()
+{
+    const auto* item = m_files->currentItem();
+    const bool toggleable = kKinds[m_kind->currentIndex()].toggleable;
+    const QString path = item ? item->data(Qt::UserRole).toString() : QString();
+    m_remove->setEnabled(item != nullptr);
+    m_toggle->setEnabled(item != nullptr && toggleable);
+    m_toggle->setText(path.endsWith(disabledSuffix()) ? tr("Turn on") : tr("Turn off"));
 }
 
 void ContentPage::setEnabled(bool enabled)
@@ -190,6 +205,10 @@ void ContentPage::removeSelected()
         return;
     const QString path = item->data(Qt::UserRole).toString();
     const QFileInfo info(path);
+    if (QMessageBox::question(this, tr("Delete"), tr("Delete %1? This cannot be undone.").arg(info.fileName()))
+        != QMessageBox::Yes)
+        return;
+
     const bool ok = info.isDir() ? QDir(path).removeRecursively() : QFile::remove(path);
     loadFiles();
     emit status(ok ? tr("Deleted %1").arg(info.fileName()) : tr("Could not delete %1").arg(info.fileName()));

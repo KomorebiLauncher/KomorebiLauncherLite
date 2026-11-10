@@ -30,6 +30,7 @@ class JavaPage : public QWidget {
    private:
     QListWidget* m_list = nullptr;
     QLabel* m_hint = nullptr;
+    Komorebi::Button* m_use = nullptr;
 };
 
 /// The launcher's own log files: open the folder, read one, clear them.
@@ -66,8 +67,12 @@ class AccountsPage : public QWidget {
 
    private:
     void signIn();
+    void refreshActiveMarks();
+    void updateActions();
     QListWidget* m_list = nullptr;
     QLabel* m_hint = nullptr;
+    Komorebi::Button* m_signOut = nullptr;
+    bool m_loading = false;
 };
 
 /// The name, the version and the licence. Nothing else has to be here.

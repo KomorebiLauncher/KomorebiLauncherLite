@@ -30,6 +30,7 @@ class ContentPage : public QWidget {
 
    private:
     void loadFiles();
+    void updateActions();
     void setEnabled(bool enabled);
     void removeSelected();
     void openFolder();
@@ -39,4 +40,5 @@ class ContentPage : public QWidget {
     QListWidget* m_files = nullptr;
     QLabel* m_hint = nullptr;
     Komorebi::Button* m_toggle = nullptr;
+    Komorebi::Button* m_remove = nullptr;
 };
