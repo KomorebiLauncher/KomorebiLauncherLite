@@ -238,22 +238,6 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
     downloadForm->addRow(tr("Speed limit (KB/s)"), m_speedLimit);
     layout->addLayout(downloadForm);
 
-    // ---- signing in
-    auto* accountForm = new QFormLayout();
-    accountForm->setSpacing(8);
-    m_msaClientId = new Komorebi::Field(page);
-    m_msaClientId->setPlaceholderText(QStringLiteral("00000000-0000-0000-0000-000000000000"));
-    m_msaClientId->setText(settings.msaClientId);
-    accountForm->addRow(tr("Microsoft app id (sign-in)"), m_msaClientId);
-    accountForm->addRow(
-        QString(),
-        hintLabel(page, tr("Only needed to sign in with a Microsoft account: create a public-client app in "
-                           "Azure and paste its application (client) id here. Playing offline needs nothing "
-                           "in this field, and the launcher ships no app id of its own, so leaving it empty "
-                           "means Microsoft sign-in can only fail. The KOMOREBI_MSA_CLIENT_ID environment "
-                           "variable also works.")));
-    layout->addLayout(accountForm);
-
     // ---- appearance
     auto* appearForm = new QFormLayout();
     appearForm->setSpacing(8);
@@ -307,7 +291,6 @@ SettingsDialog::SettingsDialog(const Settings& settings, QWidget* parent)
         m_result.mirrorBase = m_mirrorBase->text().trimmed();
         m_result.maxConcurrency = qMax(1, m_concurrency->text().toInt());
         m_result.speedLimitKb = qMax(0, m_speedLimit->text().toInt());
-        m_result.msaClientId = m_msaClientId->text().trimmed();
 
         if (QDir::cleanPath(m_dataDirectory) != QDir::cleanPath(Komorebi::dataRoot())) {
             QString error;

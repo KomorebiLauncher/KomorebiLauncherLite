@@ -44,7 +44,6 @@ Settings Settings::load()
     if (memory >= 512)
         settings.memoryMb = memory;
 
-    settings.msaClientId = root.value(QStringLiteral("msaClientId")).toString();
     settings.curseForgeApiKey = root.value(QStringLiteral("curseForgeApiKey")).toString();
     settings.downloadSite = root.value(QStringLiteral("downloadSite")).toString(QStringLiteral("official-first"));
     // The first version of this setting said only "official" or "mirror".
@@ -82,7 +81,6 @@ void Settings::save() const
     root.insert(QStringLiteral("darkTheme"), darkTheme);
     root.insert(QStringLiteral("wallpaperOpacity"), wallpaperOpacity);
     root.insert(QStringLiteral("memoryMb"), memoryMb);
-    root.insert(QStringLiteral("msaClientId"), msaClientId);
     root.insert(QStringLiteral("curseForgeApiKey"), curseForgeApiKey);
     root.insert(QStringLiteral("downloadSite"), downloadSite);
     root.insert(QStringLiteral("mirrorBase"), mirrorBase);

@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "core/auth/MicrosoftAuth.h"
 #include "core/util/DataMove.h"
 #include "kit/Kit.h"
 
@@ -135,7 +136,13 @@ int runSelfTest()
                image.pixelColor(80, 40).name());
     }
 
-    // 8. copying a data directory: what the settings dialog offers before it moves to another drive
+    // 8. the application id signing in goes through: it is compiled in, so it cannot be missing
+    {
+        const QString client = MicrosoftAuth::clientId();
+        report(!client.isEmpty(), "an app id is always available", client);
+    }
+
+    // 9. copying a data directory: what the settings dialog offers before it moves to another drive
     {
         g_report << QStringLiteral("data directory self-test");
         const auto write = [](const QString& path, const QByteArray& content) {

@@ -48,7 +48,8 @@ struct PollResult {
 
 class MicrosoftAuth {
    public:
-    /// The client id the launcher is registered under; empty means signing in is not configured.
+    /// The client id the launcher signs in with: the environment override, then the setting, then
+    /// the application the launcher ships with. Never empty.
     static QString clientId();
 
     /// Asks Microsoft for a code to show the player.

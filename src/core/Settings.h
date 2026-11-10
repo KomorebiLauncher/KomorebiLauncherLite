@@ -19,8 +19,7 @@ struct Settings {
     bool darkTheme = false;
     int wallpaperOpacity = 100;  ///< 0-100, how much of the wallpaper shows through
 
-    // accounts
-    QString msaClientId;   ///< the Azure app id the launcher signs in with
+    // content
     QString curseForgeApiKey;  ///< empty: the key the project ships with
 
     // downloads

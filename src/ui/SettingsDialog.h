@@ -59,6 +59,5 @@ class SettingsDialog : public QDialog {
     QLineEdit* m_mirrorBase = nullptr;
     QLineEdit* m_concurrency = nullptr;
     QLineEdit* m_speedLimit = nullptr;
-    QLineEdit* m_msaClientId = nullptr;
     QLineEdit* m_dataDirectoryField = nullptr;
 };

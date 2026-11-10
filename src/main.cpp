@@ -598,7 +598,7 @@ int main(int argc, char** argv)
             out.flush();
         };
 
-        note(QStringLiteral("app id: %1").arg(Komorebi::MicrosoftAuth::clientId().isEmpty() ? QStringLiteral("(none)") : QStringLiteral("configured")));
+        note(QStringLiteral("app id: %1").arg(Komorebi::MicrosoftAuth::clientId()));
         QString error;
         const Komorebi::DeviceCode code = Komorebi::MicrosoftAuth::startDeviceCode(&error);
         if (code.deviceCode.isEmpty()) {

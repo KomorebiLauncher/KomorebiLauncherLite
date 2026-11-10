@@ -14,17 +14,6 @@
 
 using namespace Komorebi;
 
-namespace {
-
-/// True when the sign-in stopped only because no app id is configured: that is the one failure the
-/// player can fix themselves, so it gets its own sentence instead of the core's terse English.
-bool missingAppId(const QString& error)
-{
-    return error.contains(QLatin1String("app id"), Qt::CaseInsensitive);
-}
-
-}  // namespace
-
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
 {
@@ -105,9 +94,7 @@ LoginDialog::LoginDialog(QWidget* parent)
         m_codeLabel->setVisible(false);
         m_copy->setVisible(false);
         m_open->setVisible(false);
-        m_hint->setText(missingAppId(error)
-                            ? tr("Microsoft sign-in needs an application (client) id. Add one under Settings → Microsoft app id.")
-                            : tr("Could not start the sign-in: %1").arg(error));
+        m_hint->setText(tr("Could not start the sign-in: %1").arg(error));
         return;
     }
 
@@ -146,9 +133,7 @@ void LoginDialog::poll()
         break;
     case PollResult::State::Failed:
         m_timer->stop();
-        setHint(missingAppId(result.error)
-                    ? tr("Microsoft sign-in needs an application (client) id. Add one under Settings → Microsoft app id.")
-                    : tr("Sign-in failed: %1").arg(result.error));
+        setHint(tr("Sign-in failed: %1").arg(result.error));
         break;
     }
 }

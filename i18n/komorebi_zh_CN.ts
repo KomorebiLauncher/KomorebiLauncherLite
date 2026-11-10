@@ -828,89 +828,83 @@ Started %1 time(s), last %2</source>
 <context>
     <name>LoginDialog</name>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="31"/>
-        <location filename="../src/ui/LoginDialog.cpp" line="38"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="20"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="27"/>
         <source>Sign in with Microsoft</source>
         <translation>微软账户登录</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="45"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="34"/>
         <source>Open this page in a browser:</source>
         <translation>在浏览器里打开这个页面：</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="54"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="43"/>
         <source>and enter this code:</source>
         <translation>然后输入这个代码：</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="68"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="57"/>
         <source>Copy the code</source>
         <translation>复制代码</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="70"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="59"/>
         <source>Open the page</source>
         <translation>打开页面</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="71"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="60"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="78"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="67"/>
         <source>Waiting for the browser…</source>
         <translation>等待浏览器确认…</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="84"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="73"/>
         <source>Copied</source>
         <translation>已复制</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="109"/>
-        <location filename="../src/ui/LoginDialog.cpp" line="150"/>
-        <source>Microsoft sign-in needs an application (client) id. Add one under Settings → Microsoft app id.</source>
-        <translation>Microsoft 登录需要一个应用（客户端）ID。请在“设置 → Microsoft 应用 ID”里填写。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="110"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="97"/>
         <source>Could not start the sign-in: %1</source>
         <translation>无法开始登录：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="116"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="103"/>
         <source>Waiting for the browser… the code is good for %1 minutes.</source>
         <translation>等待浏览器确认…代码在 %1 分钟内有效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="129"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="116"/>
         <source>The code expired. Close this and try again.</source>
         <translation>代码已过期，请关闭后重试。</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="136"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="123"/>
         <source>Waiting for the browser… %1: enter the code and approve.</source>
         <translation>等待浏览器确认…%1：输入代码并批准。</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="136"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="123"/>
         <source>still waiting</source>
         <translation>仍在等待</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="136"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="123"/>
         <source>waiting</source>
         <translation>正在等待</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="140"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="127"/>
         <source>Waiting a little longer…</source>
         <translation>再等一会儿…</translation>
     </message>
     <message>
-        <location filename="../src/ui/LoginDialog.cpp" line="151"/>
+        <location filename="../src/ui/LoginDialog.cpp" line="136"/>
         <source>Sign-in failed: %1</source>
         <translation>登录失败：%1</translation>
     </message>
@@ -1201,210 +1195,200 @@ Started %1 time(s), last %2</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="138"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="116"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="128"/>
         <source>Follow the system</source>
         <translation>跟随系统</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="85"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="83"/>
         <source>Browse…</source>
         <translation>浏览…</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="86"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="84"/>
         <source>Default</source>
         <translation>默认</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="90"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="304"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="331"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="348"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="102"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="299"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="326"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="343"/>
         <source>Data directory</source>
         <translation>数据目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="93"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="105"/>
         <source>Versions, libraries, assets, Java, accounts and your saves all live here. Moving it to another drive is fine; the launcher asks before copying anything, and the change takes effect the next time it starts.</source>
         <translation>版本、库文件、资源、Java、账户和你的存档都在这里。换到别的盘也没问题；复制之前启动器会先问你，改动在下次启动时生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="100"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="112"/>
         <source>Choose a data directory</source>
         <translation>选择数据目录</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="129"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="141"/>
         <source>Memory (MB)</source>
         <translation>内存（MB）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="150"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="162"/>
         <source>Game window size</source>
         <translation>游戏窗口大小</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="151"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="163"/>
         <source>0 means whatever the version asks for; an empty field means the same.</source>
         <translation>0 表示由版本自行决定；留空含义相同。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="156"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="168"/>
         <source>Java path</source>
         <translation>Java 路径</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="154"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="166"/>
         <source>Empty: choose the runtime the version asks for</source>
         <translation>留空：按版本要求自动选择</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="131"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="143"/>
         <source>Lock the heap (-Xms = -Xmx)</source>
         <translation>锁定内存分配（-Xms = -Xmx）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="144"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="156"/>
         <source>width</source>
         <translation>宽</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="145"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="157"/>
         <source>height</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="161"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="173"/>
         <source>JVM arguments</source>
         <translation>JVM 参数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="166"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="178"/>
         <source>Game arguments</source>
         <translation>游戏参数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="169"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="181"/>
         <source>Optional command to run before the game</source>
         <translation>可选：启动游戏前执行的命令</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="171"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="183"/>
         <source>Before launch</source>
         <translation>启动前命令</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="174"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="186"/>
         <source>Normal</source>
         <translation>正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="175"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="187"/>
         <source>Above normal</source>
         <translation>高于正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="176"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="188"/>
         <source>High</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="177"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="189"/>
         <source>Below normal</source>
         <translation>低于正常</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="184"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="196"/>
         <source>Process priority</source>
         <translation>进程优先级</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="186"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="198"/>
         <source>Ask for the high performance GPU</source>
         <translation>要求使用高性能显卡</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="190"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="202"/>
         <source>Legacy fix (old versions)</source>
         <translation>旧版本兼容修复</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="194"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="206"/>
         <source>Allow the unsafe memory access agent</source>
         <translation>允许 Unsafe 内存访问代理</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="204"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="216"/>
         <source>Official first</source>
         <translation>官方源优先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="205"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="217"/>
         <source>Mirror first</source>
         <translation>镜像源优先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="206"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="218"/>
         <source>Official only</source>
         <translation>仅官方源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="207"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="219"/>
         <source>Mirror only</source>
         <translation>仅镜像源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="214"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="226"/>
         <source>Download from</source>
         <translation>下载源</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="219"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="231"/>
         <source>Mirror address</source>
         <translation>镜像地址</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="222"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="234"/>
         <source>Files at once</source>
         <translation>同时下载数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="225"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="237"/>
         <source>0: no limit</source>
         <translation>0：不限速</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="226"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="238"/>
         <source>Speed limit (KB/s)</source>
         <translation>速度限制（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="235"/>
-        <source>Microsoft app id (sign-in)</source>
-        <translation>Microsoft 应用 ID（登录用）</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="238"/>
-        <source>Only needed to sign in with a Microsoft account: create a public-client app in Azure and paste its application (client) id here. Playing offline needs nothing in this field, and the launcher ships no app id of its own, so leaving it empty means Microsoft sign-in can only fail. The KOMOREBI_MSA_CLIENT_ID environment variable also works.</source>
-        <translation>只有用 Microsoft 账户登录时才需要：在 Azure 里创建一个公共客户端应用，把它的应用（客户端）ID 填在这里。离线游玩这个字段不用填；启动器自身不带应用 ID，所以留空就意味着 Microsoft 登录必然失败。也可以改用 KOMOREBI_MSA_CLIENT_ID 环境变量。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="320"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="315"/>
         <source>%1 is not a full path.</source>
         <translation>%1 不是完整路径。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="325"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="320"/>
         <source>The new directory has to be outside the current one, and not contain it either.</source>
         <translation>新目录必须在当前目录之外，也不能包含当前目录。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="332"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="327"/>
         <source>Move everything from
 %1
 to
@@ -1415,81 +1399,81 @@ to
 %2？</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="333"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="328"/>
         <source>Copy and switch</source>
         <translation>复制并切换</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="334"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="329"/>
         <source>Switch without copying</source>
         <translation>只切换，不复制</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="335"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="330"/>
         <source>Leave it alone</source>
         <translation>保持原样</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="343"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="338"/>
         <source>Could not create %1.</source>
         <translation>无法创建 %1。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="347"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="342"/>
         <source>Copying the data directory…</source>
         <translation>正在复制数据目录…</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="347"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="342"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="357"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="352"/>
         <source>Copying %1
 %2 files, %3 MB</source>
         <translation>正在复制 %1
 %2 个文件，%3 MB</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="368"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="363"/>
         <source>Copying stopped, so the data directory is unchanged. Anything already copied is left in %1 and can be deleted.</source>
         <translation>复制已停止，数据目录保持不变。已经复制过去的文件留在 %1，可以删掉。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="374"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="369"/>
         <source>Copying failed: %1
 The data directory is unchanged.</source>
         <translation>复制失败：%1
 数据目录保持不变。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="383"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="378"/>
         <source>Could not remember the new data directory: %1</source>
         <translation>无法记录新的数据目录：%1</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="260"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="256"/>
         <source>Wallpaper</source>
         <translation>壁纸</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="261"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="257"/>
         <source>Has no effect when the theme carries no wallpaper.</source>
         <translation>主题不带壁纸时不生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="264"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="260"/>
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>语言切换会在下次启动启动器时生效。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="272"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="268"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="274"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="270"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>

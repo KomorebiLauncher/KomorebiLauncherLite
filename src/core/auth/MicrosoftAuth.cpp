@@ -12,7 +12,6 @@
 #include <QUrlQuery>
 
 #include "core/Paths.h"
-#include "core/Settings.h"
 #include "services/net/Fetcher.h"
 
 namespace Komorebi {
@@ -139,12 +138,16 @@ bool exchangeXbox(const QString& accessToken, MinecraftAccount* account, QString
 
 QString MicrosoftAuth::clientId()
 {
-    // Registered per installation: an app id belongs to whoever registered it, so it is a setting
-    // rather than a constant, with an environment override for tests.
+    // The environment variable exists for test runs that must not reach the real application, and
+    // is otherwise unset. The id below is the launcher's own, so a player has nothing to fill in:
+    // an application registered by hand almost always ends up refused by Microsoft (tenant type,
+    // missing public client flows), which is a support ticket rather than a feature.
     const QString fromEnvironment = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_MSA_CLIENT_ID"));
     if (!fromEnvironment.isEmpty())
         return fromEnvironment;
-    return Settings::load().msaClientId;
+    // The Komorebi application, the same one the full edition signs in with: a public client that
+    // allows the device code flow this launcher uses.
+    return QStringLiteral("bbee7876-69f0-40c7-980c-b717f438de9c");
 }
 
 DeviceCode MicrosoftAuth::startDeviceCode(QString* error)
@@ -152,10 +155,6 @@ DeviceCode MicrosoftAuth::startDeviceCode(QString* error)
     DeviceCode code;
 
     const QString client = clientId();
-    if (client.isEmpty()) {
-        *error = QStringLiteral("no Microsoft app id is configured; set it in the settings");
-        return code;
-    }
 
     const QByteArray body = form({
         { QStringLiteral("client_id"), client },
@@ -183,10 +182,6 @@ bool MicrosoftAuth::signIn(const DeviceCode& code, MinecraftAccount* account, QS
                            const std::function<bool()>& keepWaiting)
 {
     const QString client = clientId();
-    if (client.isEmpty()) {
-        *error = QStringLiteral("no Microsoft app id is configured");
-        return false;
-    }
 
     // Poll until the player has typed the code and approved it. Microsoft answers
     // "authorization_pending" while the browser is still open.
@@ -236,11 +231,6 @@ PollResult MicrosoftAuth::poll(const DeviceCode& code)
     PollResult result;
 
     const QString client = clientId();
-    if (client.isEmpty()) {
-        result.state = PollResult::State::Failed;
-        result.error = QStringLiteral("no Microsoft app id is configured");
-        return result;
-    }
 
     const QByteArray body = form({
         { QStringLiteral("grant_type"), QStringLiteral("urn:ietf:params:oauth:grant-type:device_code") },
@@ -289,7 +279,7 @@ PollResult MicrosoftAuth::poll(const DeviceCode& code)
 bool MicrosoftAuth::refresh(MinecraftAccount* account, QString* error)
 {
     const QString client = clientId();
-    if (client.isEmpty() || account->refreshToken.isEmpty()) {
+    if (account->refreshToken.isEmpty()) {
         *error = QStringLiteral("nothing to refresh with");
         return false;
     }
