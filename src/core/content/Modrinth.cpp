@@ -16,6 +16,9 @@ namespace {
 
 constexpr auto kBase = "https://api.modrinth.com/v2";
 
+/// How many versions one page holds; the API stops at a hundred either way.
+constexpr int kVersionPage = 50;
+
 /// Modrinth asks for a user agent that says who is calling; requests without one are refused.
 QList<QPair<QString, QString>> headers()
 {
@@ -29,12 +32,18 @@ QList<QPair<QString, QString>> headers()
 
 QList<CurseForgeProject> Modrinth::searchModpacks(const QString& query, int pageSize, QString* error)
 {
+    return searchModpacks(query, pageSize, 0, error);
+}
+
+QList<CurseForgeProject> Modrinth::searchModpacks(const QString& query, int pageSize, int index, QString* error)
+{
     QList<CurseForgeProject> projects;
 
     QUrlQuery params;
     if (!query.isEmpty())
         params.addQueryItem(QStringLiteral("query"), query);
     params.addQueryItem(QStringLiteral("limit"), QString::number(pageSize));
+    params.addQueryItem(QStringLiteral("offset"), QString::number(qMax(0, index)));
     params.addQueryItem(QStringLiteral("facets"), QStringLiteral("[[\"project_type:modpack\"]]"));
 
     const QString url = QStringLiteral("%1/search?%2").arg(QString::fromLatin1(kBase), params.toString(QUrl::FullyEncoded));
@@ -62,6 +71,12 @@ QList<CurseForgeProject> Modrinth::searchModpacks(const QString& query, int page
 QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString& gameVersion, const QString& loader,
                                          QString* error)
 {
+    return versions(projectId, gameVersion, loader, 0, kVersionPage, error);
+}
+
+QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString& gameVersion, const QString& loader,
+                                         int offset, int limit, QString* error)
+{
     QList<CurseForgeFile> files;
 
     QUrlQuery params;
@@ -69,6 +84,8 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
         params.addQueryItem(QStringLiteral("game_versions"), QStringLiteral("[\"%1\"]").arg(gameVersion));
     if (!loader.isEmpty())
         params.addQueryItem(QStringLiteral("loaders"), QStringLiteral("[\"%1\"]").arg(loader));
+    params.addQueryItem(QStringLiteral("offset"), QString::number(qMax(0, offset)));
+    params.addQueryItem(QStringLiteral("limit"), QString::number(limit > 0 ? limit : kVersionPage));
 
     const QString url = QStringLiteral("%1/project/%2/version?%3")
                             .arg(QString::fromLatin1(kBase), projectId, params.toString(QUrl::FullyEncoded));
@@ -95,7 +112,9 @@ QList<CurseForgeFile> Modrinth::versions(const QString& projectId, const QString
             file.url = entryFile.value(QStringLiteral("url")).toString();
             file.fileName = QFileInfo(entryFile.value(QStringLiteral("filename")).toString()).fileName();
             file.sha1 = entryFile.value(QStringLiteral("hashes")).toObject().value(QStringLiteral("sha1")).toString();
+            file.size = static_cast<qint64>(entryFile.value(QStringLiteral("size")).toDouble());
         }
+        file.date = item.value(QStringLiteral("date_published")).toString();
         if (!file.url.isEmpty())
             files.append(file);
     }

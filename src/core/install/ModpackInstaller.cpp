@@ -486,6 +486,20 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     const QString modsDirectory = QDir(packDirectory).filePath(QStringLiteral("mods"));
     QDir().mkpath(modsDirectory);
     const auto files = manifest.value(QStringLiteral("files")).toArray();
+    // The pack names its files by id alone, so their names and hashes have to be looked up. The API
+    // answers for many ids at once, which is one request for the pack instead of one per mod -- and
+    // it answers for the pinned old versions that a project's newest page no longer lists.
+    QList<int> wanted;
+    wanted.reserve(files.size());
+    for (const auto& entry : files) {
+        const int fileId = entry.toObject().value(QStringLiteral("fileID")).toInt();
+        if (fileId > 0)
+            wanted.append(fileId);
+    }
+    QHash<int, CurseForgeFile> described;
+    for (const auto& file : CurseForge::filesByIds(wanted, &error))
+        described.insert(file.id, file);
+
     int done = 0;
     int considered = 0;  // entries that named a file at all; the ones with no ids are not
     // A project's slug is what a link to its file's page is built from, and asking for it is one
@@ -505,13 +519,17 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             continue;
         ++considered;
 
-        // The API knows the file name and the hash; the pack only carries ids.
-        const QList<CurseForgeFile> list = CurseForge::files(projectId, &error);
-        CurseForgeFile chosen;
-        for (const auto& candidate : list) {
-            if (candidate.id == fileId) {
-                chosen = candidate;
-                break;
+        // The batch lookup answered for the pack. A file it did not answer for is either gone from
+        // the API or was part of a batch that failed, and the project's own listing still has it when
+        // it happens to be among the newest ones.
+        CurseForgeFile chosen = described.value(fileId);
+        if (chosen.fileName.isEmpty()) {
+            const QList<CurseForgeFile> list = CurseForge::files(projectId, &error);
+            for (const auto& candidate : list) {
+                if (candidate.id == fileId) {
+                    chosen = candidate;
+                    break;
+                }
             }
         }
         const QString name = chosen.fileName;

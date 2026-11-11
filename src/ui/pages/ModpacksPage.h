@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "core/content/CurseForge.h"
+#include "ui/PackVersionDialog.h"
 
 class QLabel;
 class QLineEdit;
@@ -50,11 +51,16 @@ class ModpacksPage : public QWidget {
     void importZip();
     void pollInstall();
     void cancelJob();
-    void loadIcons(int generation, const QList<Komorebi::CurseForgeProject>& projects);
+    void loadIcons(int generation, const QList<Komorebi::CurseForgeProject>& projects, int firstRow);
     void pumpIcons();
     void showSelectedVersion(int row);
     bool usingModrinth() const;
     void sourceChanged();
+    /// The page of results after the ones already listed, appended instead of replacing them.
+    void loadMore();
+    void applyMore(int generation, const QList<Komorebi::CurseForgeProject>& projects, const QString& error);
+    /// How the version picker asks this pack's source for its files.
+    PackVersionDialog::Fetcher versionFetcher(const Komorebi::CurseForgeProject& project) const;
     struct Job;
     void startJob(const std::function<void(Job&)>& work, const QString& label);
 
@@ -68,6 +74,7 @@ class ModpacksPage : public QWidget {
     Komorebi::Button* m_cancel = nullptr;
     Komorebi::Button* m_import = nullptr;
     Komorebi::Button* m_search = nullptr;
+    Komorebi::Button* m_more = nullptr;
     QTimer* m_poll = nullptr;
     QNetworkAccessManager* m_icons = nullptr;
     QQueue<QPair<int, QString>> m_iconQueue;
@@ -79,6 +86,9 @@ class ModpacksPage : public QWidget {
     /// still writing progress into the job, and it must not write into freed memory.
     std::shared_ptr<Job> m_job;
     bool m_firstShown = false;
+    /// A "load more" in flight, and whether the source has already said the list ended.
+    bool m_moreRunning = false;
+    bool m_moreExhausted = false;
     std::atomic<int> m_searchGeneration{ 0 };
     std::atomic<int> m_probeGeneration{ 0 };
 };

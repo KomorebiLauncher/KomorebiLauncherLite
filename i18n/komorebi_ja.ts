@@ -1217,6 +1217,119 @@ Started %1 time(s), last %2</source>
         <source>Installed as %1, but %2 file(s) have to be fetched by hand.</source>
         <translation>%1 としてインストールしましたが、%2 ファイルは手動で取得する必要があります。</translation>
     </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="134"/>
+        <source>Load more</source>
+        <translation>さらに読み込む</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="254"/>
+        <source>Loading more…</source>
+        <translation>さらに読み込み中…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="289"/>
+        <source>Nothing more to load: %1</source>
+        <translation>読み込めるものはもうありません：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="522"/>
+        <source>That file is no longer available</source>
+        <translation>そのファイルはもう利用できません</translation>
+    </message>
+</context>
+<context>
+    <name>PackVersionDialog</name>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="84"/>
+        <source>Choose the pack version</source>
+        <translation>整合パックのバージョンを選択</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="100"/>
+        <source>The newest file is usually the beta of the next release</source>
+        <translation>最新のファイルは次のバージョンのベータ版であることがほとんどです</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Version</source>
+        <translation>バージョン</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Type</source>
+        <translation>種類</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Published</source>
+        <translation>公開日</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Size</source>
+        <translation>サイズ</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Game</source>
+        <translation>ゲームバージョン</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="167"/>
+        <source>Looking for the versions…</source>
+        <translation>バージョンを照会しています…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="204"/>
+        <source>Could not fetch the versions: %1</source>
+        <translation>バージョンを取得できませんでした：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="236"/>
+        <source>Showing %1 of %2 files</source>
+        <translation>%2 件中 %1 件を表示</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="238"/>
+        <source>%1 files</source>
+        <translation>%1 件のファイル</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="243"/>
+        <source>This pack has no downloadable file</source>
+        <translation>この整合パックにはダウンロードできるファイルがありません</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="135"/>
+        <source>Load more</source>
+        <translation>さらに読み込む</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="139"/>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="141"/>
+        <source>Install</source>
+        <translation>インストール</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="62"/>
+        <source>release</source>
+        <translation>リリース版</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="64"/>
+        <source>beta</source>
+        <translation>ベータ版</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="66"/>
+        <source>alpha</source>
+        <translation>アルファ版</translation>
+    </message>
 </context>
 <context>
     <name>Paths</name>

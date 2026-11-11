@@ -34,6 +34,13 @@
 
 using namespace Komorebi;
 
+namespace {
+
+/// One page of results: enough to fill the list, few enough that the first answer comes quickly.
+constexpr int kPackPage = 30;
+
+}  // namespace
+
 struct ModpacksPage::Job {
     std::atomic<bool> done{ false };
     std::atomic<bool> ok{ false };
@@ -124,6 +131,9 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     layout->addWidget(m_results, 1);
 
     auto* bottom = new QHBoxLayout();
+    m_more = new Button(tr("Load more"), this);
+    m_more->setVisible(false);
+    bottom->addWidget(m_more);
     bottom->addStretch(1);
     m_cancel = new Button(tr("Cancel"), this);
     m_cancel->setVisible(false);
@@ -137,6 +147,7 @@ ModpacksPage::ModpacksPage(QWidget* parent)
     connect(m_search, &QPushButton::clicked, this, &ModpacksPage::search);
     connect(m_query, &QLineEdit::returnPressed, this, &ModpacksPage::search);
     connect(m_install, &QPushButton::clicked, this, &ModpacksPage::installSelected);
+    connect(m_more, &QPushButton::clicked, this, &ModpacksPage::loadMore);
     connect(m_cancel, &QPushButton::clicked, this, &ModpacksPage::cancelJob);
     connect(m_import, &QPushButton::clicked, this, &ModpacksPage::importZip);
     connect(m_source, &QComboBox::currentIndexChanged, this, &ModpacksPage::sourceChanged);
@@ -210,6 +221,90 @@ void ModpacksPage::sourceChanged()
     m_install->setEnabled(false);
 }
 
+PackVersionDialog::Fetcher ModpacksPage::versionFetcher(const CurseForgeProject& project) const
+{
+    if (usingModrinth()) {
+        // Modrinth pages by offset; it never says how many versions a project has in all.
+        const QString slug = project.slug;
+        return [slug](int offset, int limit, int* total, QString* error) {
+            if (total != nullptr)
+                *total = 0;
+            return Modrinth::versions(slug, {}, {}, offset, limit, error);
+        };
+    }
+    // CurseForge counts from the other end: `index` files skipped, and a total in the answer.
+    const int id = project.id;
+    return [id](int offset, int limit, int* total, QString* error) {
+        return CurseForge::filesPage(id, offset, limit, total, error);
+    };
+}
+
+void ModpacksPage::loadMore()
+{
+    if (m_moreRunning || m_job || m_projects.isEmpty() || m_moreExhausted)
+        return;
+
+    const int generation = m_searchGeneration.load();
+    const QString query = m_query->text().trimmed();
+    const bool modrinth = usingModrinth();
+    const int index = m_projects.size();
+
+    m_moreRunning = true;
+    m_more->setEnabled(false);
+    m_more->setText(tr("Loading more…"));
+
+    QPointer<ModpacksPage> guard(this);
+    std::thread([guard, generation, query, modrinth, index] {
+        QString error;
+        const QList<CurseForgeProject> projects = modrinth
+                                                     ? Modrinth::searchModpacks(query, kPackPage, index, &error)
+                                                     : CurseForge::searchModpacks(query, kPackPage, index, &error);
+        if (!guard)
+            return;
+        QMetaObject::invokeMethod(
+            guard.data(),
+            [guard, generation, projects, error] {
+                if (guard)
+                    guard->applyMore(generation, projects, error);
+            },
+            Qt::QueuedConnection);
+    }).detach();
+}
+
+void ModpacksPage::applyMore(int generation, const QList<Komorebi::CurseForgeProject>& projects,
+                             const QString& error)
+{
+    m_moreRunning = false;
+    m_more->setText(tr("Load more"));
+    m_more->setEnabled(true);
+
+    // A new search has replaced the list this page would have been appended to.
+    if (generation != m_searchGeneration.load())
+        return;
+
+    if (projects.isEmpty()) {
+        m_moreExhausted = true;
+        m_more->setVisible(false);
+        if (!error.isEmpty())
+            m_hint->setText(tr("Nothing more to load: %1").arg(error));
+        return;
+    }
+
+    const int firstRow = m_projects.size();
+    m_projects += projects;
+    for (const auto& project : projects) {
+        auto* item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(project.name, project.summary));
+        item->setToolTip(project.summary);
+        m_results->addItem(item);
+    }
+
+    // The source hands out whole pages until the last one, so a short page is the end of the list.
+    m_moreExhausted = projects.size() < kPackPage;
+    m_more->setVisible(!m_moreExhausted);
+    loadIcons(generation, projects, firstRow);
+    m_hint->setText(tr("%1 pack(s). Pick one and press install.").arg(m_projects.size()));
+}
+
 void ModpacksPage::search()
 {
     const int generation = ++m_searchGeneration;
@@ -219,6 +314,10 @@ void ModpacksPage::search()
     m_hint->setText(tr("Searching…"));
     m_search->setEnabled(false);
     m_install->setEnabled(false);
+    // A new search starts its own list; whatever page the last one had reached is over.
+    m_moreRunning = false;
+    m_moreExhausted = false;
+    m_more->setVisible(false);
     emit status(tr("Searching"));
 
     // A search answers in a second or two, or in sixty when the service does not: on the window's
@@ -226,8 +325,8 @@ void ModpacksPage::search()
     QPointer<ModpacksPage> guard(this);
     std::thread([guard, generation, query, modrinth] {
         QString error;
-        const QList<CurseForgeProject> projects = modrinth ? Modrinth::searchModpacks(query, 30, &error)
-                                                           : CurseForge::searchModpacks(query, 30, &error);
+        const QList<CurseForgeProject> projects = modrinth ? Modrinth::searchModpacks(query, kPackPage, &error)
+                                                          : CurseForge::searchModpacks(query, kPackPage, &error);
         if (!guard)
             return;
         QMetaObject::invokeMethod(
@@ -261,7 +360,12 @@ void ModpacksPage::applySearch(int generation, const QList<Komorebi::CurseForgeP
     // The logos are urls the sources handed out; fetch them after the list is up, so a slow image
     // never holds up the results. This runs on the window's own event loop: a QNetworkAccessManager
     // belongs to the thread that made it, and a worker thread here would simply never get an answer.
-    loadIcons(generation, m_projects);
+    loadIcons(generation, m_projects, 0);
+
+    // A short page is the whole list: there is nothing under it to ask for.
+    m_moreExhausted = m_projects.size() < kPackPage;
+    m_more->setVisible(!m_moreExhausted && !m_projects.isEmpty());
+    m_more->setEnabled(true);
 
     if (m_projects.isEmpty()) {
         m_hint->setText(error.isEmpty() ? tr("Nothing found. Try another word.")
@@ -273,17 +377,21 @@ void ModpacksPage::applySearch(int generation, const QList<Komorebi::CurseForgeP
     emit status(tr("%1 pack(s) found").arg(m_projects.size()));
 }
 
-void ModpacksPage::loadIcons(int generation, const QList<Komorebi::CurseForgeProject>& projects)
+void ModpacksPage::loadIcons(int generation, const QList<Komorebi::CurseForgeProject>& projects, int firstRow)
 {
     if (!m_icons) {
         m_icons = new QNetworkAccessManager(this);
         m_icons->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
     }
-    m_iconQueue.clear();
-    m_iconGeneration = generation;
+    // A page appended under the one already shown continues the same generation, so the icons still
+    // on their way are kept rather than dropped: the rows they belong to are still in the list.
+    if (firstRow == 0) {
+        m_iconQueue.clear();
+        m_iconGeneration = generation;
+    }
     for (int index = 0; index < projects.size(); ++index) {
         if (!projects.at(index).logoUrl.isEmpty())
-            m_iconQueue.enqueue({ index, projects.at(index).logoUrl });
+            m_iconQueue.enqueue({ firstRow + index, projects.at(index).logoUrl });
     }
     pumpIcons();
 }
@@ -401,29 +509,28 @@ void ModpacksPage::installSelected()
         return;
 
     const CurseForgeProject project = m_projects.at(row);
+
+    // Which file is the pack is the player's call: the newest one is often the beta of the next
+    // release, and a pack installed from whichever file the API happened to list first is how a
+    // broken pack gets reported with no version in the report. Backing out here installs nothing.
+    PackVersionDialog picker(project.name, versionFetcher(project), this);
+    if (picker.exec() != QDialog::Accepted)
+        return;
+
+    const CurseForgeFile chosen = picker.chosen();
+    if (chosen.fileName.isEmpty()) {
+        m_hint->setText(tr("That file is no longer available"));
+        return;
+    }
+
     m_install->setEnabled(false);
 
     if (usingModrinth()) {
         // A Modrinth version carries its own file url; the pack itself is the same .mrpack the
         // importer accepts, so the two paths end in the same installer.
         startJob(
-            [project](Job& job) {
+            [project, chosen](Job& job) {
                 QString error;
-                const QList<CurseForgeFile> versions = Modrinth::versions(project.slug, {}, {}, &error);
-                if (versions.isEmpty()) {
-                    std::lock_guard<std::mutex> lock(job.mutex);
-                    job.error = ModpacksPage::tr("the pack has no downloadable version: %1").arg(error);
-                    return;
-                }
-
-                CurseForgeFile chosen = versions.first();
-                for (const auto& file : versions) {
-                    if (file.releaseType == QLatin1String("release")) {
-                        chosen = file;
-                        break;
-                    }
-                }
-
                 ScratchDirectory temp("pack");
                 if (!temp.isValid()) {
                     std::lock_guard<std::mutex> lock(job.mutex);
@@ -463,24 +570,8 @@ void ModpacksPage::installSelected()
     }
 
     startJob(
-        [project](Job& job) {
+        [project, chosen](Job& job) {
             QString error;
-            const QList<CurseForgeFile> files = CurseForge::files(project.id, &error);
-            if (files.isEmpty()) {
-                std::lock_guard<std::mutex> lock(job.mutex);
-                job.error = ModpacksPage::tr("the pack has no downloadable file: %1").arg(error);
-                return;
-            }
-
-            // The newest file the author marked as a release, otherwise the newest of all.
-            CurseForgeFile chosen = files.first();
-            for (const auto& file : files) {
-                if (file.releaseType == QLatin1String("1")) {
-                    chosen = file;
-                    break;
-                }
-            }
-
             ScratchDirectory temp("pack");
             if (!temp.isValid()) {
                 std::lock_guard<std::mutex> lock(job.mutex);
@@ -559,6 +650,7 @@ void ModpacksPage::startJob(const std::function<void(Job&)>& work, const QString
     m_progress->setVisible(true);
     m_install->setEnabled(false);
     m_search->setEnabled(false);
+    m_more->setEnabled(false);
     m_cancel->setEnabled(true);
     m_cancel->setVisible(true);
     emit status(tr("Installing %1").arg(label));
@@ -644,6 +736,7 @@ void ModpacksPage::pollInstall()
     m_cancel->setVisible(false);
     m_install->setEnabled(m_results->currentRow() >= 0);
     m_search->setEnabled(true);
+    m_more->setEnabled(!m_moreExhausted);
 
     // A finished install is a finished install: the cancel button may have been pressed in the last
     // second of it, and reporting "cancelled" left the new pack invisible on the Play page.

@@ -15,6 +15,8 @@ namespace {
 
 constexpr auto kBase = "https://api.curseforge.com/v1";
 constexpr int kMinecraft = 432;
+/// How many files one page of a project's listing holds; the API refuses more than fifty anyway.
+constexpr int kFilePage = 50;
 /// The hash algorithm numbers of the file API: 1 is sha1, 2 is md5. The wire format is a number.
 constexpr int kSha1 = 1;
 
@@ -40,6 +42,38 @@ QJsonObject body(const JsonResult& result, QString* error)
     return object;
 }
 
+/// One file record. The file listing and the batch lookup answer with the same shape, so both go
+/// through here and a field added once is added everywhere.
+CurseForgeFile parseFile(const QJsonObject& item)
+{
+    CurseForgeFile file;
+    file.id = item.value(QStringLiteral("id")).toInt();
+    file.displayName = item.value(QStringLiteral("displayName")).toString();
+    file.fileName = item.value(QStringLiteral("fileName")).toString();
+    file.version = item.value(QStringLiteral("displayName")).toString();
+    file.releaseType = QString::number(item.value(QStringLiteral("releaseType")).toInt());
+    // Most files carry their own CDN link; the ones that do not get one from the download-url
+    // endpoint, or cannot be downloaded at all -- see downloadFile().
+    file.url = item.value(QStringLiteral("downloadUrl")).toString();
+    // The date is what separates a release from the beta of the next one in a list, and the size is
+    // what tells a player whether the file they are picking is the big one.
+    file.date = item.value(QStringLiteral("fileDate")).toString();
+    file.size = static_cast<qint64>(item.value(QStringLiteral("fileLength")).toDouble());
+    for (const auto& version : item.value(QStringLiteral("gameVersions")).toArray())
+        file.gameVersions << version.toString();
+    // The API lists the hashes as (value, algo) pairs, and algo is a number: 1 is sha1, 2 is md5.
+    // The sha1 is passed on so a download can be checked against the file the API described, not
+    // just its size.
+    for (const auto& hash : item.value(QStringLiteral("hashes")).toArray()) {
+        const auto record = hash.toObject();
+        if (record.value(QStringLiteral("algo")).toInt() == kSha1) {
+            file.sha1 = record.value(QStringLiteral("value")).toString();
+            break;
+        }
+    }
+    return file;
+}
+
 }  // namespace
 
 QString CurseForge::apiKey()
@@ -50,12 +84,18 @@ QString CurseForge::apiKey()
 
 QList<CurseForgeProject> CurseForge::searchModpacks(const QString& query, int pageSize, QString* error)
 {
+    return searchModpacks(query, pageSize, 0, error);
+}
+
+QList<CurseForgeProject> CurseForge::searchModpacks(const QString& query, int pageSize, int index, QString* error)
+{
     QList<CurseForgeProject> projects;
 
     QUrlQuery params;
     params.addQueryItem(QStringLiteral("gameId"), QString::number(kMinecraft));
     params.addQueryItem(QStringLiteral("classId"), QStringLiteral("4471"));  // modpacks
     params.addQueryItem(QStringLiteral("pageSize"), QString::number(pageSize));
+    params.addQueryItem(QStringLiteral("index"), QString::number(qMax(0, index)));
     params.addQueryItem(QStringLiteral("sortField"), QStringLiteral("2"));  // popularity
     params.addQueryItem(QStringLiteral("sortOrder"), QStringLiteral("desc"));
     if (!query.isEmpty())
@@ -104,39 +144,71 @@ CurseForgeProject CurseForge::project(int projectId, QString* error)
 
 QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
 {
-    QList<CurseForgeFile> files;
+    return filesPage(projectId, 0, kFilePage, nullptr, error);
+}
 
-    const QString url = QStringLiteral("%1/mods/%2/files?pageSize=50").arg(QString::fromLatin1(kBase)).arg(projectId);
+QList<CurseForgeFile> CurseForge::filesPage(int projectId, int index, int pageSize, int* totalCount, QString* error)
+{
+    QList<CurseForgeFile> files;
+    if (pageSize <= 0)
+        pageSize = kFilePage;
+
+    const QString url = QStringLiteral("%1/mods/%2/files?pageSize=%3&index=%4")
+                            .arg(QString::fromLatin1(kBase))
+                            .arg(projectId)
+                            .arg(pageSize)
+                            .arg(qMax(0, index));
     const JsonResult result = getJson(url, headers());
     const QJsonObject object = body(result, error);
     if (!result.ok)
         return files;
 
+    // How many the project has in all, which is the only way the caller knows whether there is a
+    // next page: the API answers with fewer files than asked for at the end of a list, not before it.
+    if (totalCount != nullptr)
+        *totalCount = object.value(QStringLiteral("pagination")).toObject().value(QStringLiteral("totalCount")).toInt();
+
     for (const auto& entry : object.value(QStringLiteral("data")).toArray()) {
-        const auto item = entry.toObject();
-        CurseForgeFile file;
-        file.id = item.value(QStringLiteral("id")).toInt();
-        file.displayName = item.value(QStringLiteral("displayName")).toString();
-        file.fileName = item.value(QStringLiteral("fileName")).toString();
-        file.version = item.value(QStringLiteral("displayName")).toString();
-        file.releaseType = QString::number(item.value(QStringLiteral("releaseType")).toInt());
-        // Most files carry their own CDN link; the ones that do not get one from the download-url
-        // endpoint, or cannot be downloaded at all -- see downloadFile().
-        file.url = item.value(QStringLiteral("downloadUrl")).toString();
-        for (const auto& version : item.value(QStringLiteral("gameVersions")).toArray())
-            file.gameVersions << version.toString();
-        // The API lists the hashes as (value, algo) pairs, and algo is a number: 1 is sha1, 2 is md5.
-        // The sha1 is passed on so a download can be checked against the file the API described, not
-        // just its size.
-        for (const auto& hash : item.value(QStringLiteral("hashes")).toArray()) {
-            const auto record = hash.toObject();
-            if (record.value(QStringLiteral("algo")).toInt() == kSha1) {
-                file.sha1 = record.value(QStringLiteral("value")).toString();
-                break;
-            }
-        }
+        const CurseForgeFile file = parseFile(entry.toObject());
         if (file.id > 0)
             files.append(file);
+    }
+    return files;
+}
+
+QList<CurseForgeFile> CurseForge::filesByIds(const QList<int>& fileIds, QString* error)
+{
+    QList<CurseForgeFile> files;
+    if (fileIds.isEmpty())
+        return files;
+
+    // The endpoint takes a list and answers with one, which is the whole point: a pack of three
+    // hundred mods costs one request instead of three hundred. It is kept to batches so a very large
+    // pack does not turn into one unreasonable body.
+    constexpr int kBatch = 500;
+    for (int start = 0; start < fileIds.size(); start += kBatch) {
+        QJsonArray ids;
+        for (int i = start; i < fileIds.size() && i < start + kBatch; ++i)
+            ids.append(fileIds.at(i));
+        QJsonObject payload;
+        payload.insert(QStringLiteral("fileIds"), ids);
+
+        QList<QPair<QString, QString>> postHeaders = headers();
+        postHeaders.append({ QStringLiteral("Content-Type"), QStringLiteral("application/json") });
+        const JsonResult result =
+            postJson(QStringLiteral("%1/mods/files").arg(QString::fromLatin1(kBase)),
+                     QJsonDocument(payload).toJson(QJsonDocument::Compact), postHeaders);
+        const QJsonObject object = body(result, error);
+        if (!result.ok) {
+            // Whatever was already collected is still usable; the caller asks per project for the
+            // rest, so one failed batch does not take the whole pack down with it.
+            break;
+        }
+        for (const auto& entry : object.value(QStringLiteral("data")).toArray()) {
+            const CurseForgeFile file = parseFile(entry.toObject());
+            if (file.id > 0)
+                files.append(file);
+        }
     }
     return files;
 }

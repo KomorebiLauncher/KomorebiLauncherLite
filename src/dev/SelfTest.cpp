@@ -4,6 +4,8 @@
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDialog>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QLabel>
 #include <QListWidget>
 #include <QPlainTextEdit>
@@ -24,6 +26,7 @@
 #include "core/install/ManualMods.h"
 #include "kit/Kit.h"
 #include "ui/ManualModsDialog.h"
+#include "ui/PackVersionDialog.h"
 #include "ui/pages/SimplePages.h"
 
 namespace Komorebi::Dev {
@@ -366,6 +369,53 @@ int runSelfTest()
             else
                 qputenv("KOMOREBI_DATA", previous.toUtf8());
         }
+    }
+
+    // The version picker is rendered against a fetcher that answers from a canned list. What is being
+    // tested is the dialog itself -- that it comes up, that it lists the files the source names, and
+    // that it starts on the release rather than on the beta filed above it. The real fetchers belong
+    // to the sources and talk to the network, which a self-test must not do.
+    {
+        const auto canned = [](int offset, int limit, int* total, QString* error) {
+            Q_UNUSED(limit);
+            if (error)
+                error->clear();
+            if (total)
+                *total = 3;
+            QList<Komorebi::CurseForgeFile> files;
+            if (offset > 0)
+                return files;
+            const auto make = [](int id, const QString& version, const QString& kind, const QString& date) {
+                Komorebi::CurseForgeFile file;
+                file.id = id;
+                file.fileName = QStringLiteral("all-the-mods-11-%1.jar").arg(version);
+                file.displayName = file.fileName;
+                file.version = version;
+                file.releaseType = kind;
+                file.date = date;
+                file.size = 120LL * 1024 * 1024;
+                file.gameVersions = QStringList{ QStringLiteral("NeoForge"), QStringLiteral("26.1.2") };
+                return file;
+            };
+            files << make(30, QStringLiteral("2.0.0-beta"), QStringLiteral("2"), QStringLiteral("2026-09-03T10:00:00Z"))
+                  << make(29, QStringLiteral("1.9.1"), QStringLiteral("1"), QStringLiteral("2026-09-02T10:00:00Z"))
+                  << make(28, QStringLiteral("1.9.0"), QStringLiteral("1"), QStringLiteral("2026-09-01T10:00:00Z"));
+            return files;
+        };
+
+        PackVersionDialog dialog(QStringLiteral("All the Mods 11"), canned);
+        QElapsedTimer wait;
+        wait.start();
+        while (dialog.fileCount() == 0 && wait.elapsed() < 5000)
+            QApplication::processEvents(QEventLoop::AllEvents, 50);
+
+        const QImage image = render(&dialog, QSize(760, 460));
+        report(dialog.fileCount() == 3, "the files of a pack are listed",
+               QStringLiteral("%1 files").arg(dialog.fileCount()));
+        report(dialog.selected().version == QStringLiteral("1.9.1"),
+               "the picker starts on the newest release, not on the beta filed above it", dialog.selected().version);
+        report(!image.isNull(), "the list of versions opens",
+               QStringLiteral("%1x%2").arg(image.width()).arg(image.height()));
     }
 
     g_report << (g_failures == 0 ? QStringLiteral("self-test passed") : QStringLiteral("self-test failed: %1").arg(g_failures));

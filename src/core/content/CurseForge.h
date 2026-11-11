@@ -30,6 +30,8 @@ struct CurseForgeFile {
     QString version;       ///< the pack's own version string
     QStringList gameVersions;
     QString releaseType;   ///< release, beta, alpha
+    QString date;          ///< published, ISO 8601 as the source writes it; empty when it does not say
+    qint64 size = 0;       ///< bytes, 0 when the source does not say
 };
 
 class CurseForge {
@@ -40,8 +42,28 @@ class CurseForge {
     /// Modpacks matching a search, newest and most downloaded first when `query` is empty.
     static QList<CurseForgeProject> searchModpacks(const QString& query, int pageSize, QString* error);
 
+    /// The same search, from the `index`th result: what a "load more" under the list asks for.
+    static QList<CurseForgeProject> searchModpacks(const QString& query, int pageSize, int index, QString* error);
+
     /// Files of a project, newest first.
     static QList<CurseForgeFile> files(int projectId, QString* error);
+
+    /// The same list, one page at a time: `index` files already taken, at most `pageSize` more, and
+    /// `totalCount` filled in with how many the project has. A pack with a hundred releases is not
+    /// something to show at once, so the caller asks for the rest as the player scrolls.
+    static QList<CurseForgeFile> filesPage(int projectId, int index, int pageSize, int* totalCount, QString* error);
+
+    /**
+     * Several files by id, in one request.
+     *
+     * A modpack names its files by id and nothing else, so the launcher has to turn those ids into
+     * names and hashes. Listing each project's newest page and searching it is what this replaces:
+     * a pack pins the version it was built against, which is regularly older than the newest fifty
+     * files of that project, and the ones it misses used to fail the whole install.
+     *
+     * Files the API no longer knows (deleted by their author) are simply absent from the result.
+     */
+    static QList<CurseForgeFile> filesByIds(const QList<int>& fileIds, QString* error);
 
     /// One project by id: its name and its slug, which is what a link to a file's page is made of.
     static CurseForgeProject project(int projectId, QString* error);

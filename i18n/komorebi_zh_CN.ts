@@ -1217,6 +1217,119 @@ Started %1 time(s), last %2</source>
         <source>Installed as %1, but %2 file(s) have to be fetched by hand.</source>
         <translation>已安装为 %1，但有 %2 个文件需要手动获取。</translation>
     </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="134"/>
+        <source>Load more</source>
+        <translation>加载更多</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="254"/>
+        <source>Loading more…</source>
+        <translation>正在加载更多…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="289"/>
+        <source>Nothing more to load: %1</source>
+        <translation>没有更多可加载的了：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/ModpacksPage.cpp" line="522"/>
+        <source>That file is no longer available</source>
+        <translation>那个文件已经不可用了</translation>
+    </message>
+</context>
+<context>
+    <name>PackVersionDialog</name>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="84"/>
+        <source>Choose the pack version</source>
+        <translation>选择整合包版本</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="100"/>
+        <source>The newest file is usually the beta of the next release</source>
+        <translation>最新的文件往往是下一个版本的测试版</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Version</source>
+        <translation>版本</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Published</source>
+        <translation>发布时间</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Size</source>
+        <translation>大小</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="106"/>
+        <source>Game</source>
+        <translation>游戏版本</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="167"/>
+        <source>Looking for the versions…</source>
+        <translation>正在查询版本…</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="204"/>
+        <source>Could not fetch the versions: %1</source>
+        <translation>无法获取版本列表：%1</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="236"/>
+        <source>Showing %1 of %2 files</source>
+        <translation>已显示 %1 / %2 个文件</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="238"/>
+        <source>%1 files</source>
+        <translation>%1 个文件</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="243"/>
+        <source>This pack has no downloadable file</source>
+        <translation>这个整合包没有可下载的文件</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="135"/>
+        <source>Load more</source>
+        <translation>加载更多</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="139"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="141"/>
+        <source>Install</source>
+        <translation>安装</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="62"/>
+        <source>release</source>
+        <translation>正式版</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="64"/>
+        <source>beta</source>
+        <translation>测试版</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/PackVersionDialog.cpp" line="66"/>
+        <source>alpha</source>
+        <translation>内测版</translation>
+    </message>
 </context>
 <context>
     <name>Paths</name>

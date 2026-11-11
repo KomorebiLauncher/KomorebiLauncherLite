@@ -20,9 +20,16 @@ class Modrinth {
     /// Modpacks matching a query.
     static QList<CurseForgeProject> searchModpacks(const QString& query, int pageSize, QString* error);
 
+    /// The same search, from the `index`th result: what a "load more" under the list asks for.
+    static QList<CurseForgeProject> searchModpacks(const QString& query, int pageSize, int index, QString* error);
+
     /// The versions of a project that fit a game version and a loader, newest first.
     static QList<CurseForgeFile> versions(const QString& projectId, const QString& gameVersion, const QString& loader,
                                           QString* error);
+
+    /// The same list a page at a time, for a picker that asks for more as the player scrolls.
+    static QList<CurseForgeFile> versions(const QString& projectId, const QString& gameVersion, const QString& loader,
+                                          int offset, int limit, QString* error);
 
     /// Downloads one version's file. The hash comes from the version record and is checked when it
     /// is not empty, so a truncated or substituted body is refused rather than kept.
