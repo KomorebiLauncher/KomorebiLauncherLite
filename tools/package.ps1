@@ -1,15 +1,15 @@
-# Packs a built launcher into what a release ships: a zip that runs where it is unpacked, an
-# installer that puts it in the start menu, and one executable with everything inside it.
+# Packs a built launcher into what a release ships: a zip that runs where it is unpacked, and one
+# executable with everything inside it.
 #
-#   pwsh tools/package.ps1 -Version 0.1.0                  # zip and installer, from a normal build
+#   pwsh tools/package.ps1 -Version 0.1.0                  # the zip, from a normal build
 #   pwsh tools/package.ps1 -Version 0.1.0 -Static -Verify  # the single file, from a static build
 #
-# The dynamic build loads Qt from DLLs, so it becomes the zip and the installer. The single file is
-# a different build altogether -- Qt linked in, see tools/build-static-qt.ps1 -- and in that mode
-# this script only has to prove the executable stands alone.
+# The dynamic build loads Qt from DLLs, so it becomes the zip. The single file is a different build
+# altogether -- Qt linked in, see tools/build-static-qt.ps1 -- and in that mode this script only has
+# to prove the executable stands alone.
 #
 # -Verify starts the staged copy with a stripped PATH, so a missing runtime file fails here instead
-# of on a player's machine. The installer needs Inno Setup; without it the zip is still built.
+# of on a player's machine.
 
 [CmdletBinding()]
 param(
@@ -17,10 +17,8 @@ param(
     [string]$BuildDir = 'build',
     [string]$OutDir = 'dist',
     [string]$QtBin,
-    [string]$Iscc,
     [switch]$Verify,
-    [switch]$Static,
-    [switch]$SkipInstaller
+    [switch]$Static
 )
 
 $ErrorActionPreference = 'Stop'
@@ -324,43 +322,12 @@ Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Compression
 
 Write-Host ""
 Write-Host "zip:      $zip ($(Format-Size $zip) MB)"
-$hashes = [ordered]@{ zip = (Get-Sha256 $zip) }
-Write-Host "          sha256 $($hashes['zip'])"
+$sha256Zip = Get-Sha256 $zip
+Write-Host "          sha256 $sha256Zip"
 
-# The installer: the same files, placed in %LOCALAPPDATA%\Programs, with a start menu entry and an
-# entry in "add or remove programs" that knows how to remove it again.
-if (-not $SkipInstaller) {
-    if (-not $Iscc) {
-        foreach ($candidate in @(
-                (Join-Path $env:LOCALAPPDATA 'Programs/Inno Setup 6/ISCC.exe'),
-                'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
-                'C:\Program Files\Inno Setup 6\ISCC.exe')) {
-            if (Test-Path $candidate) { $Iscc = $candidate; break }
-        }
-    }
-    if (-not $Iscc -and (Get-Command ISCC.exe -ErrorAction SilentlyContinue)) {
-        $Iscc = (Get-Command ISCC.exe).Source
-    }
-    if ($Iscc) {
-        $setup = Join-Path $stageRoot "KomorebiLite-Setup-$Version.exe"
-        Remove-Item $setup -Force -ErrorAction SilentlyContinue
-        & $Iscc "/DAppVersion=$Version" "/DStageDir=$stage" "/DOutDir=$stageRoot" (Join-Path $PSScriptRoot 'setup.iss') | Out-Null
-        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $setup)) { throw "Inno Setup could not build the installer (exit code $LASTEXITCODE)" }
-        $hashes['setup'] = Get-Sha256 $setup
-        Write-Host "installer: $setup ($(Format-Size $setup) MB)"
-        Write-Host "          sha256 $($hashes['setup'])"
-    } else {
-        Write-Warning "no Inno Setup found, so no installer was built (winget install JRSoftware.InnoSetup)"
-    }
-}
-
-# The paths and hashes go to the workflow: the upload step names the files, the release notes
-# carry the hashes so a download can be checked against them.
+# The paths and hashes go to the workflow: the upload step names the files, the release notes carry
+# the hashes so a download can be checked against them.
 if ($env:GITHUB_OUTPUT) {
     "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-    "sha256_zip=$($hashes['zip'])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-    if ($hashes.Contains('setup')) {
-        "setup=$setup" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-        "sha256_setup=$($hashes['setup'])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-    }
+    "sha256_zip=$sha256Zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 }

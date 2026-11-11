@@ -16,7 +16,6 @@
 
 #include "core/auth/MicrosoftAuth.h"
 #include "core/Paths.h"
-#include "core/util/DataMove.h"
 #include "kit/Kit.h"
 
 namespace Komorebi::Dev {
@@ -143,45 +142,40 @@ int runSelfTest()
         report(!client.isEmpty(), "an app id is always available", client);
     }
 
-    // 9. copying a data directory: what the settings dialog offers before it moves to another drive
+    // 9. the data directory: the folder the launcher sits in, with an override for test runs
     {
-        g_report << QStringLiteral("data directory self-test");
-        const auto write = [](const QString& path, const QByteArray& content) {
-            QDir().mkpath(QFileInfo(path).absolutePath());
-            QFile file(path);
-            if (!file.open(QIODevice::WriteOnly))
-                return false;
-            return file.write(content) == content.size();
-        };
-
-        QTemporaryDir source;
-        QTemporaryDir target;
-        if (!source.isValid() || !target.isValid()) {
-            report(false, "temporary directories for the copy test", QString());
+        QTemporaryDir scratch;
+        if (!scratch.isValid()) {
+            report(false, "temporary directory for the data directory test", QString());
         } else {
-            const QByteArray settings = "{\"language\":\"zh_CN\"}";
-            const QByteArray jar = "not really a jar, but the copy does not care";
-            write(source.filePath(QStringLiteral("settings.json")), settings);
-            write(source.filePath(QStringLiteral("versions/26.1/26.1.jar")), jar);
-            write(source.filePath(QStringLiteral("tmp/scratch.txt")), "throwaway");
+            const QString previous = qEnvironmentVariable("KOMOREBI_DATA");
 
-            const DataCopyResult copied = copyDataDirectory(source.path(), target.path());
-            report(copied.error.isEmpty(), "a data directory copies", copied.error);
-            report(copied.files == 2, "the copy counts what it copied", QString::number(copied.files));
-            report(copied.bytes == settings.size() + jar.size(), "the copy counts the bytes",
-                   QString::number(copied.bytes));
-            report(QFile::exists(target.filePath(QStringLiteral("versions/26.1/26.1.jar"))),
-                   "the copy keeps the tree", target.filePath(QStringLiteral("versions/26.1/26.1.jar")));
-            report(!QFile::exists(target.filePath(QStringLiteral("tmp/scratch.txt"))),
-                   "the copy leaves tmp behind", QString());
+            report(dataRoot() == defaultDataRoot(), "the data directory is the launcher's own folder",
+                   QStringLiteral("%1 vs %2").arg(dataRoot(), defaultDataRoot()));
 
-            const DataCopyResult overlap = copyDataDirectory(source.path(), source.filePath(QStringLiteral("inside")));
-            report(!overlap.error.isEmpty(), "a copy into its own tree is refused", overlap.error);
+            qputenv("KOMOREBI_DATA", QDir::toNativeSeparators(scratch.path()).toUtf8());
+            report(dataRootFromEnvironment(), "KOMOREBI_DATA is noticed", scratch.path());
+            report(dataRoot() == QDir::cleanPath(scratch.path()), "KOMOREBI_DATA picks the data directory",
+                   dataRoot());
+            report(dataRootIsWritable(nullptr), "a writable folder passes the check", scratch.path());
 
-            QTemporaryDir stopped;
-            const DataCopyResult cancelled = copyDataDirectory(
-                source.path(), stopped.path(), [](const QString&, int, qint64) { return false; });
-            report(cancelled.cancelled && cancelled.error.isEmpty(), "a copy can be stopped", QString());
+            // A file where the directory should be: making the directory fails, which is the same
+            // answer as a folder that refuses to be written to.
+            QTemporaryDir holding;
+            const QString notAFolder = QDir(holding.path()).filePath(QStringLiteral("data"));
+            QFile blocker(notAFolder);
+            if (blocker.open(QIODevice::WriteOnly)) {
+                blocker.close();
+                qputenv("KOMOREBI_DATA", QDir::toNativeSeparators(notAFolder).toUtf8());
+                report(!dataRootIsWritable(nullptr), "a folder that cannot be made is refused", notAFolder);
+            } else {
+                report(false, "a file to stand where the data directory should be", notAFolder);
+            }
+
+            if (previous.isEmpty())
+                qunsetenv("KOMOREBI_DATA");
+            else
+                qputenv("KOMOREBI_DATA", previous.toUtf8());
         }
     }
 
@@ -202,9 +196,6 @@ int runSelfTest()
                 settings.close();
             }
             report(looksLikeDataRoot(filled.path()), "settings.json marks a data directory", QString());
-            report(!dataRootFromEnvironment() || !chosenDataRootIsMissing(),
-                   "a directory given by KOMOREBI_DATA is never reported missing",
-                   QStringLiteral("KOMOREBI_DATA=%1").arg(qEnvironmentVariable("KOMOREBI_DATA")));
         }
     }
 

@@ -1,10 +1,12 @@
 name: release
 
-# Cuts a release from a tag, and packs the three downloads a release offers:
+# Cuts a release from a tag, and packs the two downloads a release offers:
 #
-#   KomorebiLite-<version>-windows-x64.zip   the folder, unpack and run
-#   KomorebiLite-Setup-<version>.exe         Inno Setup installer, per user, no admin prompt
 #   KomorebiLite-<version>.exe               a single file with Qt linked in, nothing to unpack
+#   KomorebiLite-<version>-windows-x64.zip   the folder, unpack and run
+#
+# There is no installer: Lite ships as the portable executable, and the zip stays as a second way to
+# carry the same program.
 #
 #   git tag -a v0.1.0 -m "Komorebi Lite 0.1.0" && git push origin v0.1.0
 #
@@ -57,8 +59,7 @@ jobs:
             echo "version=$declared" >> "$GITHUB_OUTPUT"
           fi
 
-  # The zip and the installer: a normal shared Qt, windeployqt for the runtime, Inno Setup for the
-  # installer.
+  # The zip: a normal shared Qt, windeployqt for the runtime.
   portable:
     needs: version
     runs-on: windows-latest
@@ -75,9 +76,6 @@ jobs:
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install Inno Setup
-        run: choco install innosetup -y --no-progress
 
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
@@ -99,13 +97,11 @@ jobs:
         shell: pwsh
         run: ./tools/package.ps1 -Version ${{ needs.version.outputs.version }} -Verify -OutDir dist
 
-      - name: Keep the zip and the installer
+      - name: Keep the zip
         uses: actions/upload-artifact@v4
         with:
           name: portable
-          path: |
-            dist/*.zip
-            dist/*-Setup-*.exe
+          path: dist/*.zip
           if-no-files-found: error
 
   # The single file: Qt has to be linked in, so this job builds a static Qt once and keeps it in the
@@ -159,8 +155,8 @@ jobs:
           path: dist-single/*.exe
           if-no-files-found: error
 
-  # Publishes all three, on a tag only. The hashes are computed here, from the files that were
-  # actually uploaded, so the notes cannot disagree with the download.
+  # Publishes both, on a tag only. The hashes are computed here, from the files that were actually
+  # uploaded, so the notes cannot disagree with the download.
   publish:
     needs: [version, portable, single]
     if: github.ref_type == 'tag'
@@ -180,7 +176,6 @@ jobs:
         run: |
           mkdir -p release
           cp artifacts/portable/*.zip release/
-          cp artifacts/portable/*-Setup-*.exe release/
           cp artifacts/single/*.exe release/
           ls -l release
 
@@ -191,7 +186,7 @@ jobs:
         run: |
           cd release
           {
-            echo "Komorebi Lite $VERSION —— 轻量级 Minecraft 启动器，三种装法，挑一个用。"
+            echo "Komorebi Lite $VERSION —— 轻量级 Minecraft 启动器，两种包，挑一个用。"
             echo
             if [ -f "../docs/release-notes/$VERSION.md" ]; then
               cat "../docs/release-notes/$VERSION.md"
@@ -201,11 +196,10 @@ jobs:
             echo
             echo "| 文件 | 说明 |"
             echo "| --- | --- |"
-            echo "| \`KomorebiLite-Setup-$VERSION.exe\` | 安装版：装到当前用户目录，带开始菜单和卸载项，不需要管理员权限 |"
             echo "| \`KomorebiLite-$VERSION.exe\` | 单文件版：一个 exe 就是全部，不用解压，双击就用 |"
             echo "| \`KomorebiLite-$VERSION-windows-x64.zip\` | 绿色版：解压到任意目录即用 |"
             echo
-            echo "Windows 10/11，64 位。三种包内容一致，数据目录默认是 \`%APPDATA%\\KomorebiLauncherLite\`，可以在设置里换到别的盘，与完整版互不影响。"
+            echo "Windows 10/11，64 位。两种包内容一致，都是绿色的：放进一个自己能写的文件夹就能用，版本、账户、存档都待在那个文件夹里，与完整版互不影响。"
             echo
             echo "## 校验"
             echo
@@ -217,7 +211,7 @@ jobs:
             echo
             echo "## 使用"
             echo
-            echo "1. 选一种方式装好，运行 \`komorebi-lite.exe\`。"
+            echo "1. 单文件版双击就用；用 zip 的，解压到任意目录运行 \`komorebi-lite.exe\`。放启动器的那个文件夹就是数据目录，别放在 Program Files 这类需要管理员权限的地方。"
             echo "2. 设置页选一个 Java，安装页装一个版本，然后启动。"
             echo "3. Qt 运行时、主题、OptiFine 安装助手都在包里，机器上不需要装 Qt。"
             echo

@@ -12,12 +12,14 @@
 #include <QStandardPaths>
 #include <QElapsedTimer>
 #include <QDebug>
+#include <QMessageBox>
 #include <QProcess>
 #include <QTimer>
 
 #include "core/Instance.h"
 #include "core/Paths.h"
 #include "core/Settings.h"
+#include "core/SingleInstance.h"
 #include <QTranslator>
 #include <QLocale>
 #include "core/VersionStore.h"
@@ -943,6 +945,43 @@ int main(int argc, char** argv)
         return process.exitCode() == 0 ? 0 : 1;
     }
 
+    // The development hooks are not a person starting the launcher twice, and a screenshot run has to
+    // produce its picture even when a launcher is already open: they stand aside from the two checks
+    // below, which would otherwise stop them.
+    bool developmentRun = arguments.contains(QStringLiteral("--screenshot"));
+    for (const QString& argument : arguments) {
+        if (argument.startsWith(QStringLiteral("--shot-")))
+            developmentRun = true;
+    }
+
+    // The launcher keeps its versions, accounts and settings in the folder it was started from, so a
+    // folder it cannot write to leaves it nowhere to save anything. Starting anyway would look like a
+    // first start on every run, so say which folder and why, then stop.
+    if (!developmentRun) {
+        QString dataRootError;
+        if (!Komorebi::dataRootIsWritable(&dataRootError)) {
+            const QString text = QCoreApplication::translate(
+                "AppWindow",
+                "This launcher keeps its versions, accounts and settings in the folder it was started "
+                "from:\n%1\n\nThat folder cannot be written to, so there is nowhere to keep them (%2)."
+                "\n\nMove the launcher into a folder "
+                "you can write to — one inside your own user folder, or a drive of its own — and start it "
+                "from there. Folders such as Program Files are read-only for a launcher that keeps its "
+                "data next to itself.");
+            QMessageBox::critical(nullptr, QCoreApplication::translate("AppWindow", "Folder not writable"),
+                                  text.arg(QDir::toNativeSeparators(Komorebi::dataRoot()), dataRootError));
+            return 1;
+        }
+    }
+
+    // One launcher per data folder. A second start is not a second launcher: it asks the running one
+    // to come forward and leaves, so two copies never write the same settings or instance files.
+    Komorebi::SingleInstance instance(Komorebi::dataRoot());
+    if (!developmentRun && !instance.claim()) {
+        instance.raiseRunning();
+        return 0;
+    }
+
     AppWindow window(theme);
 
     // A development hook: open a particular page before grabbing the window. It takes a number or the
@@ -958,16 +997,9 @@ int main(int argc, char** argv)
     }
     window.show();
 
-    // A remembered data directory that has gone looks like a first start, so say it aloud. The
-    // automated hooks stand aside: a modal question would hold up an unattended run.
-    bool unattended = arguments.contains(QStringLiteral("--selftest")) || arguments.contains(QStringLiteral("--screenshot"))
-                      || arguments.contains(QStringLiteral("--install"));
-    for (const QString& argument : arguments) {
-        if (argument.startsWith(QStringLiteral("--shot-")))
-            unattended = true;
-    }
-    if (!unattended)
-        window.warnAboutMissingDataRoot();
+    // A later start asks to be let in through here: this window comes forward instead of a second
+    // launcher opening on the same folder.
+    instance.listen([&window] { window.raiseToFront(); });
 
     // A development hook: render the window once and quit, so a change can be looked at without a
     // person in the loop. It is not part of the launcher's own behaviour.

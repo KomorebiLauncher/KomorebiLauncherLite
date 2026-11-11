@@ -28,18 +28,8 @@ class SettingsDialog : public QDialog {
     /// The settings as edited. It says what the launcher should use, not what is saved.
     Komorebi::Settings result() const { return m_result; }
 
-    /// Whether the data directory was switched: the launcher has to start again to use it.
-    bool dataDirectoryChanged() const { return m_dataDirectoryChanged; }
-
    private:
-    /// Applies the chosen data directory, copying the old one over when the player asked for it.
-    /// Returns false when the dialog should stay open.
-    bool switchDataDirectory(const QString& target, QString* error);
-
     Komorebi::Settings m_result;
-
-    QString m_dataDirectory;
-    bool m_dataDirectoryChanged = false;
 
     QComboBox* m_language = nullptr;
     QComboBox* m_priority = nullptr;
@@ -59,5 +49,4 @@ class SettingsDialog : public QDialog {
     QLineEdit* m_mirrorBase = nullptr;
     QLineEdit* m_concurrency = nullptr;
     QLineEdit* m_speedLimit = nullptr;
-    QLineEdit* m_dataDirectoryField = nullptr;
 };

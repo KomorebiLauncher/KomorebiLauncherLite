@@ -139,114 +139,6 @@ Minecraft の公式製品ではなく、Mojang や Microsoft とは関係あり�
         <translation>このアプリについて</translation>
     </message>
     <message>
-        <location filename="../src/ui/AppWindow.cpp" line="178"/>
-        <location filename="../src/ui/AppWindow.cpp" line="210"/>
-        <location filename="../src/ui/AppWindow.cpp" line="220"/>
-        <location filename="../src/ui/AppWindow.cpp" line="240"/>
-        <location filename="../src/ui/AppWindow.cpp" line="250"/>
-        <location filename="../src/ui/AppWindow.cpp" line="266"/>
-        <source>Data directory</source>
-        <translation>データディレクトリ</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="179"/>
-        <source>The data directory is now
-%1
-
-The launcher has to start again to use it. Restart now?</source>
-        <translation>データディレクトリは
-%1
-
-になりました。
-使用するにはランチャーの再起動が必要です。今すぐ再起動しますか？</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="184"/>
-        <source>Restart the launcher to use the new data directory</source>
-        <translation>新しいデータディレクトリを使うにはランチャーを再起動してください</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="211"/>
-        <source>This launcher was using
-%1
-for its data, and the file that remembered it is gone, along with the folder that file lived in.
-
-That directory is not there either, so this start uses %2.</source>
-<translation>このランチャーは
-%1
-をデータ用に使っていましたが、それを覚えていたファイルが、そのファイルのあったフォルダごと無くなりました。
-
-そのディレクトリも存在しないため、今回の起動では %2 を使用します。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="221"/>
-        <source>This launcher was using
-%1
-for its data, and the file that remembered it — kept in %2 — is gone. The folder that file lived in has probably been deleted.
-
-The directory itself is still there, with everything in it. Go back to it?</source>
-<translation>このランチャーは
-%1
-をデータ用に使っていましたが、それを覚えていたファイル（%2 にありました）が無くなりました。そのファイルのあったフォルダが削除されたようです。
-
-ディレクトリ自体は中身ごとそのまま残っています。そこに戻しますか？</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="226"/>
-        <source>Go back to it</source>
-<translation>そこに戻す</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="227"/>
-        <source>Start over with the default directory</source>
-<translation>既定のディレクトリで最初から始める</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="240"/>
-        <source>Could not remember that directory: %1</source>
-<translation>そのディレクトリを記憶できませんでした：%1</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="244"/>
-        <source>Restart the launcher to use that data directory</source>
-<translation>そのデータディレクトリを使うにはランチャーを再起動してください</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="251"/>
-        <source>The data directory this launcher was using is not there:
-%1
-
-It may have been moved or renamed, or its drive is not connected. Until it is back this start has no versions, instances, accounts or saves to show.
-
-Go back to the default directory, %2?</source>
-        <translation>このランチャーが使っていたデータディレクトリが見つかりません：
-%1
-
-移動されたか、名前が変わったか、ドライブが接続されていないのでございます。戻るまで、この起動ではバージョンもインスタンスもアカウントもセーブも表示されません。
-
-既定のディレクトリ %2 に戻しますか？</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="257"/>
-        <source>Use the default directory</source>
-        <translation>既定のディレクトリを使う</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="258"/>
-        <source>Wait for it to come back</source>
-        <translation>戻るまで待つ</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="266"/>
-        <source>Could not forget the missing directory: %1</source>
-        <translation>見つからないディレクトリを忘れられませんでした：%1</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/AppWindow.cpp" line="270"/>
-        <source>Restart the launcher to use the default data directory</source>
-        <translation>既定のデータディレクトリを使うにはランチャーを再起動してください</translation>
-    </message>
-    <message>
         <location filename="../src/ui/AppWindow.cpp" line="60"/>
         <source>Settings</source>
         <translation>設定</translation>
@@ -266,6 +158,26 @@ Go back to the default directory, %2?</source>
         <location filename="../src/ui/AppWindow.cpp" line="172"/>
         <source>Settings saved (the language changes next time the launcher starts)</source>
         <translation>設定を保存しました（言語は次回起動時に反映されます）</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="953"/>
+        <source>This launcher keeps its versions, accounts and settings in the folder it was started from:
+%1
+
+That folder cannot be written to, so there is nowhere to keep them (%2).
+
+Move the launcher into a folder you can write to — one inside your own user folder, or a drive of its own — and start it from there. Folders such as Program Files are read-only for a launcher that keeps its data next to itself.</source>
+        <translation>ランチャーは、バージョンもアカウントも設定も、自分が置かれているフォルダーに置きます：
+%1
+
+そのフォルダーには書き込めないため、置く場所がありません（%2）。
+
+ランチャーは、ご自身が書き込めるフォルダー——ご自身のユーザーフォルダーの中や、専用ドライブ——に移してから起動してください。Program Files のような場所は、データを自分の隣に置くランチャーには読み取り専用です。</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="961"/>
+        <source>Folder not writable</source>
+        <translation>フォルダーに書き込めません</translation>
     </message>
 </context>
 <context>
@@ -1274,303 +1186,204 @@ Started %1 time(s), last %2</source>
     </message>
 </context>
 <context>
+    <name>Paths</name>
+    <message>
+        <location filename="../src/core/Paths.cpp" line="21"/>
+        <location filename="../src/core/Paths.cpp" line="28"/>
+        <source>a file could not be written into it</source>
+        <translation>ファイルを書き込めませんでした</translation>
+    </message>
+    <message>
+        <location filename="../src/core/Paths.cpp" line="60"/>
+        <source>the folder could not be created</source>
+        <translation>フォルダーを作成できませんでした</translation>
+    </message>
+</context>
+<context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="59"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="76"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="54"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="71"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="160"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="93"/>
         <source>Language</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="150"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="83"/>
         <source>Follow the system</source>
         <translation>システムに従う</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="91"/>
-        <source>Browse…</source>
-        <translation>参照…</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="92"/>
-        <source>Default</source>
-        <translation>既定</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="110"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="321"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="348"/>
-        <location filename="../src/ui/SettingsDialog.cpp" line="365"/>
-        <source>Data directory</source>
-        <translation>データディレクトリ</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="113"/>
-        <source>Versions, libraries, assets, Java, accounts and your saves all live here. Moving it to another drive is fine; the launcher asks before copying anything, and the change takes effect the next time it starts.</source>
-        <translation>バージョン、ライブラリ、アセット、Java、アカウント、セーブデータはすべてここにあります。別のドライブに移しても問題ありません。コピーする前に確認します。変更は次回の起動時に反映されます。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="126"/>
-        <source>The directory remembered from last time is not there any more. Pick another one here, or press Default to go back to the default directory.</source>
-        <translation>前回記憶したディレクトリがもうありません。ここで別のディレクトリを選ぶか、「既定」を押して既定のディレクトリに戻してください。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="134"/>
-        <source>Choose a data directory</source>
-        <translation>データディレクトリを選択</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="163"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="96"/>
         <source>Memory (MB)</source>
         <translation>メモリ (MB)</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="184"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="117"/>
         <source>Game window size</source>
         <translation>ゲームウィンドウのサイズ</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="185"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="118"/>
         <source>0 means whatever the version asks for; an empty field means the same.</source>
         <translation>0 はバージョン側の指定に任せる意味です。空欄も同じです。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="190"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="123"/>
         <source>Java path</source>
         <translation>Java のパス</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="188"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="121"/>
         <source>Empty: choose the runtime the version asks for</source>
         <translation>空欄: バージョンが要求する実行環境を自動で選択</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="120"/>
-        <source>This start takes its data directory from the KOMOREBI_DATA environment variable, which wins over anything chosen here.</source>
-        <translation>この起動ではデータディレクトリを環境変数 KOMOREBI_DATA から取得しています。ここで選んだものより優先されるため、ここでの変更は反映されません。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="165"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="98"/>
         <source>Lock the heap (-Xms = -Xmx)</source>
         <translation>ヒープを固定 (-Xms = -Xmx)</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="178"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="111"/>
         <source>width</source>
         <translation>幅</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="179"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="112"/>
         <source>height</source>
         <translation>高さ</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="195"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="128"/>
         <source>JVM arguments</source>
         <translation>JVM 引数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="200"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="133"/>
         <source>Game arguments</source>
         <translation>ゲーム引数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="203"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="136"/>
         <source>Optional command to run before the game</source>
         <translation>任意: 起動前に実行するコマンド</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="205"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="138"/>
         <source>Before launch</source>
         <translation>起動前コマンド</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="208"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="141"/>
         <source>Normal</source>
         <translation>標準</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="209"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="142"/>
         <source>Above normal</source>
         <translation>標準以上</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="210"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="143"/>
         <source>High</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="211"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="144"/>
         <source>Below normal</source>
         <translation>標準未満</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="218"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="151"/>
         <source>Process priority</source>
         <translation>プロセスの優先度</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="220"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="153"/>
         <source>Ask for the high performance GPU</source>
         <translation>高性能 GPU を要求</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="224"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="157"/>
         <source>Legacy fix (old versions)</source>
         <translation>旧バージョン互換の修正</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="228"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="161"/>
         <source>Allow the unsafe memory access agent</source>
         <translation>Unsafe メモリアクセスを許可</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="238"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="171"/>
         <source>Official first</source>
         <translation>公式を優先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="239"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="172"/>
         <source>Mirror first</source>
         <translation>ミラーを優先</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="240"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="173"/>
         <source>Official only</source>
         <translation>公式のみ</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="241"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="174"/>
         <source>Mirror only</source>
         <translation>ミラーのみ</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="248"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="181"/>
         <source>Download from</source>
         <translation>ダウンロード元</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="253"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="186"/>
         <source>Mirror address</source>
         <translation>ミラーのアドレス</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="256"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="189"/>
         <source>Files at once</source>
         <translation>同時ダウンロード数</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="259"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="192"/>
         <source>0: no limit</source>
         <translation>0: 制限なし</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="260"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="193"/>
         <source>Speed limit (KB/s)</source>
         <translation>速度制限（KB/s）</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="337"/>
-        <source>%1 is not a full path.</source>
-        <translation>%1 は完全なパスではありません。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="342"/>
-        <source>The new directory has to be outside the current one, and not contain it either.</source>
-        <translation>新しいディレクトリは現在のディレクトリの外側にあり、現在のディレクトリを含まない必要があります。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="349"/>
-        <source>Move everything from
-%1
-to
-%2?</source>
-        <translation>%1
- の中身をすべて
-%2
- に移動しますか？</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="350"/>
-        <source>Copy and switch</source>
-        <translation>コピーして切り替え</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="351"/>
-        <source>Switch without copying</source>
-        <translation>コピーせずに切り替え</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="352"/>
-        <source>Leave it alone</source>
-        <translation>そのままにする</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="360"/>
-        <source>Could not create %1.</source>
-        <translation>%1 を作成できませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="364"/>
-        <source>Copying the data directory…</source>
-        <translation>データディレクトリをコピーしています…</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="364"/>
-        <source>Stop</source>
-        <translation>停止</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="374"/>
-        <source>Copying %1
-%2 files, %3 MB</source>
-        <translation>%1 をコピー中
-%2 ファイル、%3 MB</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="385"/>
-        <source>Copying stopped, so the data directory is unchanged. Anything already copied is left in %1 and can be deleted.</source>
-        <translation>コピーを停止しました。データディレクトリは変更されていません。コピー済みのファイルは %1 に残っているので削除してかまいません。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="391"/>
-        <source>Copying failed: %1
-The data directory is unchanged.</source>
-        <translation>コピーに失敗しました：%1
-データディレクトリは変更されていません。</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="400"/>
-        <source>Could not remember the new data directory: %1</source>
-        <translation>新しいデータディレクトリを記録できませんでした：%1</translation>
-    </message>
-    <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="278"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="211"/>
         <source>Wallpaper</source>
         <translation>壁紙</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="279"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="212"/>
         <source>Has no effect when the theme carries no wallpaper.</source>
         <translation>テーマに壁紙がない場合は効果がありません。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="282"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="215"/>
         <source>A language change takes effect the next time the launcher starts.</source>
         <translation>言語の変更は次回ランチャー起動時に反映されます。</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="290"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="223"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/ui/SettingsDialog.cpp" line="292"/>
+        <location filename="../src/ui/SettingsDialog.cpp" line="225"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

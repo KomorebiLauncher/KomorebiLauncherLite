@@ -2,10 +2,10 @@
 /*
  *  Where the launcher keeps its things.
  *
- *  While the rewrite is young it shares the directory the installed launcher already uses, so the
- *  same instances, libraries and assets can be read by both. Qt's "generic config" is Local on
- *  Windows, which is not where the launcher put anything, so the roaming directory is asked for
- *  directly.
+ *  There is one data directory and it is the folder the launcher was started from, so the whole
+ *  installation is a folder a player can copy, back up or move between drives without anything
+ *  having to be told where it went. `KOMOREBI_DATA` is the only way to point a copy somewhere else,
+ *  and it exists for the test harness rather than for players.
  */
 
 #pragma once
@@ -17,55 +17,24 @@ namespace Komorebi {
 /// The launcher's data directory, with a trailing separator removed.
 QString dataRoot();
 
-/**
- * Where the data directory is when nobody said otherwise: `%APPDATA%\KomorebiLauncherLite`.
- *
- * This one never moves, so it is where the pointer to a moved data directory lives. Settings,
- * accounts and the game all live in `dataRoot()`, which cannot be read from a file inside itself.
- */
+/// Where the data directory is: the folder the executable sits in.
 QString defaultDataRoot();
 
-/// The file that remembers a data directory the player picked: `defaultDataRoot()/data-root.txt`.
-QString dataRootPointer();
-
 /**
- * Points the launcher at `directory` (an empty string goes back to `defaultDataRoot()`), and
- * returns false with `error` filled when the pointer could not be written.
+ * Whether the data directory can be written to, creating it first when it is missing.
  *
- * Nothing is moved here: the caller decides what to do with the files already on disk.
+ * The launcher ships as a single file that is meant to be started from a folder of its own, so a
+ * folder it cannot write to (Program Files, a read-only drive, inside an archive) is a reason to say
+ * so and stop: without it settings, accounts and everything the game downloads cannot be kept.
+ * Returns false with `error` filled when the directory cannot be created or written to.
  */
-bool setDataRoot(const QString& directory, QString* error);
+bool dataRootIsWritable(QString* error);
 
-/// Whether the data directory is one the player chose rather than the default.
-bool hasChosenDataRoot();
-
-/// Whether this start takes the data directory from `KOMOREBI_DATA`, which wins over any setting.
+/// Whether this start takes the data directory from `KOMOREBI_DATA`, which wins over everything.
 bool dataRootFromEnvironment();
-
-/**
- * Whether the remembered data directory is no longer there.
- *
- * A pointer to a path that has gone — a folder moved by hand, one renamed, a drive not plugged in —
- * is otherwise indistinguishable from a first start: the launcher comes up with no versions, no
- * instances and no accounts, and never says why.
- */
-bool chosenDataRootIsMissing();
 
 /// Whether `directory` holds anything this launcher writes: settings, accounts, a version, assets…
 bool looksLikeDataRoot(const QString& directory);
-
-/**
- * The data directory the launcher was moved to, when the pointer that recorded it has gone.
- *
- * The pointer lives inside `defaultDataRoot()`, so deleting that folder — easy to do by hand once the
- * data has been copied elsewhere — used to take the choice with it and leave the launcher silently
- * starting on an empty default directory. A second copy of the pointer, kept in `%LOCALAPPDATA%`, is
- * what this reads; it never decides anything by itself, it only makes the question askable.
- *
- * Empty when the pointer is still there, when no second copy exists, or when the second copy names
- * the default directory anyway.
- */
-QString forgottenDataRoot();
 
 /// `<dataRoot>/instances`
 QString instancesRoot();

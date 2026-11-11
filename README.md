@@ -19,7 +19,7 @@
 | Java 运行时按版本自动下载（Mojang 运行时，装进数据目录的 `java/`） | 可用 |
 | 高性能显卡（写 Windows 图形首选项）、进程优先级、原生库解包 | 可用 |
 | 下载源（官方 / 镜像 / 仅官方 / 仅镜像，可自定义镜像）、并发数、限速 | 可用 |
-| 数据目录可换到别的盘（设置里选目录，可选择顺手把现有文件复制过去） | 可用 |
+| 数据目录固定在启动器旁边（启动器在哪个文件夹，数据就在哪个文件夹；整个文件夹搬走就是搬家） | 可用 |
 | 实例级设置（内存 / 参数 / 备注按版本覆盖） | 可用 |
 | 微软账户登录（设备码），启动时带正版档案；应用 ID 内置，不用你注册或填写 | 可用 |
 | 整合包：CurseForge / Modrinth 搜索与安装、本地导入（`.zip` / `.mrpack`） | 可用 |
@@ -34,8 +34,8 @@ Lite 用**自己的一份 Qt**，默认装在 `%LOCALAPPDATA%\KomorebiLauncherLi
 
 ```powershell
 build.bat            # 配置 + 全量编译到 build\
-run.bat              # 打开窗口（数据目录 %APPDATA%\KomorebiLauncherLite）
-run-local.bat        # 打开窗口（数据目录 build\data，用于这台机器上 %APPDATA% 写不进去的情况）
+run.bat              # 打开窗口（数据目录就是 build\，也就是 exe 所在的文件夹）
+run-local.bat        # 打开窗口（数据目录 build\data，开发时把数据与构建产物分开）
 ```
 
 `build.bat` 故意每次都全量编译：增量编译保留过旧的 .obj 会在启动时崩溃，排查成本远高于多等一分钟。
@@ -45,34 +45,34 @@ run-local.bat        # 打开窗口（数据目录 build\data，用于这台机�
 发一个版本只需要打一个标签，其余由 CI（`.github/workflows/release.yml`）做完：
 
 ```powershell
-git tag -a v0.1.9 -m "Komorebi Lite 0.1.9"
-git push origin v0.1.9
+git tag -a v0.2.0 -m "Komorebi Lite 0.2.0"
+git push origin v0.2.0
 ```
 
-标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建三个包，只上传成 artifact 供试用，不发 Release。
+标签里的版本号必须与 `CMakeLists.txt` 的 `project(... VERSION ...)` 一致，不一致时 CI 直接停下，不会打包。不带标签手动运行这个 workflow 也可以：同样构建两个包，只上传成 artifact 供试用，不发 Release。
 
-版本自己要说明的话写在 `docs/release-notes/<版本>.md`（例如 `docs/release-notes/0.1.9.md`），发布时 CI 会把它插在说明的开头，后面的下载、校验、使用几段照旧自动生成；没有这个文件就只有自动那几段。
+版本自己要说明的话写在 `docs/release-notes/<版本>.md`（例如 `docs/release-notes/0.2.0.md`），发布时 CI 会把它插在说明的开头，后面的下载、校验、使用几段照旧自动生成；没有这个文件就只有自动那几段。
 
-一个版本出三个包，内容一致，选一种装法即可：
+一个版本出两个包，内容一致，用哪个都行：
 
 | 文件 | 怎么来的 |
 | --- | --- |
 | `KomorebiLite-<版本>-windows-x64.zip` | 共享版 Qt + `windeployqt` 复制运行时，解压即用 |
-| `KomorebiLite-Setup-<版本>.exe` | Inno Setup 打的安装包，装到当前用户目录，带开始菜单与卸载项，不弹 UAC |
 | `KomorebiLite-<版本>.exe` | 静态版 Qt 链接进 exe，单文件，不用解压 |
 
-单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.1.9 -BuildDir build-static -Static -Verify`。`-Verify` 会在一个空目录里跑一遍 `--selftest`、再截一张窗口图、最后打开整合包页面：主题没打进 exe、或者下载线程一启动就崩的那次，都会在这里直接失败，而不是发到一个打不开的界面上。
+两个包都是绿色的，没有安装步骤：解压或放进一个自己能写的文件夹，双击 `komorebi-lite.exe` 就是全部。版本、账户和存档都留在这个文件夹里，所以要避开 `Program Files` 这类需要管理员权限的位置——那里启动器会直接说文件夹不可写并停下，不会退到别处。
+
+单文件版要一份静态 Qt：`tools/build-static-qt.ps1` 会下载源码、以 `-static -static-runtime` 编译并安装到 `%LOCALAPPDATA%\KomorebiLauncherLite\Qt-static\<版本>\msvc2022_64`，之后用 `-DKOMOREBI_STATIC_QT=ON` 配置本工程即可。CI 把它放在 `actions/cache` 里，所以只有换 Qt 版本的第一次要多等半小时；本地要自己打单文件版时，先跑一遍这个脚本，再用 `tools\package.ps1 -Version 0.2.0 -BuildDir build-static -Static -Verify`。`-Verify` 会在一个空目录里跑一遍 `--selftest`、再截一张窗口图、最后打开整合包页面：主题没打进 exe、或者下载线程一启动就崩的那次，都会在这里直接失败，而不是发到一个打不开的界面上。
 
 随 exe 一起发的 Visual C++ 运行时不能用这台机器系统目录里的那份：GitHub runner 上装的是 14.29，而它的编译器是 14.44，用新头文件编出来的对象由旧运行时代劳会在启动线程时直接崩掉——0.1.1 的整合包页面打不开就是这个原因。`tools\package.ps1` 现在从构建目录的 `CMakeCache.txt` 读出工具集版本，按版本去 `VC\Redist\MSVC\<版本>\x64\Microsoft.VC143.CRT` 取整套文件（含 `windeployqt` 从来不带的 `msvcp140_atomic_wait.dll` 和 `vcruntime140_threads.dll`），版本对不上就不打包。
 
-安装包需要 Inno Setup（`winget install JRSoftware.InnoSetup`），没有它时 `tools\package.ps1` 只出 zip 并提示一句。中文安装界面用的是仓库里 `tools/inno/ChineseSimplified.isl`，因为 Inno Setup 自己不带中文。
-
 ## 目录布局
 
-按游戏自己的约定，装出来的目录可以被任何启动器直接使用：
+按游戏自己的约定，装出来的目录可以被任何启动器直接使用。这个文件夹就是启动器所在的那个文件夹：
 
 ```
-%APPDATA%\KomorebiLauncherLite\
+<启动器所在文件夹>\
+  komorebi-lite.exe           启动器本身
   versions\<id>\<id>.json     这一版的描述
   versions\<id>\<id>.jar      游戏本体
   versions\<id>\natives\      需要解包的原生库
@@ -83,11 +83,11 @@ git push origin v0.1.9
   logs\                       每次启动的游戏日志
 ```
 
-数据目录不写死在这里：设置里的「数据目录」可以换成任意一个目录（比如空间更大的 D 盘），换完重启启动器生效。换了以后，上一段这个位置只留一个 `data-root.txt`，里面一行写新目录的路径——它是启动器记住这次选择的地方。同一份内容在 `%LOCALAPPDATA%\KomorebiLauncherLite` 还留着一个副本：`data-root.txt` 本身就住在 `%APPDATA%\KomorebiLauncherLite` 里面，你要是把这个文件夹整个删了，光靠它就会把选过的目录忘得干干净净。有副本在，启动器下次启动会问一句「要不要回到原来那个目录」，而不是默默当作第一次启动；点「用默认目录重新开始」会把两份都清掉，之后不再问。选新目录时启动器会问一次要不要把现有文件复制过去：选复制就只复制、不删原件（`tmp\` 是临时文件，不复制）；也可以只切换不复制，旧的目录原样留着，想删自己删。复制可以中途停，停在哪儿就是哪儿，指针还没写，数据目录仍是原来的那个。
+启动器在哪里，数据就在哪里：没有「数据目录」这一项，也没有记住选择的指针文件。把整个文件夹拷走，版本、账户和存档就跟着走；删掉整个文件夹，就等于卸干净。代价只有一个——这个文件夹必须可写，放在 `Program Files` 之类需要管理员权限的地方时，启动器会说「这个文件夹不可写」然后停下，不会退回到别的目录默默开始一个新的。
 
-在资源管理器里把数据目录挪走、改了名字，或者挪到没接上的移动硬盘上，`data-root.txt` 里的路径就指空了——这时启动器会在启动时直说哪个目录找不到，并给一个「使用默认目录」的按钮，不会默默当作第一次启动。设置里也有一行红字提醒，目录一栏选新的即可。
+同一个文件夹只开一个启动器：再点一次，已经开着的那个窗口会到前面来，第二个进程直接退出。两个不同文件夹里的启动器互不相干，可以同时开着。
 
-设置 `KOMOREBI_DATA` 可以直接指定数据目录（优先级高于 `data-root.txt`，测试用）。
+开发时用 `KOMOREBI_DATA` 把数据目录指到别处（`run-local.bat` 就是指向 `build\data`），这个变量是给测试和打包脚本用的，正常使用不需要设。
 
 ## 诊断入口
 

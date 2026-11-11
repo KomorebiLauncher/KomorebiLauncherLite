@@ -170,104 +170,16 @@ void AppWindow::openSettings()
     // opacity shows up at once.
     update();
     setStatus(tr("Settings saved (the language changes next time the launcher starts)"));
-
-    // Everything else reads the data directory once, while starting, so a new one only counts after
-    // a fresh start. Offering that start here saves the player from hunting for the shortcut.
-    if (dialog.dataDirectoryChanged()) {
-        const auto answer = QMessageBox::question(
-            this, tr("Data directory"),
-            tr("The data directory is now\n%1\n\nThe launcher has to start again to use it. Restart now?")
-                .arg(QDir::toNativeSeparators(Komorebi::dataRoot())),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        if (answer == QMessageBox::Yes && restartLauncher())
-            return;
-        setStatus(tr("Restart the launcher to use the new data directory"));
-    }
 }
 
-bool AppWindow::restartLauncher()
+void AppWindow::raiseToFront()
 {
-    // Same arguments as this start, so a debugging run keeps its page and flags.
-    if (!QProcess::startDetached(QCoreApplication::applicationFilePath(), QCoreApplication::arguments().mid(1)))
-        return false;
-    QCoreApplication::quit();
-    return true;
-}
-
-void AppWindow::warnAboutMissingDataRoot()
-{
-    if (!Komorebi::chosenDataRootIsMissing()) {
-        // A different way for the same thing to go wrong: the pointer that remembered a moved data
-        // directory lives inside the default one, so deleting that folder forgets the choice without
-        // leaving anything behind to notice.
-        const QString forgotten = Komorebi::forgottenDataRoot();
-        if (forgotten.isEmpty())
-            return;
-
-        const QString remembered = QDir::toNativeSeparators(forgotten);
-        const QString fallback = QDir::toNativeSeparators(Komorebi::defaultDataRoot());
-        if (!QFileInfo(forgotten).isDir()) {
-            QMessageBox(QMessageBox::Warning, tr("Data directory"),
-                        tr("This launcher was using\n%1\nfor its data, and the file that remembered it is "
-                           "gone, along with the folder that file lived in.\n\n"
-                           "That directory is not there either, so this start uses %2.")
-                            .arg(remembered, fallback),
-                        QMessageBox::Ok, this)
-                .exec();
-            return;
-        }
-
-        QMessageBox box(QMessageBox::Warning, tr("Data directory"),
-                        tr("This launcher was using\n%1\nfor its data, and the file that remembered it — kept "
-                           "in %2 — is gone. The folder that file lived in has probably been deleted.\n\n"
-                           "The directory itself is still there, with everything in it. Go back to it?")
-                            .arg(remembered, fallback),
-                        QMessageBox::NoButton, this);
-        auto* goBack = box.addButton(tr("Go back to it"), QMessageBox::AcceptRole);
-        auto* startOver = box.addButton(tr("Start over with the default directory"), QMessageBox::RejectRole);
-        box.setDefaultButton(goBack);
-        box.exec();
-
-        if (box.clickedButton() != goBack) {
-            // "Start over" has to forget the second copy too, or every start would ask again.
-            if (box.clickedButton() == startOver)
-                Komorebi::setDataRoot(QString(), nullptr);
-            return;
-        }
-
-        QString error;
-        if (!Komorebi::setDataRoot(forgotten, &error)) {
-            QMessageBox::warning(this, tr("Data directory"), tr("Could not remember that directory: %1").arg(error));
-            return;
-        }
-        if (!restartLauncher())
-            setStatus(tr("Restart the launcher to use that data directory"));
-        return;
-    }
-
-    const QString missing = QDir::toNativeSeparators(Komorebi::dataRoot());
-    const QString fallback = QDir::toNativeSeparators(Komorebi::defaultDataRoot());
-    QMessageBox box(QMessageBox::Warning, tr("Data directory"),
-                    tr("The data directory this launcher was using is not there:\n%1\n\n"
-                       "It may have been moved or renamed, or its drive is not connected. Until it is back "
-                       "this start has no versions, instances, accounts or saves to show.\n\n"
-                       "Go back to the default directory, %2?")
-                        .arg(missing, fallback),
-                    QMessageBox::NoButton, this);
-    auto* goBack = box.addButton(tr("Use the default directory"), QMessageBox::AcceptRole);
-    auto* waitForIt = box.addButton(tr("Wait for it to come back"), QMessageBox::RejectRole);
-    box.setDefaultButton(waitForIt);
-    box.exec();
-    if (box.clickedButton() != goBack)
-        return;
-
-    QString error;
-    if (!Komorebi::setDataRoot(QString(), &error)) {
-        QMessageBox::warning(this, tr("Data directory"), tr("Could not forget the missing directory: %1").arg(error));
-        return;
-    }
-    if (!restartLauncher())
-        setStatus(tr("Restart the launcher to use the default data directory"));
+    // A second start asks the running launcher to show itself rather than opening a second window
+    // on the same folder.
+    setWindowState(windowState() & ~Qt::WindowMinimized);
+    show();
+    raise();
+    activateWindow();
 }
 
 void AppWindow::setStatus(const QString& text)

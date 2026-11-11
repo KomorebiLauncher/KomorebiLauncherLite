@@ -1,180 +1,71 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "core/Paths.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QProcessEnvironment>
-#include <QSaveFile>
-#include <QStandardPaths>
 
 namespace Komorebi {
 
 namespace {
 
-/// The path a pointer file names, or an empty string when it says nothing this launcher can use.
-QString readPointer(const QString& path)
+/// Whether `directory` takes a file: it can exist and still be read-only, so this writes one.
+bool directoryIsWritable(const QString& directory, QString* error)
 {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return {};
-
-    const QString line = QString::fromUtf8(file.readAll()).trimmed();
-    // A relative path in here would depend on the working directory the launcher was started from,
-    // which is not something a player can be expected to control.
-    if (line.isEmpty() || !QDir::isAbsolutePath(line))
-        return {};
-    return QDir::cleanPath(line);
-}
-
-/// Writes a pointer file, replacing whatever was there. False when it could not be written.
-bool writePointer(const QString& path, const QString& directory)
-{
-    if (!QDir().mkpath(QFileInfo(path).absolutePath()))
+    const QString probePath = QDir(directory).filePath(QStringLiteral("komorebi-write-probe.tmp"));
+    QFile probe(probePath);
+    if (!probe.open(QIODevice::WriteOnly)) {
+        if (error)
+            *error = QCoreApplication::translate("Paths", "a file could not be written into it");
         return false;
-
-    // QSaveFile commits by renaming, so a crash halfway leaves the old pointer rather than nothing.
-    QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-    file.write(QDir::toNativeSeparators(directory).toUtf8());
-    file.write("\n");
-    return file.commit();
-}
-
-/// A pointer file that is not there is already forgotten.
-bool removePointer(const QString& path)
-{
-    return !QFile::exists(path) || QFile::remove(path);
-}
-
-/**
- * The second copy of the pointer, deliberately outside the folder the first one lives in.
- *
- * The first copy has to sit in `defaultDataRoot()`, which is also the folder a player has just
- * emptied by copying its contents somewhere else — and deleting it therefore silently forgot which
- * directory the launcher had been moved to. This one survives that.
- */
-QString shadowDataRootPointer()
-{
-#if defined(Q_OS_WIN)
-    const QString local = QProcessEnvironment::systemEnvironment().value(QStringLiteral("LOCALAPPDATA"));
-    if (!local.isEmpty())
-        return QDir::cleanPath(QDir(local).filePath(QStringLiteral("KomorebiLauncherLite/data-root.txt")));
-#endif
-
-    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation))
-        .filePath(QStringLiteral("KomorebiLauncherLite/data-root.txt"));
-}
-
-/// The remembered data directory, or an empty string when there is none worth using.
-QString readDataRootPointer()
-{
-    return readPointer(dataRootPointer());
+    }
+    const bool wrote = probe.write("ok") == 2;
+    probe.close();
+    probe.remove();
+    if (!wrote && error)
+        *error = QCoreApplication::translate("Paths", "a file could not be written into it");
+    return wrote;
 }
 
 }  // namespace
 
 QString defaultDataRoot()
 {
-#if defined(Q_OS_WIN)
-    const QString roaming = QProcessEnvironment::systemEnvironment().value(QStringLiteral("APPDATA"));
-    if (!roaming.isEmpty())
-        return QDir::cleanPath(QDir(roaming).filePath(QStringLiteral("KomorebiLauncherLite")));
-#endif
-
-    return QDir::cleanPath(QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation))
-                               .filePath(QStringLiteral("KomorebiLauncherLite")));
-}
-
-QString dataRootPointer()
-{
-    return QDir(defaultDataRoot()).filePath(QStringLiteral("data-root.txt"));
+    // The launcher is portable and has exactly one data directory: the folder it was started from.
+    // Nothing records another one, so copying the folder carries the instances, the accounts and the
+    // saves along with it, and there is no file whose loss could make the launcher forget where its
+    // data is.
+    return QDir::cleanPath(QCoreApplication::applicationDirPath());
 }
 
 QString dataRoot()
 {
-    // An explicit setting wins, then the directory the player picked, then the roaming one on Windows,
-    // then Qt's idea of it.
+    // The environment variable is for the test harness and the package scripts, which run several
+    // copies against throwaway directories: without it they would all want the same folder, and
+    // without an override a check would write into a real installation.
     const QString override = QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_DATA"));
     if (!override.isEmpty())
         return QDir::cleanPath(override);
 
-    const QString chosen = readDataRootPointer();
-    if (!chosen.isEmpty())
-        return chosen;
-
     return defaultDataRoot();
 }
 
-bool setDataRoot(const QString& directory, QString* error)
+bool dataRootIsWritable(QString* error)
 {
-    const QString pointer = dataRootPointer();
-    if (directory.isEmpty()) {
-        // Going back to the default: the pointer files are the whole of the old arrangement, and both
-        // copies have to go or the second one would keep offering the arrangement back.
-        if (removePointer(pointer) && removePointer(shadowDataRootPointer()))
-            return true;
+    const QString root = dataRoot();
+    if (!QDir().mkpath(root)) {
         if (error)
-            *error = QStringLiteral("could not remove %1").arg(QDir::toNativeSeparators(pointer));
+            *error = QCoreApplication::translate("Paths", "the folder could not be created");
         return false;
     }
-
-    const QString target = QDir::cleanPath(QDir(directory).absolutePath());
-    if (!QDir().mkpath(target)) {
-        if (error)
-            *error = QStringLiteral("could not create %1").arg(QDir::toNativeSeparators(target));
-        return false;
-    }
-
-    // Writing a file there says more than mkpath does: the directory can exist and still be read-only.
-    const QString probePath = QDir(target).filePath(QStringLiteral("data-root-probe.tmp"));
-    QFile probe(probePath);
-    if (!probe.open(QIODevice::WriteOnly) || probe.write("ok") != 2) {
-        if (error)
-            *error = QStringLiteral("could not write to %1").arg(QDir::toNativeSeparators(target));
-        return false;
-    }
-    probe.close();
-    probe.remove();
-
-    if (!QDir().mkpath(defaultDataRoot())) {
-        if (error)
-            *error = QStringLiteral("could not create %1").arg(QDir::toNativeSeparators(defaultDataRoot()));
-        return false;
-    }
-
-    // QSaveFile commits by renaming, so a crash halfway leaves the old pointer rather than nothing.
-    if (!writePointer(pointer, target)) {
-        if (error)
-            *error = QStringLiteral("could not write %1").arg(QDir::toNativeSeparators(pointer));
-        return false;
-    }
-
-    // Best effort on purpose: the second copy only makes a question askable, it never decides where
-    // the launcher looks, so a read-only local profile is not a reason to refuse the switch.
-    writePointer(shadowDataRootPointer(), target);
-    return true;
-}
-
-bool hasChosenDataRoot()
-{
-    return !readDataRootPointer().isEmpty();
+    return directoryIsWritable(root, error);
 }
 
 bool dataRootFromEnvironment()
 {
     return !QProcessEnvironment::systemEnvironment().value(QStringLiteral("KOMOREBI_DATA")).isEmpty();
-}
-
-bool chosenDataRootIsMissing()
-{
-    // The environment is not a remembered choice: a variable that points nowhere is the caller's own
-    // doing, and a test run must not be talked out of the directory it asked for.
-    if (dataRootFromEnvironment())
-        return false;
-    const QString chosen = readDataRootPointer();
-    return !chosen.isEmpty() && !QFileInfo(chosen).isDir();
 }
 
 bool looksLikeDataRoot(const QString& directory)
@@ -192,18 +83,6 @@ bool looksLikeDataRoot(const QString& directory)
             return true;
     }
     return false;
-}
-
-QString forgottenDataRoot()
-{
-    // While the real pointer is there it is the whole answer, whatever the second copy says.
-    if (!readDataRootPointer().isEmpty())
-        return {};
-
-    const QString remembered = readPointer(shadowDataRootPointer());
-    if (remembered.isEmpty() || remembered == QDir::cleanPath(defaultDataRoot()))
-        return {};
-    return remembered;
 }
 
 QString instancesRoot()
