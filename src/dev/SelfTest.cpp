@@ -144,14 +144,23 @@ int runSelfTest()
 
     // 9. the data directory: the folder the launcher sits in, with an override for test runs
     {
+        // A run that sets KOMOREBI_DATA (the packaging check, run-local.bat) is pointed somewhere else
+        // on purpose, so the default and the environment variable are checked separately.
+        const QString ownFolder = QDir::cleanPath(QCoreApplication::applicationDirPath());
+        report(defaultDataRoot() == ownFolder, "the default data directory is the launcher's own folder",
+               QStringLiteral("%1 vs %2").arg(defaultDataRoot(), ownFolder));
+
+        const QString fromEnvironment = dataRootFromEnvironment()
+                                            ? QDir::cleanPath(qEnvironmentVariable("KOMOREBI_DATA"))
+                                            : defaultDataRoot();
+        report(dataRoot() == fromEnvironment, "the data directory is that folder, or the one KOMOREBI_DATA names",
+               QStringLiteral("%1 vs %2").arg(dataRoot(), fromEnvironment));
+
         QTemporaryDir scratch;
         if (!scratch.isValid()) {
             report(false, "temporary directory for the data directory test", QString());
         } else {
             const QString previous = qEnvironmentVariable("KOMOREBI_DATA");
-
-            report(dataRoot() == defaultDataRoot(), "the data directory is the launcher's own folder",
-                   QStringLiteral("%1 vs %2").arg(dataRoot(), defaultDataRoot()));
 
             qputenv("KOMOREBI_DATA", QDir::toNativeSeparators(scratch.path()).toUtf8());
             report(dataRootFromEnvironment(), "KOMOREBI_DATA is noticed", scratch.path());
