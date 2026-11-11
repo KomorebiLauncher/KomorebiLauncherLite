@@ -4,7 +4,9 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QApplication>
 #include <QMessageBox>
@@ -12,6 +14,9 @@
 #include "ui/LoginDialog.h"
 #include <QLabel>
 #include <QListWidget>
+#include <QPlainTextEdit>
+#include <QScrollBar>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -158,6 +163,9 @@ LogsPage::LogsPage(QWidget* parent)
     m_hint->setWordWrap(true);
     layout->addWidget(m_hint);
 
+    auto* body = new QHBoxLayout();
+    body->setSpacing(10);
+
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
     m_list->setStyleSheet(QStringLiteral(
@@ -165,7 +173,29 @@ LogsPage::LogsPage(QWidget* parent)
         " border-radius: 6px; padding: 6px; }"
         "QListWidget::item { padding: 8px 10px; border-radius: 4px; color: #242e4c; outline: none; }"
         "QListWidget::item:selected { background: rgba(139, 36, 58, 0.12); }"));
-    layout->addWidget(m_list, 1);
+    m_list->setMinimumWidth(230);
+    m_list->setMaximumWidth(320);
+    body->addWidget(m_list);
+
+    m_view = new QPlainTextEdit(this);
+    m_view->setReadOnly(true);
+    m_view->setFrameShape(QFrame::NoFrame);
+    m_view->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_view->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    m_view->setPlaceholderText(tr("Pick a log file on the left to read it here."));
+    m_view->setStyleSheet(QStringLiteral(
+        "QPlainTextEdit { background: rgba(250, 247, 240, 0.88); outline: none; border: 1px solid rgba(201, 194, 180, 0.9);"
+        " border-radius: 6px; padding: 8px; color: #242e4c; }"));
+    body->addWidget(m_view, 1);
+
+    layout->addLayout(body, 1);
+
+    m_follow = new QTimer(this);
+    m_follow->setInterval(1000);
+    connect(m_follow, &QTimer::timeout, this, &LogsPage::follow);
+    m_follow->start();
+
+    connect(m_list, &QListWidget::currentRowChanged, this, [this](int) { readSelected(); });
 
     connect(open, &QPushButton::clicked, this, [] {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QDir(dataRoot()).filePath(QStringLiteral("logs"))));
@@ -207,18 +237,79 @@ void LogsPage::showEvent(QShowEvent* event)
 
 void LogsPage::reload()
 {
+    // Reading the folder again must not move the reader off the file they were looking at, and with
+    // no reader yet the newest file -- the one the game is writing right now -- is the one to open.
+    const QString keep = m_path;
     m_list->clear();
     const QDir directory(QDir(dataRoot()).filePath(QStringLiteral("logs")));
     const auto entries = directory.entryInfoList(QDir::Files, QDir::Time);
+    int row = -1;
     for (const auto& entry : entries) {
         auto* item = new QListWidgetItem(QStringLiteral("%1\n%2 · %3 KB")
                                              .arg(entry.fileName(), entry.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm")),
                                                   QString::number(entry.size() / 1024)));
         item->setData(Qt::UserRole, entry.absoluteFilePath());
         m_list->addItem(item);
+        if (row < 0 && !keep.isEmpty() && entry.absoluteFilePath() == keep)
+            row = m_list->count() - 1;
     }
     m_hint->setText(entries.isEmpty() ? tr("No logs yet.") : tr("%1 log file(s).").arg(entries.size()));
     emit status(tr("%1 log file(s)").arg(entries.size()));
+
+    if (m_list->count() == 0) {
+        m_path.clear();
+        m_loadedBytes = 0;
+        m_view->clear();
+        return;
+    }
+    m_list->setCurrentRow(row < 0 ? 0 : row);
+    readSelected();
+}
+
+void LogsPage::readSelected()
+{
+    const auto* item = m_list->currentItem();
+    if (!item) {
+        m_path.clear();
+        m_loadedBytes = 0;
+        m_view->clear();
+        return;
+    }
+
+    const QString path = item->data(Qt::UserRole).toString();
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        m_path = path;
+        m_loadedBytes = 0;
+        m_view->setPlainText(tr("Could not read %1").arg(QDir::toNativeSeparators(path)));
+        return;
+    }
+
+    // A crash log is interesting at its end, and a game still running is writing there, so only the
+    // last stretch is read. Half a megabyte is thousands of lines, far more than anyone scrolls.
+    constexpr qint64 tailBytes = 512 * 1024;
+    const qint64 size = file.size();
+    if (size > tailBytes)
+        file.seek(size - tailBytes);
+    const QByteArray data = file.read(tailBytes);
+
+    m_path = path;
+    m_loadedBytes = size;
+    m_view->setPlainText(QString::fromUtf8(data));
+    QScrollBar* bar = m_view->verticalScrollBar();
+    bar->setValue(bar->maximum());
+}
+
+void LogsPage::follow()
+{
+    // The page keeps the timer running while it is hidden behind another page; only a file on screen
+    // is worth re-reading, and only when it actually grew.
+    if (!isVisible() || m_path.isEmpty())
+        return;
+    const qint64 size = QFileInfo(m_path).size();
+    if (size == m_loadedBytes)
+        return;
+    readSelected();
 }
 
 // ---------------------------------------------------------------- accounts

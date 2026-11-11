@@ -935,6 +935,15 @@ Started %1 time(s), last %2</source>
         <location filename="../src/ui/pages/SimplePages.cpp" line="157"/>
         <source>Every game start writes a log here.</source>
         <translation>ゲームを起動するたびにログが残ります。</translation>
+    </message>    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="185"/>
+        <source>Pick a log file on the left to read it here.</source>
+        <translation>左のログを選びますと、こちらに表示いたします。</translation>
+    </message>
+    <message>
+        <location filename="../src/ui/pages/SimplePages.cpp" line="284"/>
+        <source>Could not read %1</source>
+        <translation>%1 を読めませんでした</translation>
     </message>
     <message>
         <location filename="../src/ui/pages/SimplePages.cpp" line="180"/>

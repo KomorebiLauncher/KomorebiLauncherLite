@@ -9,6 +9,8 @@
 
 class QLabel;
 class QListWidget;
+class QPlainTextEdit;
+class QTimer;
 
 namespace Komorebi {
 class Button;
@@ -51,8 +53,17 @@ class LogsPage : public QWidget {
     void showEvent(QShowEvent* event) override;
 
    private:
+    /// Reads the file the list points at into the viewer, from the end when it is long.
+    void readSelected();
+    /// Watches the file in the viewer while it is on screen: a running game keeps writing to it.
+    void follow();
+
     QListWidget* m_list = nullptr;
     QLabel* m_hint = nullptr;
+    QPlainTextEdit* m_view = nullptr;
+    QTimer* m_follow = nullptr;
+    QString m_path;
+    qint64 m_loadedBytes = 0;
 };
 
 /// Microsoft accounts: sign one in, see who is signed in, sign out.

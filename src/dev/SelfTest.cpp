@@ -5,10 +5,13 @@
 #include <QDialog>
 #include <QLabel>
 #include <QListWidget>
+#include <QPlainTextEdit>
 #include <QMenu>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QStringList>
 #include <QPushButton>
 #include <QTemporaryDir>
@@ -236,6 +239,13 @@ int runSelfTest()
                 page.show();
                 report(list->count() == 1, "a log written after the page was built shows up when it opens",
                        QStringLiteral("%1 item(s)").arg(list->count()));
+                // The list is only the way in; the log itself is read into the viewer beside it, and
+                // the newest file is opened without anyone clicking.
+                auto* viewer = page.findChild<QPlainTextEdit*>();
+                report(viewer != nullptr, "the log page has a viewer for the file itself", QString());
+                if (viewer)
+                    report(viewer->toPlainText().contains(QStringLiteral("hello")),
+                           "the newest log is already open in the viewer", viewer->toPlainText().trimmed());
                 page.hide();
             }
 
@@ -246,6 +256,41 @@ int runSelfTest()
         }
     }
 
+    {
+        // A combo box with a list longer than the screen used to open its popup at the top of the
+        // screen: Qt sized and placed it for the whole list before the cap was applied. Where it
+        // ends up is checked here, since a person only notices it when they click the box.
+        QDialog host;
+        auto* combo = new Komorebi::Combo(&host);
+        auto* hostLayout = new QVBoxLayout(&host);
+        hostLayout->addWidget(new QLabel(QStringLiteral("popup placement"), &host));
+        hostLayout->addStretch(1);
+        hostLayout->addWidget(combo);
+        hostLayout->addStretch(1);
+        for (int i = 0; i < 300; ++i)
+            combo->addItem(QStringLiteral("version %1").arg(i));
+
+        host.show();
+        combo->showPopup();
+        QWidget* popup = combo->view() ? combo->view()->window() : nullptr;
+        report(popup != nullptr && popup != combo, "a long combo box opens a popup", QString());
+        if (popup && popup != combo) {
+            const QRect rect(popup->mapToGlobal(QPoint(0, 0)), popup->size());
+            const QScreen* screen = QGuiApplication::screenAt(rect.center());
+            if (!screen)
+                screen = QGuiApplication::primaryScreen();
+            const QRect area = screen ? screen->availableGeometry() : rect;
+
+            report(rect.height() <= 400, "the popup is capped instead of running off the screen",
+                   QStringLiteral("%1 px tall").arg(rect.height()));
+            report(area.contains(rect), "the popup sits on the screen the combo box is on",
+                   QStringLiteral("%1,%2 %3x%4 in %5,%6 %7x%8")
+                       .arg(rect.left()).arg(rect.top()).arg(rect.width()).arg(rect.height())
+                       .arg(area.left()).arg(area.top()).arg(area.width()).arg(area.height()));
+            combo->hidePopup();
+        }
+        host.hide();
+    }
     g_report << (g_failures == 0 ? QStringLiteral("self-test passed") : QStringLiteral("self-test failed: %1").arg(g_failures));
 
     QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("selftest.log")));

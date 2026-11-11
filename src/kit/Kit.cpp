@@ -3,6 +3,8 @@
 
 #include <QApplication>
 #include <QAbstractItemView>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QFocusEvent>
 #include <QFontMetrics>
 #include <QPainterPath>
@@ -140,6 +142,11 @@ Combo::Combo(QWidget* parent) : QComboBox(parent)
  * With a stylesheet on the view -- which every control here has -- Qt stops honouring maxVisibleItems
  * and sizes the popup from the whole list, so picking a version out of a hundred drops a column taller
  * than the screen over everything. The popup is capped to a readable number of rows here instead.
+ *
+ * The cap is applied after Qt has already placed the popup, and the popup it placed was taller than
+ * the screen: it went above the combo and ended up at the top of the screen, where a shrink left it.
+ * Only the next open looked right, because the maximum height had stuck to the reused popup. So the
+ * popup is placed again here, now that it fits.
  */
 void Combo::showPopup()
 {
@@ -157,7 +164,24 @@ void Combo::showPopup()
     const int border = container->style()->pixelMetric(QStyle::PM_DefaultFrameWidth, nullptr, container) * 2;
     const int wanted = rowHeight * qMin(qMax(count(), 1), rowsVisible) + border + 4;
     container->setMaximumHeight(wanted);
-    container->resize(container->width(), qMin(container->height(), wanted));
+
+    const QSize popupSize(container->width(), qMin(container->height(), wanted));
+    container->resize(popupSize);
+
+    // Below the combo when it fits, above it otherwise, and never off the screen the combo is on.
+    const QRect comboRect(mapToGlobal(QPoint(0, 0)), size());
+    const QScreen* screen = QGuiApplication::screenAt(comboRect.center());
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+    const QRect area = screen ? screen->availableGeometry() : comboRect;
+
+    int x = qBound(area.left(), comboRect.left(),
+                   qMax(area.left(), area.right() - popupSize.width() + 1));
+    int y = comboRect.bottom() + 1;
+    if (y + popupSize.height() > area.bottom())
+        y = comboRect.top() - popupSize.height();
+    y = qBound(area.top(), y, qMax(area.top(), area.bottom() - popupSize.height() + 1));
+    container->move(x, y);
 }
 
 QSize Combo::sizeHint() const
