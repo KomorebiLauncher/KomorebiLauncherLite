@@ -410,8 +410,8 @@ Move the launcher into a folder you can write to — one inside your own user fo
     </message>
     <message>
         <location filename="../src/ui/InstallDialog.cpp" line="331"/>
-        <source>%1 %2%% (%3/%4)</source>
-        <translation>%1 %2%%（%3/%4）</translation>
+        <source>%1 %2% (%3/%4)</source>
+        <translation>%1 %2%（%3/%4）</translation>
     </message>
     <message>
         <location filename="../src/ui/InstallDialog.cpp" line="348"/>

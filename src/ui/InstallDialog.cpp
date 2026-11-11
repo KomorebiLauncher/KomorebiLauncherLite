@@ -343,7 +343,7 @@ void InstallDialog::pollProgress()
 
     if (total > 0) {
         const int percent = done * 100 / total;
-        m_hint->setText(tr("%1 %2%% (%3/%4)").arg(stage).arg(percent).arg(done).arg(total));
+        m_hint->setText(tr("%1 %2% (%3/%4)").arg(stage).arg(percent).arg(done).arg(total));
     } else if (!stage.isEmpty()) {
         m_hint->setText(stage);
     }
