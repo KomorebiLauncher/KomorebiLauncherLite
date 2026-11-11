@@ -14,6 +14,7 @@
 | 安装 Fabric / Quilt / Forge / NeoForge / OptiFine | 可用，`--install <版本> --loader fabric\|quilt\|forge\|neoforge\|optifine` |
 | 启动已安装版本 | 可用，`--launch-version <版本>` |
 | 界面（启动 / 整合包 / 内容 / Java / 账户 / 日志 / 工具 / 关于 / 设置） | 可用 |
+| 日志页（左边列表、右边直接看正文；游戏还在写的时候跟着刷新） | 可用 |
 | 三语言（简体中文 / English / 日本語） | 可用 |
 | 内存（含锁定 `-Xms`）、窗口、JVM 参数、游戏参数、启动前命令、Java 指定 | 可用 |
 | Java 运行时按版本自动下载（Mojang 运行时，装进数据目录的 `java/`） | 可用 |
