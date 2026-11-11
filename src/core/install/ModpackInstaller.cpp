@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -487,6 +488,9 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
     const auto files = manifest.value(QStringLiteral("files")).toArray();
     int done = 0;
     int considered = 0;  // entries that named a file at all; the ones with no ids are not
+    // A project's slug is what a link to its file's page is built from, and asking for it is one
+    // request per project; a pack that names several files of one project should pay for one.
+    QHash<int, CurseForgeProject> projects;
     for (const auto& entry : files) {
         const auto file = entry.toObject();
         if (requestCancelled()) {
@@ -539,8 +543,33 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
                 ++result.downloaded;
                 continue;
             }
-            result.failed << (restricted ? QStringLiteral("%1 (%2, and %3)").arg(name, error, elsewhere)
-                                         : QStringLiteral("%1 (%2)").arg(name, error));
+            if (restricted) {
+                // Nobody outside CurseForge may have this file, so the pack is installed without it
+                // and the player is told to fetch it by hand. What they need is the page of that
+                // exact file, and its address is the project's slug, which only the project endpoint
+                // has -- the file listing names the project by id alone.
+                if (!projects.contains(projectId)) {
+                    QString projectError;
+                    projects.insert(projectId, CurseForge::project(projectId, &projectError));
+                }
+                const CurseForgeProject project = projects.value(projectId);
+
+                ManualMod mod;
+                mod.projectId = projectId;
+                mod.fileId = fileId;
+                mod.fileName = QFileInfo(name).fileName();
+                mod.sha1 = chosen.sha1;
+                mod.version = chosen.displayName.isEmpty() ? chosen.version : chosen.displayName;
+                mod.name = project.name.isEmpty() ? QString::number(projectId) : project.name;
+                mod.pageUrl = project.slug.isEmpty()
+                                  ? QStringLiteral("https://www.curseforge.com/projects/%1").arg(projectId)
+                                  : QStringLiteral("https://www.curseforge.com/minecraft/mc-mods/%1/files/%2")
+                                        .arg(project.slug)
+                                        .arg(fileId);
+                result.missing << mod;
+                continue;
+            }
+            result.failed << QStringLiteral("%1 (%2)").arg(name, error);
             continue;
         }
         ++result.downloaded;
@@ -562,6 +591,11 @@ ModpackResult installModpack(const QString& zipPath, bool withAssets,
             }
         }
     }
+
+    // What could not be fetched at all is written beside the pack rather than counted against it: a
+    // handful of files the player may fetch by hand does not make a broken install, and the rest of
+    // the pack is playable meanwhile. The list also clears itself when a reinstall needs nothing.
+    writeManualMods(packDirectory, result.missing);
 
     cleanup();
     if (!result.failed.isEmpty()) {

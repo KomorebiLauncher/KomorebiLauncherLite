@@ -24,6 +24,7 @@
 #include "core/InstanceConfig.h"
 #include "core/Paths.h"
 #include "core/auth/AccountStore.h"
+#include "core/install/ManualMods.h"
 #include "core/install/VersionInstaller.h"
 #include "core/launch/LaunchService.h"
 #include "core/launch/WindowsTweaks.h"
@@ -277,6 +278,12 @@ void LaunchPage::selectRow(int row)
         body += tr("\nGame arguments: %1").arg(config.gameArguments);
     if (config.launchCount > 0)
         body += tr("\nStarted %1 time(s), last %2").arg(config.launchCount).arg(config.lastLaunched);
+    // A pack installed short of a file starts and then behaves strangely; the count belongs where the
+    // player looks before pressing play, not only in a dialog they may have closed.
+    const int owed = readManualMods(version.path).size();
+    if (owed > 0)
+        body += tr("\n\n%1 file(s) of this pack still have to be fetched by hand. The Content page lists them.")
+                    .arg(owed);
     if (!config.description.isEmpty())
         body += QStringLiteral("\n\n") + config.description;
 

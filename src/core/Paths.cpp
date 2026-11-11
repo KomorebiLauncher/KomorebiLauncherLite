@@ -154,4 +154,9 @@ QString versionDirectory(const QString& versionId)
 {
     return QDir(versionsRoot()).filePath(versionId);
 }
+
+QString hokoraDirectory()
+{
+    return QDir(dataRoot()).filePath(QStringLiteral("hokora"));
+}
 }  // namespace Komorebi

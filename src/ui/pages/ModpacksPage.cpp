@@ -30,6 +30,7 @@
 #include "core/util/Scratch.h"
 #include "kit/Kit.h"
 #include "services/net/Fetcher.h"
+#include "ui/ManualModsDialog.h"
 
 using namespace Komorebi;
 
@@ -47,6 +48,9 @@ struct ModpacksPage::Job {
     QString current;
     QString error;
     QString versionId;
+    /// Files the pack needs but their authors do not allow a launcher to fetch; kept to hand them to
+    /// the dialog that explains them once the install is over.
+    QList<Komorebi::ManualMod> missing;
 };
 
 ModpacksPage::ModpacksPage(QWidget* parent)
@@ -452,6 +456,7 @@ void ModpacksPage::installSelected()
                 job.downloaded = result.downloaded;
                 job.skipped = result.skipped;
                 job.failed = result.failed.size();
+                job.missing = result.missing;
             },
             project.name);
         return;
@@ -508,6 +513,7 @@ void ModpacksPage::installSelected()
             job.downloaded = result.downloaded;
             job.skipped = result.skipped;
             job.failed = result.failed.size();
+            job.missing = result.missing;
         },
         project.name);
 }
@@ -536,6 +542,7 @@ void ModpacksPage::importZip()
             job.versionId = result.versionId;
             job.downloaded = result.downloaded;
             job.failed = result.failed.size();
+            job.missing = result.missing;
         },
         path);
 }
@@ -619,6 +626,7 @@ void ModpacksPage::pollInstall()
     QString versionId;
     int downloaded = 0;
     int failed = 0;
+    QList<ManualMod> missing;
     {
         std::lock_guard<std::mutex> lock(m_job->mutex);
         ok = m_job->ok;
@@ -627,6 +635,7 @@ void ModpacksPage::pollInstall()
         versionId = m_job->versionId;
         downloaded = m_job->downloaded;
         failed = m_job->failed;
+        missing = m_job->missing;
     }
     m_job.reset();
     setCancellationFlag(nullptr);
@@ -639,7 +648,21 @@ void ModpacksPage::pollInstall()
     // A finished install is a finished install: the cancel button may have been pressed in the last
     // second of it, and reporting "cancelled" left the new pack invisible on the Play page.
     if (ok) {
-        m_hint->setText(tr("Installed as %1 (%2 files downloaded, %3 failed). It is on the Play page.").arg(versionId).arg(downloaded).arg(failed));
+        if (missing.isEmpty()) {
+            m_hint->setText(tr("Installed as %1 (%2 files downloaded, %3 failed). It is on the Play page.")
+                                .arg(versionId)
+                                .arg(downloaded)
+                                .arg(failed));
+        } else {
+            // The pack is installed and playable minus these files; saying "installed" without that
+            // number would be a lie that costs the player an hour of wondering why nothing starts.
+            m_hint->setText(tr("Installed as %1, but %2 file(s) have to be fetched by hand.")
+                                .arg(versionId)
+                                .arg(missing.size()));
+            auto* dialog = new ManualModsDialog(versionId, this);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->show();
+        }
         emit status(tr("Installed %1").arg(versionId));
         emit installed(versionId);
         return;

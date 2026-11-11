@@ -304,6 +304,22 @@ Move the launcher into a folder you can write to — one inside your own user fo
         <source>Could not delete %1</source>
         <translation>%1 を削除できません</translation>
     </message>
+    <message>
+        <source>Fetch by hand</source>
+        <translation>手動で取得</translation>
+    </message>
+    <message>
+        <source>Files this pack needs but their authors allow nobody to download</source>
+        <translation>この整合パックが必要としているが、作者がランチャーからのダウンロードを許していないファイル</translation>
+    </message>
+    <message>
+        <source>Fetch by hand (%1)</source>
+        <translation>手動で取得（%1）</translation>
+    </message>
+    <message>
+        <source>Moved the files in hokora into this version</source>
+        <translation>hokora のファイルをこのバージョンに移しました</translation>
+    </message>
 </context>
 <context>
     <name>InstallDialog</name>
@@ -823,6 +839,10 @@ Started %1 time(s), last %2</source>
         <source>Delete %1 and everything in its folder?</source>
         <translation>%1 とそのフォルダーの中身をすべて削除しますか？</translation>
     </message>
+    <message>
+        <source>%1 file(s) of this pack still have to be fetched by hand. The Content page lists them.</source>
+        <translation>この整合パックのファイル %1 件は手動で取得する必要があります。一覧は「コンテンツ」ページにあります。</translation>
+    </message>
 </context>
 <context>
     <name>LoginDialog</name>
@@ -1193,6 +1213,10 @@ Started %1 time(s), last %2</source>
         <source>Installed %1</source>
         <translation>%1 をインストールしました</translation>
     </message>
+    <message>
+        <source>Installed as %1, but %2 file(s) have to be fetched by hand.</source>
+        <translation>%1 としてインストールしましたが、%2 ファイルは手動で取得する必要があります。</translation>
+    </message>
 </context>
 <context>
     <name>Paths</name>
@@ -1560,6 +1584,61 @@ Started %1 time(s), last %2</source>
         <location filename="../src/ui/pages/ToolsPage.cpp" line="269"/>
         <source>Download failed: %1</source>
         <translation>ダウンロードに失敗しました: %1</translation>
+    </message>
+</context>
+<context>
+    <name>ManualModsDialog</name>
+    <message>
+        <source>Mods to fetch by hand</source>
+        <translation>手動で取得する MOD</translation>
+    </message>
+    <message>
+        <source>Download these files from their pages, then put them into the hokora folder</source>
+        <translation>これらのファイルを各ページからダウンロードし、hokora フォルダーに入れてください</translation>
+    </message>
+    <message>
+        <source>Mod</source>
+        <translation>MOD</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>バージョン</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>ファイル</translation>
+    </message>
+    <message>
+        <source>Left in hokora, because the contents are not the file the pack asked for: %1</source>
+        <translation>内容が整合パックの求めるファイルと違うため、hokora に残しています：%1</translation>
+    </message>
+    <message>
+        <source>Open the hokora folder</source>
+        <translation>hokora フォルダーを開く</translation>
+    </message>
+    <message>
+        <source>Look again</source>
+        <translation>もう一度確認</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>Nothing is missing</source>
+        <translation>不足しているファイルはありません</translation>
+    </message>
+    <message>
+        <source>%1 file(s) still to fetch</source>
+        <translation>取得するファイルが %1 件あります</translation>
+    </message>
+    <message>
+        <source>Every file is in place. The pack is complete</source>
+        <translation>すべてのファイルが揃いました。この整合パックは完全です</translation>
+    </message>
+    <message>
+        <source>The pack gave no hash for this file</source>
+        <translation>このファイルのハッシュは整合パックに含まれていません</translation>
     </message>
 </context>
 </TS>

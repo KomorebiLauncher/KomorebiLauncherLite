@@ -15,6 +15,7 @@
 
 #include <functional>
 
+#include "core/install/ManualMods.h"
 #include "core/install/VersionInstaller.h"
 
 namespace Komorebi {
@@ -36,6 +37,12 @@ struct ModpackResult {
     int downloaded = 0;
     int skipped = 0;
     QStringList failed;
+    /**
+     * Files whose author allows no download outside CurseForge. They are not a failure: the pack is
+     * installed without them and this list is written beside it, so the player can see what is owed
+     * and fetch each file from its page.
+     */
+    QList<ManualMod> missing;
 };
 
 /// Reads the manifest inside a pack without installing anything.

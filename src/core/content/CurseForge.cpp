@@ -82,6 +82,26 @@ QList<CurseForgeProject> CurseForge::searchModpacks(const QString& query, int pa
     return projects;
 }
 
+CurseForgeProject CurseForge::project(int projectId, QString* error)
+{
+    CurseForgeProject project;
+
+    const QString url = QStringLiteral("%1/mods/%2").arg(QString::fromLatin1(kBase)).arg(projectId);
+    const JsonResult result = getJson(url, headers());
+    const QJsonObject object = body(result, error);
+    if (!result.ok)
+        return project;
+
+    // The file listing names a project by id only. A player told to fetch one file by hand needs the
+    // page it is on, and building that page's address needs the slug, which only this endpoint has.
+    const auto data = object.value(QStringLiteral("data")).toObject();
+    project.id = data.value(QStringLiteral("id")).toInt();
+    project.name = data.value(QStringLiteral("name")).toString();
+    project.slug = data.value(QStringLiteral("slug")).toString();
+    project.summary = data.value(QStringLiteral("summary")).toString();
+    return project;
+}
+
 QList<CurseForgeFile> CurseForge::files(int projectId, QString* error)
 {
     QList<CurseForgeFile> files;

@@ -43,6 +43,9 @@ class CurseForge {
     /// Files of a project, newest first.
     static QList<CurseForgeFile> files(int projectId, QString* error);
 
+    /// One project by id: its name and its slug, which is what a link to a file's page is made of.
+    static CurseForgeProject project(int projectId, QString* error);
+
     /// The file itself. `files()` already carries the url for most files; the rest leave it to the
     /// download-url endpoint, and the ones whose author allows no download outside CurseForge at all
     /// are reported as that, not as the 403 they arrive as. `restricted` is set for exactly that

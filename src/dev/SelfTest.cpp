@@ -2,6 +2,7 @@
 #include "dev/SelfTest.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QDialog>
 #include <QLabel>
 #include <QListWidget>
@@ -20,7 +21,9 @@
 
 #include "core/auth/MicrosoftAuth.h"
 #include "core/Paths.h"
+#include "core/install/ManualMods.h"
 #include "kit/Kit.h"
+#include "ui/ManualModsDialog.h"
 #include "ui/pages/SimplePages.h"
 
 namespace Komorebi::Dev {
@@ -291,6 +294,80 @@ int runSelfTest()
         }
         host.hide();
     }
+    // 12. the files a pack cannot fetch: the list beside the version, and hokora, where a player puts
+    // what they downloaded by hand. The two mistakes worth guarding are taking the newest version of
+    // a mod for the one the pack asked for, and refusing a file the browser saved under a new name.
+    {
+        QTemporaryDir root;
+        if (!root.isValid()) {
+            report(false, "temporary directory for the hokora test", QString());
+        } else {
+            const QString previous = qEnvironmentVariable("KOMOREBI_DATA");
+            qputenv("KOMOREBI_DATA", QDir::toNativeSeparators(root.path()).toUtf8());
+
+            const QString pack = versionDirectory(QStringLiteral("test-pack-1.0"));
+            QDir().mkpath(QDir(pack).filePath(QStringLiteral("mods")));
+            QDir().mkpath(hokoraDirectory());
+
+            const QByteArray bytes("a jar the pack asked for");
+            ManualMod wanted;
+            wanted.name = QStringLiteral("JEI");
+            wanted.version = QStringLiteral("jei-1.20.1-15.2.0.27");
+            wanted.fileName = QStringLiteral("jei-1.20.1-15.2.0.27.jar");
+            wanted.sha1 = QString::fromLatin1(QCryptographicHash::hash(bytes, QCryptographicHash::Sha1).toHex());
+            wanted.pageUrl = QStringLiteral("https://www.curseforge.com/minecraft/mc-mods/jei/files/1");
+            wanted.projectId = 238222;
+            wanted.fileId = 1;
+
+            const auto writeFile = [](const QString& path, const QByteArray& content) {
+                QFile file(path);
+                if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+                    return false;
+                file.write(content);
+                return true;
+            };
+
+            const QString asked = QDir(hokoraDirectory()).filePath(wanted.fileName);
+            report(writeManualMods(pack, { wanted }), "the list of files to fetch is written beside the version",
+                   QString());
+            report(readManualMods(pack).size() == 1, "the list comes back with its entry", QString());
+
+            // The dialog is rendered too: a table with a page for each file and the line saying where
+            // the files go is the whole feature, and selftest-ManualModsDialog.png is what it looks like.
+            {
+                ManualModsDialog dialog(QStringLiteral("test-pack-1.0"));
+                const QImage image = render(&dialog, QSize(680, 420));
+                report(!image.isNull() && dialog.remaining() == 1, "the list of files to fetch opens with its entry",
+                       QStringLiteral("%1x%2").arg(image.width()).arg(image.height()));
+            }
+
+            writeFile(asked, "the newest version of the mod, which is not the one asked for");
+            const HokoraHarvest refused = harvestHokora(pack);
+            report(refused.taken == 0 && refused.rejected.contains(wanted.fileName),
+                   "a file with the wanted name but other contents is refused",
+                   refused.rejected.join(QStringLiteral(", ")));
+            report(QFileInfo::exists(asked), "the refused file is left where the player put it", asked);
+            report(readManualMods(pack).size() == 1, "the refused file is still owed", QString());
+
+            // A browser that saved the download as "jei (1).jar" saved the right file; the pack knows
+            // it by its contents, and the version needs it under the name its manifest lists.
+            const QString renamed = QDir(hokoraDirectory()).filePath(QStringLiteral("jei (1).jar"));
+            report(writeFile(renamed, bytes), "a second file in hokora", renamed);
+            const HokoraHarvest taken = harvestHokora(pack);
+            report(taken.taken == 1, "the file whose contents match is taken", QStringLiteral("%1 taken").arg(taken.taken));
+            report(QFileInfo::exists(QDir(pack).filePath(QStringLiteral("mods/%1").arg(wanted.fileName))),
+                   "it lands in the mods folder under the name the pack asked for", QString());
+            report(readManualMods(pack).isEmpty(), "nothing is owed any more", QString());
+            report(!QFileInfo::exists(QDir(pack).filePath(QStringLiteral("manual-mods.json"))),
+                   "the list removes itself when nothing is owed", QString());
+
+            if (previous.isEmpty())
+                qunsetenv("KOMOREBI_DATA");
+            else
+                qputenv("KOMOREBI_DATA", previous.toUtf8());
+        }
+    }
+
     g_report << (g_failures == 0 ? QStringLiteral("self-test passed") : QStringLiteral("self-test failed: %1").arg(g_failures));
 
     QFile out(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("selftest.log")));

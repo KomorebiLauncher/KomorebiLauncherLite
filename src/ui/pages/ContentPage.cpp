@@ -14,7 +14,9 @@
 
 #include "core/Paths.h"
 #include "core/VersionStore.h"
+#include "core/install/ManualMods.h"
 #include "kit/Kit.h"
+#include "ui/ManualModsDialog.h"
 
 using namespace Komorebi;
 
@@ -89,9 +91,15 @@ ContentPage::ContentPage(QWidget* parent)
     m_toggle->setPrimary(true);
     m_remove = new Button(tr("Delete"), this);
     auto* folder = new Button(tr("Open folder"), this);
+    // Only a pack can be installed short of a file, and the button exists for exactly that state:
+    // hidden while there is nothing owed, so it does not read as one more thing that does nothing.
+    m_manual = new Button(tr("Fetch by hand"), this);
+    m_manual->setToolTip(tr("Files this pack needs but their authors allow nobody to download"));
+    m_manual->hide();
     actions->addWidget(m_toggle);
     actions->addWidget(m_remove);
     actions->addWidget(folder);
+    actions->addWidget(m_manual);
     actions->addStretch(1);
     layout->addLayout(actions);
 
@@ -116,6 +124,7 @@ ContentPage::ContentPage(QWidget* parent)
     });
     connect(m_remove, &QPushButton::clicked, this, &ContentPage::removeSelected);
     connect(folder, &QPushButton::clicked, this, &ContentPage::openFolder);
+    connect(m_manual, &QPushButton::clicked, this, &ContentPage::fetchByHand);
 
     reload();
 }
@@ -132,6 +141,7 @@ void ContentPage::reload()
     if (m_version->count() == 0) {
         m_hint->setText(tr("No versions installed yet."));
         m_files->clear();
+        m_manual->hide();
         updateActions();
         return;
     }
@@ -152,13 +162,23 @@ void ContentPage::selectVersion(const QString& versionId)
 
 void ContentPage::loadFiles()
 {
+    const QString version = m_version->currentData().toString();
+    // Hokora is swept before the folder is read: a file the player has just dropped in is in the mods
+    // folder by the time the list is drawn, and refresh -- the button a person pokes after copying a
+    // file somewhere -- is the moment they expect that to have happened.
+    if (!version.isEmpty() && takeFromHokora())
+        emit status(tr("Moved the files in hokora into this version"));
+
     m_files->clear();
     // The list is empty again, so both buttons are off until the player picks an item.
     updateActions();
 
-    const QString version = m_version->currentData().toString();
     if (version.isEmpty())
         return;
+
+    const QList<ManualMod> pending = readManualMods(versionDirectory(version));
+    m_manual->setVisible(!pending.isEmpty());
+    m_manual->setText(tr("Fetch by hand (%1)").arg(pending.size()));
 
     const QDir directory(QDir(versionDirectory(version)).filePath(m_kind->currentData().toString()));
     if (!directory.exists()) {
@@ -222,4 +242,29 @@ void ContentPage::openFolder()
     const QString path = QDir(versionDirectory(version)).filePath(m_kind->currentData().toString());
     QDir().mkpath(path);
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+bool ContentPage::takeFromHokora()
+{
+    const QString version = m_version->currentData().toString();
+    if (version.isEmpty())
+        return false;
+    return harvestHokora(versionDirectory(version)).taken > 0;
+}
+
+void ContentPage::fetchByHand()
+{
+    const QString version = m_version->currentData().toString();
+    if (version.isEmpty())
+        return;
+
+    auto* dialog = new ManualModsDialog(version, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    // The dialog moves files in as they arrive, so the folder behind it has to be redrawn, not just
+    // when it closes: a player who fills the list wants to see it happen.
+    connect(dialog, &ManualModsDialog::changed, this, [this] {
+        loadFiles();
+        emit status(tr("Moved the files in hokora into this version"));
+    });
+    dialog->show();
 }

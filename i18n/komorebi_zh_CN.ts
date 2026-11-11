@@ -304,6 +304,22 @@ Move the launcher into a folder you can write to — one inside your own user fo
         <source>Could not delete %1</source>
         <translation>无法删除 %1</translation>
     </message>
+    <message>
+        <source>Fetch by hand</source>
+        <translation>手动获取</translation>
+    </message>
+    <message>
+        <source>Files this pack needs but their authors allow nobody to download</source>
+        <translation>整合包需要、但作者不允许启动器下载的文件</translation>
+    </message>
+    <message>
+        <source>Fetch by hand (%1)</source>
+        <translation>手动获取（%1）</translation>
+    </message>
+    <message>
+        <source>Moved the files in hokora into this version</source>
+        <translation>已把 hokora 里的文件放进这个版本</translation>
+    </message>
 </context>
 <context>
     <name>InstallDialog</name>
@@ -823,6 +839,10 @@ Started %1 time(s), last %2</source>
         <source>Delete %1 and everything in its folder?</source>
         <translation>删除 %1 及其文件夹里的全部内容？</translation>
     </message>
+    <message>
+        <source>%1 file(s) of this pack still have to be fetched by hand. The Content page lists them.</source>
+        <translation>这个整合包还有 %1 个文件需要手动获取，清单在「内容」页。</translation>
+    </message>
 </context>
 <context>
     <name>LoginDialog</name>
@@ -1193,6 +1213,10 @@ Started %1 time(s), last %2</source>
         <source>Installed %1</source>
         <translation>已安装 %1</translation>
     </message>
+    <message>
+        <source>Installed as %1, but %2 file(s) have to be fetched by hand.</source>
+        <translation>已安装为 %1，但有 %2 个文件需要手动获取。</translation>
+    </message>
 </context>
 <context>
     <name>Paths</name>
@@ -1560,6 +1584,61 @@ Started %1 time(s), last %2</source>
         <location filename="../src/ui/pages/ToolsPage.cpp" line="269"/>
         <source>Download failed: %1</source>
         <translation>下载失败：%1</translation>
+    </message>
+</context>
+<context>
+    <name>ManualModsDialog</name>
+    <message>
+        <source>Mods to fetch by hand</source>
+        <translation>需要手动获取的模组</translation>
+    </message>
+    <message>
+        <source>Download these files from their pages, then put them into the hokora folder</source>
+        <translation>请将受限模组手动下载后，奉纳至 hokora 文件夹</translation>
+    </message>
+    <message>
+        <source>Mod</source>
+        <translation>模组</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>版本</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>文件</translation>
+    </message>
+    <message>
+        <source>Left in hokora, because the contents are not the file the pack asked for: %1</source>
+        <translation>留在了 hokora：内容和整合包要的不是同一个文件：%1</translation>
+    </message>
+    <message>
+        <source>Open the hokora folder</source>
+        <translation>打开 hokora 文件夹</translation>
+    </message>
+    <message>
+        <source>Look again</source>
+        <translation>再看一次</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Nothing is missing</source>
+        <translation>没有缺的文件</translation>
+    </message>
+    <message>
+        <source>%1 file(s) still to fetch</source>
+        <translation>还差 %1 个文件</translation>
+    </message>
+    <message>
+        <source>Every file is in place. The pack is complete</source>
+        <translation>文件都到齐了，这个整合包是完整的</translation>
+    </message>
+    <message>
+        <source>The pack gave no hash for this file</source>
+        <translation>整合包没有给出这个文件的校验值</translation>
     </message>
 </context>
 </TS>

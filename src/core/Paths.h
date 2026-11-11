@@ -52,6 +52,17 @@ QString versionsRoot();
 QString versionDirectory(const QString& versionId);
 
 /**
+ * `<dataRoot>/hokora`, where a player puts a mod the pack could not fetch itself.
+ *
+ * Some authors allow their files to be downloaded only from the CurseForge site, so a pack that
+ * lists one of them cannot be installed in full by any launcher. Those files are named in the
+ * pack's manual list, downloaded in a browser, and dropped here; the launcher moves them into the
+ * pack's mods folder once they match. It sits at the top of the data directory rather than in
+ * tmp/, which the cleanup feature empties.
+ */
+QString hokoraDirectory();
+
+/**
  * Joins `relative` onto `root`, or returns an empty string when the result would leave it.
  *
  * Everything the launcher writes or reads by a path built from remote metadata goes through here:

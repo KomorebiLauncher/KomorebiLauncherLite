@@ -34,6 +34,10 @@ class ContentPage : public QWidget {
     void setEnabled(bool enabled);
     void removeSelected();
     void openFolder();
+    /// Opens the list of files the pack could not fetch, and reloads when it puts one in place.
+    void fetchByHand();
+    /// Moves whatever hokora holds for this version into place; true when anything was moved.
+    bool takeFromHokora();
 
     QComboBox* m_version = nullptr;
     QComboBox* m_kind = nullptr;
@@ -41,4 +45,5 @@ class ContentPage : public QWidget {
     QLabel* m_hint = nullptr;
     Komorebi::Button* m_toggle = nullptr;
     Komorebi::Button* m_remove = nullptr;
+    Komorebi::Button* m_manual = nullptr;
 };
