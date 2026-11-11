@@ -186,7 +186,7 @@ jobs:
         run: |
           cd release
           {
-            echo "Komorebi Lite $VERSION —— 轻量级 Minecraft 启动器，两种包，挑一个用。"
+            echo "Komorebi Lite $VERSION —— 两种包，挑一个顺手的嘛～"
             echo
             if [ -f "../docs/release-notes/$VERSION.md" ]; then
               cat "../docs/release-notes/$VERSION.md"
