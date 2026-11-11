@@ -53,17 +53,25 @@ ManualModsDialog::ManualModsDialog(const QString& versionId, QWidget* parent)
     m_table->setStyleSheet(QStringLiteral(
         "QTableWidget { background: rgba(250, 247, 240, 0.66); border: 1px solid rgba(201, 194, 180, 0.9);"
         " border-radius: 6px; gridline-color: rgba(201, 194, 180, 0.5); }"
-        "QTableWidget::item { padding-left: 8px; padding-right: 8px; color: #242e4c; border: none; }"
+        // No colour here: a stylesheet colour on the items outranks the one a link item carries, so
+        // the plum below would never appear.
+        "QTableWidget::item { padding-left: 8px; padding-right: 8px; border: none; }"
         "QHeaderView::section { background: rgba(242, 238, 230, 1); color: #242e4c;"
         " border: none; border-bottom: 1px solid rgba(201, 194, 180, 0.9); padding: 7px 8px; font-weight: 600; }"
         "QTableCornerButton::section { background: rgba(242, 238, 230, 1); border: none; }"));
     m_table->verticalHeader()->setVisible(false);
     m_table->verticalHeader()->setDefaultSectionSize(34);
+    // Headers sit left over cells that are left-aligned themselves; centred headers over values of
+    // other widths is what makes a table look like it lost its columns.
+    for (int column = 0; column < 3; ++column)
+        m_table->horizontalHeaderItem(column)->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    // Equal columns, not columns that shrink onto their text: a version and a file name are nearly
+    // the same string, and when the two columns are packed together the row reads as one long line.
     m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     m_table->setShowGrid(false);
-    m_table->setMinimumHeight(180);
+    m_table->setMinimumHeight(160);
     m_table->setMouseTracking(true);
     connect(m_table, &QTableWidget::cellClicked, this, [this](int row, int column) {
         if (column != 0 || row < 0 || row >= m_mods.size())
@@ -144,13 +152,14 @@ void ManualModsDialog::reload()
 
         // The name is an ordinary cell, not a widget: a table draws its own items centred, while a
         // label put into a cell keeps the alignment it was built with and hung off the bottom of the
-        // row. It is coloured and underlined like a link, and clicking the cell opens the page.
+        // row. Colour marks it as a link and the underline does not: at this size it sits on the
+        // letters and the name reads as struck through rather than clickable.
         auto* name = new QTableWidgetItem(mod.name);
-        QFont nameFont = name->font();
-        nameFont.setUnderline(!mod.pageUrl.isEmpty());
-        name->setFont(nameFont);
         if (!mod.pageUrl.isEmpty()) {
-            name->setForeground(m_table->palette().color(QPalette::Link));
+            // The palette's own link colour is the ink of the theme, so a name painted with it does
+            // not read as a link at all; the plum is the one colour the rest of the launcher uses for
+            // the thing you can press.
+            name->setForeground(Colours::current().plum);
             name->setToolTip(mod.pageUrl);
         }
         m_table->setItem(row, 0, name);
@@ -159,8 +168,12 @@ void ManualModsDialog::reload()
         version->setToolTip(mod.fileName);
         m_table->setItem(row, 1, version);
 
+        // A file name longer than its column is cut with an ellipsis, so the tooltip spells it out
+        // beside the hash the player can compare against what the browser saved.
         auto* file = new QTableWidgetItem(mod.fileName);
-        file->setToolTip(mod.sha1.isEmpty() ? tr("The pack gave no hash for this file") : QStringLiteral("sha1 %1").arg(mod.sha1));
+        const QString hash = mod.sha1.isEmpty() ? tr("The pack gave no hash for this file")
+                                                : QStringLiteral("sha1 %1").arg(mod.sha1);
+        file->setToolTip(QStringLiteral("%1\n%2").arg(mod.fileName, hash));
         m_table->setItem(row, 2, file);
     }
 }
