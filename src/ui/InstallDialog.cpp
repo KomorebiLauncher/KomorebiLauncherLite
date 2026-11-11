@@ -120,12 +120,25 @@ InstallDialog::InstallDialog(const VersionStore& store, QWidget* parent)
     buttons->addWidget(m_close);
     layout->addLayout(buttons);
 
-    connect(m_close, &QPushButton::clicked, this, &QDialog::reject);
+    connect(m_close, &QPushButton::clicked, this, [this] {
+        // An install that went through is a result the page needs: it hands the new version back so
+        // the list shows it selected. Rejecting here would throw that away and leave the old
+        // selection in place.
+        if (m_installed.isEmpty())
+            reject();
+        else
+            accept();
+    });
     connect(m_install, &QPushButton::clicked, this, &InstallDialog::startInstall);
     connect(m_kind, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this] { loadManifest(); });
 
     m_poll = new QTimer(this);
     m_poll->setInterval(200);
+
+    m_autoClose = new QTimer(this);
+    m_autoClose->setSingleShot(true);
+    m_autoClose->setInterval(1500);
+    connect(m_autoClose, &QTimer::timeout, this, &QDialog::accept);
     connect(m_poll, &QTimer::timeout, this, &InstallDialog::pollProgress);
 
     QTimer::singleShot(0, this, &InstallDialog::loadManifest);
@@ -218,6 +231,8 @@ void InstallDialog::startInstall()
 
     m_state->running = true;
     m_state->finished = false;
+    // Another install cancels the close that the previous one asked for.
+    m_autoClose->stop();
     m_state->done = 0;
     m_state->total = 0;
     m_install->setEnabled(false);
@@ -357,6 +372,10 @@ void InstallDialog::pollProgress()
             m_hint->setText(tr("%1 is installed").arg(m_installed));
             m_install->setEnabled(true);
             m_close->setText(tr("Done"));
+            // Installed is the answer the dialog exists for, so it closes itself instead of waiting
+            // to be dismissed. The short delay leaves the last line and the version name on screen
+            // long enough to read, and Accept carries the new version id back to the page.
+            m_autoClose->start();
         } else {
             m_hint->setText(tr("Install failed: %1").arg(error));
             m_install->setEnabled(true);

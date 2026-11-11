@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QDialog>
 #include <QLabel>
+#include <QListWidget>
 #include <QMenu>
 #include <QDir>
 #include <QFile>
@@ -17,6 +18,7 @@
 #include "core/auth/MicrosoftAuth.h"
 #include "core/Paths.h"
 #include "kit/Kit.h"
+#include "ui/pages/SimplePages.h"
 
 namespace Komorebi::Dev {
 
@@ -205,6 +207,42 @@ int runSelfTest()
                 settings.close();
             }
             report(looksLikeDataRoot(filled.path()), "settings.json marks a data directory", QString());
+        }
+    }
+
+    // 11. the log page: a log written while the launcher is running must appear when the page opens
+    {
+        QTemporaryDir root;
+        if (!root.isValid()) {
+            report(false, "temporary directory for the log page test", QString());
+        } else {
+            const QString previous = qEnvironmentVariable("KOMOREBI_DATA");
+            qputenv("KOMOREBI_DATA", QDir::toNativeSeparators(root.path()).toUtf8());
+
+            LogsPage page;
+            auto* list = page.findChild<QListWidget*>();
+            report(list != nullptr, "the log page has a list of log files", QString());
+
+            // Written after the page was built: starting the game and then opening the page is the
+            // order players use, and the page used to show the empty list it had built at startup.
+            QDir().mkpath(root.filePath(QStringLiteral("logs")));
+            QFile log(root.filePath(QStringLiteral("logs/20261111-120000.log")));
+            if (log.open(QIODevice::WriteOnly)) {
+                log.write("hello\n");
+                log.close();
+            }
+
+            if (list) {
+                page.show();
+                report(list->count() == 1, "a log written after the page was built shows up when it opens",
+                       QStringLiteral("%1 item(s)").arg(list->count()));
+                page.hide();
+            }
+
+            if (previous.isEmpty())
+                qunsetenv("KOMOREBI_DATA");
+            else
+                qputenv("KOMOREBI_DATA", previous.toUtf8());
         }
     }
 

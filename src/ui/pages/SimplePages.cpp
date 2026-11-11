@@ -199,6 +199,12 @@ LogsPage::LogsPage(QWidget* parent)
     reload();
 }
 
+void LogsPage::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    reload();
+}
+
 void LogsPage::reload()
 {
     m_list->clear();

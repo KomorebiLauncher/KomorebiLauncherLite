@@ -47,6 +47,8 @@ class InstallDialog : public QDialog {
     Komorebi::Button* m_install = nullptr;
     Komorebi::Button* m_close = nullptr;
     QTimer* m_poll = nullptr;
+    /// Closes the dialog after a successful install; stopped if another install starts first.
+    QTimer* m_autoClose = nullptr;
     QString m_installed;
 
     struct State;

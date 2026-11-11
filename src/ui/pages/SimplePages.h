@@ -45,6 +45,11 @@ class LogsPage : public QWidget {
    signals:
     void status(const QString& text);
 
+   protected:
+    // The list is built once, so a log written while the launcher is running (the usual case: start
+    // the game, then look) only shows up if the page reads the folder again when it is opened.
+    void showEvent(QShowEvent* event) override;
+
    private:
     QListWidget* m_list = nullptr;
     QLabel* m_hint = nullptr;
